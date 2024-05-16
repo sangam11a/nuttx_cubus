@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <debug.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <nuttx/kmalloc.h>
 #include <nuttx/wqueue.h>
@@ -234,7 +233,6 @@ static void lis3mdl_read_measurement_data(FAR struct lis3mdl_dev_s *dev)
   dev->data.y_mag = (int16_t) (y_mag);
   dev->data.z_mag = (int16_t) (z_mag);
   dev->data.temperature = (int16_t) (temperature);
-  printf("[LIS3MDL] read data from MAG, X: %i, Y: %i, Z:%i, TEMP: %i\n", x_mag, y_mag, z_mag);
 
   /* Give back the mutex */
 
@@ -261,14 +259,12 @@ static void lis3mdl_read_magnetic_data(FAR struct lis3mdl_dev_s *dev,
   SPI_LOCK(dev->spi, true);
 
   /* Set CS to low which selects the LIS3MDL */
-  printf("[LIS3MDL] Selecting SPI");
   SPI_SELECT(dev->spi, dev->config->spi_devid, true);
 
   /* Transmit the register address from where we want to start reading
    * 0x80 -> MSB is set -> Read Indication 0x40 -> MSB-1 (MS-Bit) is
    * set -> auto increment of address when reading multiple bytes.
    */
-  printf("[LIS3MDL] sending read command to mag.\n");
   SPI_SEND(dev->spi, (LIS3MDL_OUT_X_L_REG | 0x80 | 0x40)); /* RX */
   *x_mag  = ((uint16_t) (SPI_SEND(dev->spi, 0)) << 0);     /* LSB */
   *x_mag |= ((uint16_t) (SPI_SEND(dev->spi, 0)) << 8);     /* MSB */
@@ -280,7 +276,6 @@ static void lis3mdl_read_magnetic_data(FAR struct lis3mdl_dev_s *dev,
   *z_mag |= ((uint16_t) (SPI_SEND(dev->spi, 0)) << 8);     /* MSB */
 
   /* Set CS to high which deselects the LIS3MDL */
-  printf("[LIS3MDL] Collected data from SPI, X %i, Y %i, Z %i \n", *x_mag, *y_mag, *z_mag);
   SPI_SELECT(dev->spi, dev->config->spi_devid, false);
 
   /* Unlock the SPI bus */
@@ -318,7 +313,6 @@ static void lis3mdl_read_temperature(FAR struct lis3mdl_dev_s *dev,
   *temperature |= ((uint16_t) (SPI_SEND(dev->spi, 0)) << 8);    /* MSB */
 
   /* Set CS to high which deselects the LIS3MDL */
-  printf("[LIS3MDL] Read Temperature data from MAG, TEMP %i\n", *temperature);
   SPI_SELECT(dev->spi, dev->config->spi_devid, false);
 
   /* Unlock the SPI bus */

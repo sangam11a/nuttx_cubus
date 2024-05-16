@@ -152,7 +152,7 @@ void stm32_spi3select(struct spi_dev_s *dev,
   switch (devid)
   {
     case SPIDEV_FLASH(0):
-      stm32_gpiowrite(GPIO_MFM_CS, false);
+      stm32_gpiowrite(GPIO_MFM_CS, !selected);
       break;
   }
 }
@@ -172,7 +172,7 @@ void stm32_spi4select(struct spi_dev_s *dev,
   switch (devid)
   {
     case SPIDEV_FLASH(0):
-      stm32_gpiowrite(GPIO_SFM_CS, selected);
+      stm32_gpiowrite(GPIO_SFM_CS, !selected);
       break;
   }
 }
@@ -194,12 +194,11 @@ void stm32_spi5select(struct spi_dev_s *dev,
   {
     case SPIDEV_USER(0):
       /* Set the CS pin for mag0*/
-      printf("setting CS pin for Lis3mdl.\n");
-      stm32_gpiowrite(GPIO_LIS3MDL_CS, selected);
+      stm32_gpiowrite(GPIO_LIS3MDL_CS, !selected);
       break;
     case SPIDEV_IMU(0):
       /* Set the CS pin for IMU0*/
-      stm32_gpiowrite(GPIO_MPU_CS, selected);
+      stm32_gpiowrite(GPIO_MPU_CS, !selected);
       break;
 
   }
