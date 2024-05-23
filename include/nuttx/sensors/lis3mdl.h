@@ -1,4 +1,4 @@
-/****************************************************************************
+ /****************************************************************************
  * include/nuttx/sensors/lis3mdl.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more

@@ -84,6 +84,10 @@ if(CONFIG_ADC)
     list(APPEND SRCS ads7828.c)
   endif()
 
+  if(CONFIG_ADC_ADS7953)
+    list(APPEND SRCS ads7953.c)
+  endif()
+
   if(CONFIG_ADC_MAX1161X)
     list(APPEND SRCS max1161x.c)
   endif()

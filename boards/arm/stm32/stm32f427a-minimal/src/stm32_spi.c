@@ -135,6 +135,19 @@ void stm32_spi2select(struct spi_dev_s *dev,
 {
   spiinfo("devid: %d CS: %s\n",
          (int)devid, selected ? "assert" : "de-assert");
+
+  switch(devid)
+  {
+    case SPIDEV_USER(0):
+      /* Set the CS pin for mag0*/
+      stm32_gpiowrite(GPIO_LIS3MDL_CS, !selected);
+      break;
+    case SPIDEV_IMU(0):
+      /* Set the CS pin for IMU0*/
+      stm32_gpiowrite(GPIO_MPU_CS, !selected);
+      break;
+
+  }
 }
 
 uint8_t stm32_spi2status(struct spi_dev_s *dev, uint32_t devid)
@@ -189,18 +202,11 @@ void stm32_spi5select(struct spi_dev_s *dev,
 {
   spiinfo("devid: %%d CS: %s\n",
             (int)devid, selected ? "assert" : "de-assert");
-
   switch(devid)
   {
-    case SPIDEV_USER(0):
-      /* Set the CS pin for mag0*/
-      stm32_gpiowrite(GPIO_LIS3MDL_CS, !selected);
+    case SPIDEV_ADC(0):
+      stm32_gpiowrite(GPIO_EXT_ADC1_CS, !selected);
       break;
-    case SPIDEV_IMU(0):
-      /* Set the CS pin for IMU0*/
-      stm32_gpiowrite(GPIO_MPU_CS, !selected);
-      break;
-
   }
 }
 

@@ -50,11 +50,35 @@
 #endif
 #endif
 
+#ifdef CONFIG_SENSORS_LIS3MDL
 #include <nuttx/sensors/lis3mdl.h>
+#endif
+
+// #ifdef CONFIG_ADC_ADS7953
+#include <nuttx/analog/ads7953.h>
+#include "../../../../drivers/analog/ads7953.c"
+// #endif
 
 #include "stm32.h"
 #include "stm32f427a.h"
 
+#if defined(CONFIG_STM32_SPI2)
+  struct spi_dev_s *spi2;
+#endif
+
+#if defined(CONFIG_STM32_SPI3)
+  struct spi_dev_s *spi3;
+#endif
+
+#if defined(CONFIG_STM32_SPI4)
+  struct spi_dev_s *spi4;
+#endif
+
+#if defined(CONFIG_STM32_SPI5)
+  struct spi_dev_s *spi5;
+#endif
+
+#ifdef CONFIG_SENSORS_LIS3MDL
 struct mag_priv_s
 {
   struct lis3mdl_config_s dev;
@@ -62,6 +86,18 @@ struct mag_priv_s
   void *arg;
   uint32_t intcfg;
 };
+#endif
+
+#ifdef CONFIG_ADC_ADS7953
+
+struct adc_priv_s
+{
+  struct ads7953_config_s dev;
+  xcpt_t handler;
+  void *arg;
+  uint32_t intcfg;
+};
+#endif
 
 /* IRQ/GPIO access callbacks.  These operations all hidden behind
  * callbacks to isolate the MRF24J40 driver from differences in GPIO
@@ -74,6 +110,7 @@ struct mag_priv_s
  *   irq_enable       - Enable or disable the GPIO interrupt
  */
 
+#ifdef CONFIG_SENSORS_LIS3MDL
 static int stm32_attach_irq(const struct lis3mdl_config_s *lower,
                             xcpt_t handler, void *arg)
 {
@@ -95,6 +132,15 @@ static struct mag_priv_s mag0 =
   .handler = NULL,
   .intcfg = GPIO_LIS3MDL_INT,
 };
+#endif
+
+#ifdef CONFIG_ADC_ADS7953
+static struct adc_priv_s adc0 =
+{
+  .dev.spi = NULL,
+  .dev.spi_devid = SPIDEV_ADC(0),
+};
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -117,22 +163,6 @@ static struct mag_priv_s mag0 =
 int stm32_bringup(void)
 {
 
-#if defined(CONFIG_STM32_SPI2)
-  struct spi_dev_s *spi2;
-#endif
-
-#if defined(CONFIG_STM32_SPI3)
-  struct spi_dev_s *spi3;
-#endif
-
-#if defined(CONFIG_STM32_SPI4)
-  struct spi_dev_s *spi4;
-#endif
-
-#if defined(CONFIG_STM32_SPI5)
-  struct spi_dev_s *spi5;
-#endif
-
 #if defined(CONFIG_MTD)
   struct mtd_dev_s *mtd;
 #if defined (CONFIG_MTD_MT25QL)
@@ -147,29 +177,28 @@ int stm32_bringup(void)
 
   /* Configure SPI-based devices */
 
-
 #ifdef CONFIG_SENSORS_LIS3MDL
 
   /* Init SPI Bus again */
 
-  spi5 = stm32_spibus_initialize(5);
-  if (!spi5)
+  spi2 = stm32_spibus_initialize(2);
+  if (!spi2)
   {
-    printf("[BRING_UP] ERROR: Failed to Initialize SPI 5 bus.\n");
+    printf("[BRING_UP] ERROR: Failed to Initialize SPI 2 bus.\n");
   } else {
-    printf("[BRING_UP] Initialized bus on SPI port 5.\n");
+    printf("[BRING_UP] Initialized bus on SPI port 2.\n");
 
-    SPI_SETFREQUENCY(spi5, 1000000);
-    SPI_SETBITS(spi5, 8);
-    SPI_SETMODE(spi5, SPIDEV_MODE0);
+    SPI_SETFREQUENCY(spi2, 1000000);
+    SPI_SETBITS(spi2, 8);
+    SPI_SETMODE(spi2, SPIDEV_MODE0);
   }
 
-  ret = lis3mdl_register("/dev/mag0", spi5, &mag0.dev);
+  ret = lis3mdl_register("/dev/mag0", spi2, &mag0.dev);
   if (ret < 0)
   {
     printf("[BRING_UP] Error: Failed to register LIS3MDL driver.\n");
   } else {
-    printf("[BRING_UP] LIS3MDL registered on SPI 5.\n");
+    printf("[BRING_UP] LIS3MDL registered on SPI 2.\n");
   }
 #endif  // CONFIG_SENSORS_LIS3MDL
 
@@ -380,15 +409,33 @@ int stm32_bringup(void)
 
 // #endif /* CONFIG_RAMMTD && CONFIG_STM32F427A_RAMMTD */
 
-#ifdef CONFIG_ADC
-  /* Initialize ADC and register the ADC device. */
-
-  ret = stm32_adc_setup();
+#ifdef CONFIG_ADC_ADS7953
+  spi5 = stm32_spibus_initialize(5);
+  if (!spi5)
+  {
+    printf("[BRINGUP] Failed to initialize SPI Port 5.\n");
+  } else {
+    printf("[BRINGUP] Successfully Initalized SPI Port 5.\n");
+    adc0.dev.spi = spi5;
+  }
+  ret = ads7953_register("/dev/ext_adc", adc0.dev.spi, adc0.dev.spi_devid);
   if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: stm32_adc_setup() failed: %d\n", ret);
-    }
+  {
+    printf("[BRINGUP] ads7953 register failed.\n");
+  } else {
+    printf("[BRINGUP] Registered ads7953.\n");
+  }
 #endif
+
+// #ifdef CONFIG_ADC
+//   /* Initialize ADC and register the ADC device. */
+
+//   ret = stm32_adc_setup();
+//   if (ret < 0)
+//     {
+//       syslog(LOG_ERR, "ERROR: stm32_adc_setup() failed: %d\n", ret);
+//     }
+// #endif
 
   UNUSED(ret);
   return OK;

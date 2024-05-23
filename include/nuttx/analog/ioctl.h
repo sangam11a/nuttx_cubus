@@ -109,6 +109,10 @@
 #define AN_SAMV7_AFEC_FIRST (AN_MCP48XX_FIRST + AN_MCP48XX_NCMDS)
 #define AN_SAMV7_AFEC_NCMDS 1
 
+/* See include/nuttx/analog/ads7953.h */
+
+#define AN_ADS7953_FIRST (AN_SAMV7_AFEC_FIRST + AN_SAMV7_AFEC_NCMDS)
+#define AN_ADS7953_NCMDS 4
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/

@@ -77,6 +77,15 @@ config ADS1255_FREQUENCY
 
 endif # ADC_ADS125X
 
+config ADC_ADS7953
+	bool "ADS7953 support"
+	default n
+	select SPI
+	---help---
+		Enable driver support for the ADS7953 SPI powered ADC.
+
+		Note that the ADC conversion is started via the ANIOC_TRIGGER iotcl.
+
 config ADC_LTC1867L
 	bool "LTC 1863L/1867L support"
 	default n
