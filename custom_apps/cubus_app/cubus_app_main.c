@@ -28,8 +28,27 @@
  * Public Functions
  ****************************************************************************/
 
-static void adc_devpath(FAR struct adc_state_s *adc, FAR const char *devpath);
+/****************************************************************************
+ * Name: adc_devpath
+ ****************************************************************************/
+#if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
+static void adc_devpath(FAR struct adc_state_s *adc, FAR const char *devpath)
+{
+  /* Get rid of any old device path */
+
+  if (adc->devpath)
+    {
+      free(adc->devpath);
+    }
+
+  /* Then set-up the new device path by copying the string */
+
+  adc->devpath = strdup(devpath);
+}
+#endif
 int int_adc_main();
+
+void print_satellite_health_data();
 
 /****************************************************************************
  * Private Data
@@ -91,7 +110,6 @@ int main(int argc, FAR char *argv[])
   syslog(LOG_INFO, "Opening a file inside %s.\n", MFM_MAIN_STRPATH);
   char path[65];
   sprintf(path, "%s%s", MFM_MAIN_STRPATH,file_name);
-  // int fd = open(path, O_CREAT | O_RDWR | O_APPEND);
   int fd = file_open(&file_p, path, O_RDWR | O_CREAT | O_APPEND);
   if (fd < 0)
   {
@@ -113,6 +131,9 @@ int main(int argc, FAR char *argv[])
   return 0;
 }
 
+/*
+* TODO: Add number of samples and append in a two dimensional array and return the average value
+*/
 
 /****************************************************************************
  * Name: adc_main
@@ -472,6 +493,7 @@ int ext_adc_main(){
 
 void make_satellite_health(){
 
+
   float int_adc1_temp[CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE] = {'\0'};  
   int_adc1_data_convert(int_adc1_temp);
 
@@ -598,30 +620,14 @@ void int_adc1_data_convert(float *temp_buff){
  *    only one channel data is converted by internal adc 3 i.e. 4V_I 
  *    it uses LMP8640 current sensor, so same formula given above is used ...
  ****************************************************************************/
-
+#ifdef CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3
 void int_adc3_data_convert(float *temp_buff_1){
   for(int i=0;i<CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE;i++){
     temp_buff_1[i] = (float)int_adc3_sample[0].am_data * 3.3 / 4095;
     temp_buff_1[i] = (float)(temp_buff_1[i]/(2*RES_LMP8640*GAIN_LMP8640))*1000;
   }
 }
+#endif
 
 
 
-/****************************************************************************
- * Name: adc_devpath
- ****************************************************************************/
-
-static void adc_devpath(FAR struct adc_state_s *adc, FAR const char *devpath)
-{
-  /* Get rid of any old device path */
-
-  if (adc->devpath)
-    {
-      free(adc->devpath);
-    }
-
-  /* Then set-up the new device path by copying the string */
-
-  adc->devpath = strdup(devpath);
-}

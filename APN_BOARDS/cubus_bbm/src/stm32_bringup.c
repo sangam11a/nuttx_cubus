@@ -100,6 +100,8 @@ typedef struct adc_priv_s
 };
 #endif
 
+struct mtd_dev_s *mtd;
+
 /* IRQ/GPIO access callbacks.  These operations all hidden behind
  * callbacks to isolate the MRF24J40 driver from differences in GPIO
  * interrupt handling by varying boards and MCUs.  If possible,

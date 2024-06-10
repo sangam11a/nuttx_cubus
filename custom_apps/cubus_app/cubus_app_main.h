@@ -146,3 +146,4 @@ typedef struct {
 int ext_adc_main();
 int read_int_adc1();
 int read_int_adc3();
+void make_satellite_health();
