@@ -33,6 +33,8 @@ static void adc_devpath(FAR struct adc_state_s *adc, FAR const char *devpath);
 
 int int_adc_main();
 
+void print_satellite_health_data();
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
