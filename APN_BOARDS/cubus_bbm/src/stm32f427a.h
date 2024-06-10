@@ -124,6 +124,7 @@
 #endif  // CONFIG_STM32_ADC3
 
 #define EXT_ADC_PATH    "/dev/ext_adc0"
+#define MAG_1_PATH      "/dev/mag0"
 
 
 /* STM32F427 minimal board GPIOs ************************************************/

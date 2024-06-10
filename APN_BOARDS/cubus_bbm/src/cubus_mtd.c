@@ -357,29 +357,35 @@ memoryout:
 					}
 				} else {
 					syslog(LOG_INFO, "Mount Successful\n");
-
-					/*
-					syslog(LOG_INFO, "Performing write testing.");
-					char file_path[65];
-					sprintf(file_path, "%s/test.txt", mount_point);
-					int fd = open(file_path, O_CREAT | O_RDWR);
-					if(fd < 0) 
-					{
-						syslog(LOG_ERR, "Error opening file in mainstorage of MFM.\n");
-						close(fd);
-					} else {
-						const char *write_data = "Write test for LittleFS mounted system.\n";
-						ssize_t bytes_written = write(fd, write_data, strlen(write_data));
-						if(bytes_written > 0)
-						{
-							syslog(LOG_INFO, "Flash Write Successful.\n Data Len: %d\n", bytes_written);
-							close(fd);
-						} else {
-							syslog(LOG_INFO, "Write Failure.\n");
-						}
-							close(fd);
-					}
-					*/
+					
+					// syslog(LOG_INFO, "Performing write testing.");
+					// struct file file_p;
+					// char file_path[65];
+					// sprintf(file_path, "%s/test.txt", mount_point);
+					// // int fd = open(file_path, O_CREAT | O_RDWR);
+					// int fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
+					// if(fd < 0) 
+					// {
+					// 	syslog(LOG_ERR, "Error opening file in mainstorage of MFM.\n");
+					// 	// close(fd);
+					// 	file_close(&file_p);
+					// } else {
+					// 	const char *write_data = "Write test for LittleFS mounted system.\n";
+					// 	// ssize_t bytes_written = write(fd, write_data, strlen(write_data));
+					// 	ssize_t bytes_written = file_write(&file_p, write_data, strlen(write_data));
+					// 	if(bytes_written > 0)
+					// 	{
+					// 		syslog(LOG_INFO, "Flash Write Successful.\n Data Len: %d\n", bytes_written);
+					// 		// close(fd);
+					// 		file_close(&file_p);
+					// 	} else {
+					// 		syslog(LOG_INFO, "Write Failure.\n");
+					// 	}
+					// 		// close(fd);
+					// 		file_syncfs(&file_p);
+					// 		file_close(&file_p);
+					// }
+					
 
 				}
 

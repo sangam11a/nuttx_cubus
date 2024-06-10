@@ -184,7 +184,7 @@ int stm32_adc_setup(void)
       ret = adc_register(ADC1_PATH, adc1);
       if (ret < 0)
         {
-          aerr("ERROR: adc_register /dev/adc0 failed: %d\n", ret);
+          aerr("ERROR: adc_register %s failed: %d\n", ADC1_PATH, ret);
           return ret;
         }
 

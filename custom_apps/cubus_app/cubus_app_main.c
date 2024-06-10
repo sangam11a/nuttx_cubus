@@ -105,11 +105,13 @@ int main(int argc, FAR char *argv[])
 
   make_satellite_health();
 
-  print_satellite_health_data();
-  const char *file_name[] = {"/test_storage.txt"};
+  print_satellite_health_data(&sat_health);
+  const char file_name[] = {"/str.txt"};
   syslog(LOG_INFO, "Opening a file inside %s.\n", MFM_MAIN_STRPATH);
   char path[65];
   sprintf(path, "%s%s", MFM_MAIN_STRPATH,file_name);
+  syslog(LOG_INFO, "file path: %s\n", path);
+  // int fd = open(path, O_CREAT | O_RDWR | O_APPEND);
   int fd = file_open(&file_p, path, O_RDWR | O_CREAT | O_APPEND);
   if (fd < 0)
   {
@@ -127,8 +129,43 @@ int main(int argc, FAR char *argv[])
     file_close(&file_p);
   }
 
+  syslog(LOG_INFO, "\n\n\nReading stored data from flash mem.\n");
+  fd = file_open(&file_p, path, O_RDONLY);
+  if(fd < 0)
+  {
+    syslog(LOG_ERR, "Error opening file in mainstorage of MFM.\n");
+  }else {
+    satellite_health_s health_read;
+    ssize_t bytes_read;
+    int off;
+    off = file_seek(&file_p,0, SEEK_SET);
+    while(!(off < 0) ) 
+    {
+    bytes_read = file_read(&file_p, &health_read, sizeof(health_read));
+    syslog(LOG_INFO,"Read %i bytes from flash. to %i size str.\n", bytes_read, sizeof(health_read));
+    if(!bytes_read)
+    {
+      syslog(LOG_ERR, "Read error\n");
+      goto ERR_FILE_CLOSE;
+    }
+    print_satellite_health_data(&health_read);
+    // off = file_seek(&file_p, sizeof(health_read), SEEK_CUR);
+    // if(!off)
+    // {
+    //   syslog("Error in offsetting %i bytes.\n", sizeof(health_read));
+    //   goto ERR_FILE_CLOSE;
+    // } else {
+    //   syslog(LOG_INFO, "pointer moved %i forward.\n", off);
+    // }
+    }
+  }
 
   return 0;
+
+ERR_FILE_CLOSE:
+  file_close(&file_p);
+  return 0;
+
 }
 
 /*
@@ -541,34 +578,34 @@ void make_satellite_health(){
 
 /*
 */
-void print_satellite_health_data(){
+void print_satellite_health_data(satellite_health_s *sat_health){
   printf(" *******************************************\r\n");
-  printf(" |   Solar Panel 1 Voltage: \t %d \t|\r\n",sat_health.sol_p1_v);
-  printf(" |   Solar Panel 2 Voltage: \t %d \t|\r\n",sat_health.sol_p2_v);
-  printf(" |   Solar Panel 3 Voltage: \t %d \t|\r\n",sat_health.sol_p3_v);
-  printf(" |   Solar Panel 4 Voltage: \t %d \t|\r\n",sat_health.sol_p4_v);
-  printf(" |   Solar Panel 5 Voltage: \t %d \t|\r\n",sat_health.sol_p5_v);
-  printf(" |   Solar Panel T Voltage: \t %d \t|\r\n", sat_health.sol_t_v);
+  printf(" |   Solar Panel 1 Voltage: \t %d \t|\r\n",sat_health->sol_p1_v);
+  printf(" |   Solar Panel 2 Voltage: \t %d \t|\r\n",sat_health->sol_p2_v);
+  printf(" |   Solar Panel 3 Voltage: \t %d \t|\r\n",sat_health->sol_p3_v);
+  printf(" |   Solar Panel 4 Voltage: \t %d \t|\r\n",sat_health->sol_p4_v);
+  printf(" |   Solar Panel 5 Voltage: \t %d \t|\r\n",sat_health->sol_p5_v);
+  printf(" |   Solar Panel T Voltage: \t %d \t|\r\n", sat_health->sol_t_v);
   printf(" |--------------------------------------|\r\n");
-  printf(" |   Solar Panel 1 Current: \t %d \t|\r\n",sat_health.sol_p1_c);
-  printf(" |   Solar Panel 2 Current: \t %d \t|\r\n",sat_health.sol_p2_c);
-  printf(" |   Solar Panel 3 Current: \t %d \t|\r\n",sat_health.sol_p3_c);
-  printf(" |   Solar Panel 4 Current: \t %d \t|\r\n",sat_health.sol_p4_c);
-  printf(" |   Solar Panel 5 Current: \t %d \t|\r\n",sat_health.sol_p5_c);
-  printf(" |   Solar Panel T Current: \t %d \t|\r\n",sat_health.sol_t_c);
+  printf(" |   Solar Panel 1 Current: \t %d \t|\r\n",sat_health->sol_p1_c);
+  printf(" |   Solar Panel 2 Current: \t %d \t|\r\n",sat_health->sol_p2_c);
+  printf(" |   Solar Panel 3 Current: \t %d \t|\r\n",sat_health->sol_p3_c);
+  printf(" |   Solar Panel 4 Current: \t %d \t|\r\n",sat_health->sol_p4_c);
+  printf(" |   Solar Panel 5 Current: \t %d \t|\r\n",sat_health->sol_p5_c);
+  printf(" |   Solar Panel T Current: \t %d \t|\r\n",sat_health->sol_t_c);
   printf(" |--------------------------------------|\r\n");
-  printf(" |   Unreg Line Current:    \t %d \t|\r\n",sat_health.unreg_c);
-  printf(" |   Main 3v3 Current:      \t %d \t|\r\n",sat_health.v3_main_c);
-  printf(" |   COM 3v3 Current:       \t %d \t|\r\n",sat_health.v3_com_c);
-  printf(" |   5 Volts line Current:  \t %d \t|\r\n", sat_health.v5_c);
-  printf(" |   3v3 2 line Current:    \t %d \t|\r\n", sat_health.v3_2_c); 
+  printf(" |   Unreg Line Current:    \t %d \t|\r\n",sat_health->unreg_c);
+  printf(" |   Main 3v3 Current:      \t %d \t|\r\n",sat_health->v3_main_c);
+  printf(" |   COM 3v3 Current:       \t %d \t|\r\n",sat_health->v3_com_c);
+  printf(" |   5 Volts line Current:  \t %d \t|\r\n", sat_health->v5_c);
+  printf(" |   3v3 2 line Current:    \t %d \t|\r\n", sat_health->v3_2_c); 
   printf(" |--------------------------------------|\r\n");
-  printf(" |   Raw Current:           \t %d \t|\r\n", sat_health.raw_c);
-  printf(" |   Raw Voltage:           \t %d \t|\r\n", sat_health.raw_v);
+  printf(" |   Raw Current:           \t %d \t|\r\n", sat_health->raw_c);
+  printf(" |   Raw Voltage:           \t %d \t|\r\n", sat_health->raw_v);
   printf(" |--------------------------------------|\r\n");
-  printf(" |   Battery Total Voltage: \t %d \t|\r\n",sat_health.batt_volt);
-  printf(" |   Battery Total Current: \t %d \t|\r\n", sat_health.batt_c);
-  printf(" |   Battery Temperature:   \t %d \t|\r\n", sat_health.temp_batt);
+  printf(" |   Battery Total Voltage: \t %d \t|\r\n",sat_health->batt_volt);
+  printf(" |   Battery Total Current: \t %d \t|\r\n", sat_health->batt_c);
+  printf(" |   Battery Temperature:   \t %d \t|\r\n", sat_health->temp_batt);
   printf(" *********************************************\r\n");
 }
 

@@ -60,14 +60,11 @@
 #define MOUNT_POINT "/m1"
 #define DATA "hello from nuttx apps"
 
-
-#define MFMROOTDIR			    "/mnt/fs/mfm"
 #define MFM_MSN_STRPATH		    "/mnt/fs/mfm/mtd_mission"
-#define MFM_MAIN_STRPATH        MFMROOTDIR "/mtd_mainstorage"
+#define MFM_MAIN_STRPATH        "/mnt/fs/mfm/mtd_mainstorage"
 
-#define SFMROOTDIR			    "/mnt/fs/sfm"
 #define SFM_MSN_STRPATH		    "/mnt/fs/sfm/mtd_mission"
-#define SFM_MAIN_STRPATH        SFMROOTDIR "/mtd_mainstorage"
+#define SFM_MAIN_STRPATH        "/mnt/fs/sfm/mtd_mainstorage"
 
 typedef struct {
   size_t readsize;
@@ -83,16 +80,16 @@ typedef struct {
 }ext_adc_config_s;
 
 typedef struct  {
-	uint64_t timestamp;
-	float accl_x;
-	float accl_y;
-	float accl_z;
-	float gyro_x;
-	float gyro_y;
-	float gyro_z;
-	float mag_x;
-	float mag_y;
-	float mag_z;
+	// uint64_t timestamp;
+	// float accl_x;
+	// float accl_y;
+	// float accl_z;
+	// float gyro_x;
+	// float gyro_y;
+	// float gyro_z;
+	// float mag_x;
+	// float mag_y;
+	// float mag_z;
 	int16_t temp_x;
 	int16_t temp_x1;
 	int16_t temp_y;
