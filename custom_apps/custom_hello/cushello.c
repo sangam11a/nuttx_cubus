@@ -25,6 +25,14 @@
 #include <nuttx/config.h>
 #include <stdio.h>
 
+#include <nuttx/mtd/mtd.h>
+
+#include <nuttx/progmem.h>
+
+#include <string.h>
+
+#include <fcntl.h>
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -35,8 +43,27 @@
 
 int  main(int argc, FAR char *argv[])
 {
+  uint8_t read_buf[100];
+  char write_buf[100] = "Hello everybody ....";
+  int size = 100;
   
-  syslog(LOG_INFO, "Hello World application for writing data to flash.\n");
-  
-  return 0;
+  int fd  = open("/dev/intflash",O_RDONLY);
+      if(fd < 0){
+        printf("Error opening internal flash device\n");
+      }else{
+        printf("Opened internal flash device successfully\n");
+      }
+// #ifdef CONFIG_ARCH_HAVE_PROGMEM
+      up_progmem_write(0x081C0000, write_buf, 30);
+
+      up_progmem_read(0x081C0000, read_buf, 100);
+      
+      // printf("File read size: %d \n", size);
+      for(int i=0;i<size;i++){
+        printf("%x ", read_buf[i]);
+      // }
+// #endif
+      printf("\n");
+
+      close(fd);
 }

@@ -180,7 +180,7 @@ uint8_t stm32_spi3status(struct spi_dev_s *dev, uint32_t devid)
 void stm32_spi4select(struct spi_dev_s *dev,
                       uint32_t devid, bool selected)
 {
-  spiinfo("devid: %%d CS: %s\n",
+  spiinfo("devid: %d CS: %s\n",
             (int)devid, selected ? "assert" : "de-assert");
   switch (devid)
   {
