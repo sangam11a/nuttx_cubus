@@ -442,6 +442,13 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
   return written;
 }
 
+ssize_t up_progmem_read(size_t addr, FAR uint8_t *buf, size_t count){
+  for (int i = 0; i < count; i++) {
+		*(buf + i) = *(uint8_t*) addr;
+		addr++;
+	}
+}
+
 uint8_t up_progmem_erasestate(void)
 {
   return FLASH_ERASEDVALUE;

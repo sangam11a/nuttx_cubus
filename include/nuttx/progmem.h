@@ -230,8 +230,8 @@ ssize_t up_progmem_write(size_t addr, FAR const void *buf, size_t count);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_HAVE_PROGMEM_READ
-ssize_t up_progmem_read(size_t addr, FAR void *buf, size_t count);
+#ifdef CONFIG_ARCH_HAVE_PROGMEM
+ssize_t up_progmem_read(size_t addr, FAR uint8_t *buf, size_t count);
 #endif
 
 /****************************************************************************
