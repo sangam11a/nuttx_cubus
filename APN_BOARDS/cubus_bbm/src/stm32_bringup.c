@@ -90,7 +90,7 @@ typedef struct mag_priv_s
   xcpt_t handler;
   void *arg;
   uint32_t intcfg;
-};
+}mag_priv_s;
 #endif
 
 #ifdef CONFIG_ADC_ADS7953
@@ -101,7 +101,7 @@ typedef struct adc_priv_s
   xcpt_t handler;
   void *arg;
   uint32_t intcfg;
-};
+}adc_priv_s;
 #endif
 
 struct mtd_dev_s *mtd;
@@ -280,6 +280,35 @@ int stm32_bringup(void)
 #endif
 
   UNUSED(ret);
-  return OK;
 
+syslog(LOG_INFO, "INFO: Going to enter progmem: \n");
+
+printf("Going to enter progmem... \r\n");
+
+#if defined(CONFIG_MTD) && defined(CONFIG_MTD_PROGMEM)
+printf("Inside the progmem ifdef functions...\r\n");
+  mtd = progmem_initialize();
+  if (mtd == NULL)
+    {
+      syslog(LOG_ERR, "ERROR: progmem_initialize\n");
+      printf("[BRINGUP: PROGMEM] error initializing progmem\n");
+    }else{
+      syslog(LOG_INFO, "INFO: Initialized progmem successfully: \n");
+      printf("[BRINGUP: PROGMEM] Initialized progmem sucessfully...\r\n");
+    }
+
+  ret = register_mtddriver("/dev/intflash", mtd, 0, mtd);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: register_mtddriver() failed: %d\n", ret);
+      printf("[BRINGUP: PROGMEM] Error registering mtd driver");
+    }else{
+      syslog(LOG_INFO, "INFO: registered mtd driver successfully \n");
+      printf("[BRINGUP: PROGMEM] Registerd internal flash mtd driver successfullyy.....\r\n");
+
+    }
+
+
+#endif
+      return 0;
 }
