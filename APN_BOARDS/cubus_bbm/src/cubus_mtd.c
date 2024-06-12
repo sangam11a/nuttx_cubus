@@ -33,13 +33,13 @@ static const cubus_mtd_entry_t cubus_mfm = {
 	.npart = 2,
 	.partd = {
 		{
-			.type = MTD_MAINSTORAGE,		// storage space for  HKData logging
+			.type = MTD_MAINSTORAGE,		// storage space for  HK data logging, flag data storage, reservation table.
 			.path = "/fs/mfm/mtd_mainstorage",
 			// .nblocks = 51200				// 12.5MB in no of pages, each page having 256 bytes
 			.nblocks = 262144				// 64 MB in no of pages
 		},
-		{
-			.type = MTD_MISSION,
+		{					
+			.type = MTD_MISSION,			// storage space for missions
 			.path = "/fs/mfm/mtd_mission",
 			.nblocks = 262144
 		}

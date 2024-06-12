@@ -106,6 +106,7 @@ int main(int argc, FAR char *argv[])
   make_satellite_health();
 
   print_satellite_health_data(&sat_health);
+
   const char file_name[] = {"/str.txt"};
   syslog(LOG_INFO, "Opening a file inside %s.\n", MFM_MAIN_STRPATH);
   char path[65];
@@ -165,6 +166,122 @@ int main(int argc, FAR char *argv[])
 ERR_FILE_CLOSE:
   file_close(&file_p);
   return 0;
+
+}
+
+/****************************************************************************
+ * Name: adc_main
+ ****************************************************************************/
+
+int open_file_flash(struct file file_p, char *flash_strpath, char *filename, int open_mode){
+
+  const char file_name[] = {'\0'};
+  memcpy(file_name, filename, sizeof(filename));
+  // syslog(LOG_INFO, "Opening a file inside %s.\n", flash_strpath);
+  char path[65];
+  sprintf(path, "%s%s", flash_strpath, file_name);
+  // syslog(LOG_INFO, "file path: %s\n", path);
+  int fd = file_open(&file_p, path, open_mode);
+  if(fd < 0){
+     syslog(LOG_ERR, "Error opening file from path: %s\n",path);
+     return fd;
+  }
+  return fd;
+}
+
+int close_file_flash(struct file file_p){
+  int ret = file_syncfs(&file_p);
+  if(ret == -EBADF){
+    syslog(LOG_ERR, "File sync unsuccessful.... data may be lost \n Closing file..\n");
+  }
+  ret = file_close(&file_p);
+  return ret;
+} 
+
+int write_to_flash(struct file file_p, const void *buf, size_t nbytes){
+  ssize_t bytes_written  = file_write(&file_p, buf, nbytes);
+  if(bytes_written > 0){
+    if(bytes_written == nbytes){
+      syslog(LOG_INFO, "flash write successful\n");
+    }else{
+      syslog(LOG_ERR, "flash write incomplete...\t %d bytes written\n", bytes_written);
+    }
+  }else{
+    syslog(LOG_ERR, "write failure...\n");
+  }
+  return bytes_written;
+}
+
+int read_from_flash(struct file file_p, off_t offset, int seek_mode, void *buff, size_t nbytes){
+  int off = file_seek(&file_p, 0, seek_mode);
+  syslog(LOG_INFO, "Offset for file seek: %d",off);
+  int bytes_read = file_read(&file_p, buff, nbytes);
+  if(bytes_read != 0){
+    if(bytes_read == nbytes){
+      syslog(LOG_INFO,"Read %i bytes from flash.\n", bytes_read );
+    }else{
+      syslog(LOG_ERR,"Unable to read %d bytes from flash \n", nbytes - bytes_read);
+    }
+  }else{
+    syslog(LOG_ERR, "Unable to read anything from flash....\n");
+  }
+  return bytes_read;
+}
+
+
+/****************************************************************************
+ * Name: adc_main
+ ****************************************************************************/
+
+void make_satellite_health(){
+
+
+  float int_adc1_temp[CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE] = {'\0'};  
+  int_adc1_data_convert(int_adc1_temp);
+
+  float int_adc3_temp[CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE] = {'\0'};
+  int_adc3_data_convert(int_adc3_temp);
+
+  /* External ADC data */
+  sat_health.sol_t_v = (int16_t)ext_adc_data[0].processed_data;
+  sat_health.raw_v = (int16_t)ext_adc_data[1].processed_data;
+  sat_health.sol_p5_v = (int16_t)ext_adc_data[2].processed_data;
+  sat_health.sol_p4_v = (int16_t)ext_adc_data[3].processed_data;
+  sat_health.sol_p3_v = (int16_t)ext_adc_data[4].processed_data;
+  sat_health.sol_p1_v = (int16_t)ext_adc_data[5].processed_data;
+  sat_health.sol_p2_v = (int16_t)ext_adc_data[6].processed_data;
+
+  sat_health.ant_temp_out = (int16_t)ext_adc_data[8].processed_data;
+  // sat_health.temp_batt = (int16_t)ext_adc_data[9].processed_data;
+  sat_health.temp_bpb = (int16_t)ext_adc_data[10].processed_data;
+  sat_health.temp_z = (int16_t)ext_adc_data[11].processed_data;
+
+
+  /* Internal ADC1 data */
+  sat_health.batt_c = (int16_t)int_adc1_temp[9];
+  sat_health.sol_t_c = (int16_t)int_adc1_temp[10];
+  sat_health.raw_c = (int16_t)int_adc1_temp[11];
+
+  sat_health.unreg_c = (int16_t)int_adc1_temp[0];
+  sat_health.v3_main_c = (int16_t)int_adc1_temp[1];
+  sat_health.v3_com_c = (int16_t)int_adc1_temp[2];
+  sat_health.v5_c = (int16_t)int_adc1_temp[3];
+
+  sat_health.batt_volt = (int16_t)int_adc1_temp[4];
+
+  sat_health.sol_p1_c = (int16_t)int_adc1_temp[5];
+  sat_health.v3_2_c = (int16_t)int_adc1_temp[6];
+  sat_health.sol_p4_c = (int16_t)int_adc1_temp[7];
+  sat_health.sol_p5_c = (int16_t)int_adc1_temp[8];
+
+  sat_health.sol_p2_c = (int16_t)int_adc1_temp[12];
+  sat_health.sol_p3_c = (int16_t)int_adc1_temp[13];
+
+  /* internal adc2 data*/
+  sat_health.v4_c = (int16_t)int_adc3_temp[0];
+}
+
+void update_flag_data(){
 
 }
 
@@ -523,92 +640,6 @@ int ext_adc_main(){
 }
 #endif
 
-
-/****************************************************************************
- * Name: adc_main
- ****************************************************************************/
-
-void make_satellite_health(){
-
-
-  float int_adc1_temp[CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE] = {'\0'};  
-  int_adc1_data_convert(int_adc1_temp);
-
-  float int_adc3_temp[CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE] = {'\0'};
-  int_adc3_data_convert(int_adc3_temp);
-
-  /* External ADC data */
-  sat_health.sol_t_v = (int16_t)ext_adc_data[0].processed_data;
-  sat_health.raw_v = (int16_t)ext_adc_data[1].processed_data;
-  sat_health.sol_p5_v = (int16_t)ext_adc_data[2].processed_data;
-  sat_health.sol_p4_v = (int16_t)ext_adc_data[3].processed_data;
-  sat_health.sol_p3_v = (int16_t)ext_adc_data[4].processed_data;
-  sat_health.sol_p1_v = (int16_t)ext_adc_data[5].processed_data;
-  sat_health.sol_p2_v = (int16_t)ext_adc_data[6].processed_data;
-
-  sat_health.ant_temp_out = (int16_t)ext_adc_data[8].processed_data;
-  // sat_health.temp_batt = (int16_t)ext_adc_data[9].processed_data;
-  sat_health.temp_bpb = (int16_t)ext_adc_data[10].processed_data;
-  sat_health.temp_z = (int16_t)ext_adc_data[11].processed_data;
-
-
-  /* Internal ADC1 data */
-  sat_health.batt_c = (int16_t)int_adc1_temp[9];
-  sat_health.sol_t_c = (int16_t)int_adc1_temp[10];
-  sat_health.raw_c = (int16_t)int_adc1_temp[11];
-
-  sat_health.unreg_c = (int16_t)int_adc1_temp[0];
-  sat_health.v3_main_c = (int16_t)int_adc1_temp[1];
-  sat_health.v3_com_c = (int16_t)int_adc1_temp[2];
-  sat_health.v5_c = (int16_t)int_adc1_temp[3];
-
-  sat_health.batt_volt = (int16_t)int_adc1_temp[4];
-
-  sat_health.sol_p1_c = (int16_t)int_adc1_temp[5];
-  sat_health.v3_2_c = (int16_t)int_adc1_temp[6];
-  sat_health.sol_p4_c = (int16_t)int_adc1_temp[7];
-  sat_health.sol_p5_c = (int16_t)int_adc1_temp[8];
-
-  sat_health.sol_p2_c = (int16_t)int_adc1_temp[12];
-  sat_health.sol_p3_c = (int16_t)int_adc1_temp[13];
-
-  /* internal adc2 data*/
-  sat_health.v4_c = (int16_t)int_adc3_temp[0];
-}
-
-/*
-*/
-void print_satellite_health_data(satellite_health_s *sat_health){
-  printf(" *******************************************\r\n");
-  printf(" |   Solar Panel 1 Voltage: \t %d \t|\r\n",sat_health->sol_p1_v);
-  printf(" |   Solar Panel 2 Voltage: \t %d \t|\r\n",sat_health->sol_p2_v);
-  printf(" |   Solar Panel 3 Voltage: \t %d \t|\r\n",sat_health->sol_p3_v);
-  printf(" |   Solar Panel 4 Voltage: \t %d \t|\r\n",sat_health->sol_p4_v);
-  printf(" |   Solar Panel 5 Voltage: \t %d \t|\r\n",sat_health->sol_p5_v);
-  printf(" |   Solar Panel T Voltage: \t %d \t|\r\n", sat_health->sol_t_v);
-  printf(" |--------------------------------------|\r\n");
-  printf(" |   Solar Panel 1 Current: \t %d \t|\r\n",sat_health->sol_p1_c);
-  printf(" |   Solar Panel 2 Current: \t %d \t|\r\n",sat_health->sol_p2_c);
-  printf(" |   Solar Panel 3 Current: \t %d \t|\r\n",sat_health->sol_p3_c);
-  printf(" |   Solar Panel 4 Current: \t %d \t|\r\n",sat_health->sol_p4_c);
-  printf(" |   Solar Panel 5 Current: \t %d \t|\r\n",sat_health->sol_p5_c);
-  printf(" |   Solar Panel T Current: \t %d \t|\r\n",sat_health->sol_t_c);
-  printf(" |--------------------------------------|\r\n");
-  printf(" |   Unreg Line Current:    \t %d \t|\r\n",sat_health->unreg_c);
-  printf(" |   Main 3v3 Current:      \t %d \t|\r\n",sat_health->v3_main_c);
-  printf(" |   COM 3v3 Current:       \t %d \t|\r\n",sat_health->v3_com_c);
-  printf(" |   5 Volts line Current:  \t %d \t|\r\n", sat_health->v5_c);
-  printf(" |   3v3 2 line Current:    \t %d \t|\r\n", sat_health->v3_2_c); 
-  printf(" |--------------------------------------|\r\n");
-  printf(" |   Raw Current:           \t %d \t|\r\n", sat_health->raw_c);
-  printf(" |   Raw Voltage:           \t %d \t|\r\n", sat_health->raw_v);
-  printf(" |--------------------------------------|\r\n");
-  printf(" |   Battery Total Voltage: \t %d \t|\r\n",sat_health->batt_volt);
-  printf(" |   Battery Total Current: \t %d \t|\r\n", sat_health->batt_c);
-  printf(" |   Battery Temperature:   \t %d \t|\r\n", sat_health->temp_batt);
-  printf(" *********************************************\r\n");
-}
-
 /****************************************************************************
  * Name: int_adc1_data_convert
  * 
@@ -665,6 +696,40 @@ void int_adc3_data_convert(float *temp_buff_1){
   }
 }
 #endif
+
+
+/*
+*/
+void print_satellite_health_data(satellite_health_s *sat_health){
+  printf(" *******************************************\r\n");
+  printf(" |   Solar Panel 1 Voltage: \t %d \t|\r\n",sat_health->sol_p1_v);
+  printf(" |   Solar Panel 2 Voltage: \t %d \t|\r\n",sat_health->sol_p2_v);
+  printf(" |   Solar Panel 3 Voltage: \t %d \t|\r\n",sat_health->sol_p3_v);
+  printf(" |   Solar Panel 4 Voltage: \t %d \t|\r\n",sat_health->sol_p4_v);
+  printf(" |   Solar Panel 5 Voltage: \t %d \t|\r\n",sat_health->sol_p5_v);
+  printf(" |   Solar Panel T Voltage: \t %d \t|\r\n", sat_health->sol_t_v);
+  printf(" |--------------------------------------|\r\n");
+  printf(" |   Solar Panel 1 Current: \t %d \t|\r\n",sat_health->sol_p1_c);
+  printf(" |   Solar Panel 2 Current: \t %d \t|\r\n",sat_health->sol_p2_c);
+  printf(" |   Solar Panel 3 Current: \t %d \t|\r\n",sat_health->sol_p3_c);
+  printf(" |   Solar Panel 4 Current: \t %d \t|\r\n",sat_health->sol_p4_c);
+  printf(" |   Solar Panel 5 Current: \t %d \t|\r\n",sat_health->sol_p5_c);
+  printf(" |   Solar Panel T Current: \t %d \t|\r\n",sat_health->sol_t_c);
+  printf(" |--------------------------------------|\r\n");
+  printf(" |   Unreg Line Current:    \t %d \t|\r\n",sat_health->unreg_c);
+  printf(" |   Main 3v3 Current:      \t %d \t|\r\n",sat_health->v3_main_c);
+  printf(" |   COM 3v3 Current:       \t %d \t|\r\n",sat_health->v3_com_c);
+  printf(" |   5 Volts line Current:  \t %d \t|\r\n", sat_health->v5_c);
+  printf(" |   3v3 2 line Current:    \t %d \t|\r\n", sat_health->v3_2_c); 
+  printf(" |--------------------------------------|\r\n");
+  printf(" |   Raw Current:           \t %d \t|\r\n", sat_health->raw_c);
+  printf(" |   Raw Voltage:           \t %d \t|\r\n", sat_health->raw_v);
+  printf(" |--------------------------------------|\r\n");
+  printf(" |   Battery Total Voltage: \t %d \t|\r\n",sat_health->batt_volt);
+  printf(" |   Battery Total Current: \t %d \t|\r\n", sat_health->batt_c);
+  printf(" |   Battery Temperature:   \t %d \t|\r\n", sat_health->temp_batt);
+  printf(" *********************************************\r\n");
+}
 
 
 

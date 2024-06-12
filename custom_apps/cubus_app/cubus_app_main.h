@@ -79,6 +79,7 @@ typedef struct {
   int fd;
 }ext_adc_config_s;
 
+
 typedef struct  {
 	// uint64_t timestamp;
 	// float accl_x;
@@ -124,15 +125,25 @@ typedef struct  {
 	int16_t v4_c;
 	int16_t batt_c;
 	int8_t rsv_cmd;
+
 	int8_t ant_dep_stat;
 	int8_t ul_state;
 	int8_t oper_mode;
 	int8_t msn_flag;
 	int8_t rsv_flag;
 	int8_t kill_switch;
+
     int16_t ant_temp_out;
 }satellite_health_s;
 
+
+typedef struct {
+	uint8_t ANT_DEP_STAT;		//antenna deployment status
+	uint8_t RSV_FLAG;			//reservation command flag 
+	uint8_t UL_STATE;			//uplink success
+	uint8_t OPER_MODE;			//operation modes
+	uint8_t KILL_SWITCH_STAT;	//kill switch status
+}CRITICAL_FLAGS;
 
 typedef struct {
     uint8_t chan;
@@ -140,7 +151,44 @@ typedef struct {
     float processed_data;
 }ext_adc_s;
 
+typedef enum _OPERA_MODES {
+	NRML_MODE = 0x5A,
+	LOW_PWR_MODE = 0x6A,
+	SAFE_MODE = 0x7A,
+	SAT_KILL_MODE = 0x8A,
+} OPERA_MODES;
+
+/*
+ * @brief	enumeration definition for ACK STATES
+ */
+typedef enum _ACK_STATE {
+	ACK_SUCCESS = 0xAC, ACK_FAILURE = 0xEE,
+} ACK_STATE;
+
+/*
+ * @brief enumeration definition for ANTENNA deployment states
+ */
+typedef enum _ANT_STATE {
+	UNDEPLOYED = 0x00, DEPLOY_NOW = 0XAE, DEPLOYED = 0xDE,
+} ANT_STATE;
+
+/*
+ * @brief enumeration definition for Uplink status
+ */
+typedef enum _UL_STATE {
+	UL_NOT_RX = 0x00, UL_RX = 0xAE,
+} UL_STATE;
+
+/*
+ * @brief	enumeration definition for status of Reservation commands
+ */
+typedef enum _RSV_CMD_STATE {
+	RSV_NOT_RUNNING = 0x00, RSV_RUNNING = 0xAE,
+} RSV_CMD_STATE;
+
 int ext_adc_main();
 int read_int_adc1();
 int read_int_adc3();
 void make_satellite_health();
+
+
