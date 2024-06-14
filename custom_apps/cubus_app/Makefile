@@ -31,4 +31,6 @@ MODULE    = $(CONFIG_CUSTOM_APPS_CUBUS_APP)
 
 MAINSRC = cubus_app_main.c
 
+# CSRCS = write_to_file.c
+
 include $(APPDIR)/Application.mk

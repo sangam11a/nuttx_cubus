@@ -1,0 +1,1 @@
+./tools/configure.sh -l ../APN_BOARDS/cubus_bbm/configs/nsh

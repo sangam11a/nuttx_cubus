@@ -86,6 +86,14 @@ void weak_function stm32_spidev_initialize(void)
   // stm32_configgpio(GPIO_LIS3MDL_INT);
   #  endif
 
+   #  ifdef CONFIG_SENSORS_MPU60X0
+  /* Configure the SPI-based LIS3MDL MAG chip select GPIO */
+  printf("Configure GPIO for MPU SPI5 CS\n");
+  // stm32_configgpio(GPIO_MPU_CS);// defined in boot.c
+
+  stm32_gpiowrite(GPIO_MPU_CS, true);
+  #  endif
+
   #ifdef CONFIG_A_ADS7953
   printf("Configuring GPIO for ADS7953.\n");
   // stm32_configgpio(GPIO_EXT_ADC1_CS);
@@ -203,6 +211,8 @@ void stm32_spi5select(struct spi_dev_s *dev,
 {
   spiinfo("devid: %%d CS: %s\n",
             (int)devid, selected ? "assert" : "de-assert");
+  // printf("devid: %d CS: %s\n",
+  //           (int)devid, selected ? "assert" : "de-assert");
   switch(devid)
   {
     case SPIDEV_USER(0):

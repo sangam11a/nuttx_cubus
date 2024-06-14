@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
+#include <sched.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
@@ -35,29 +35,98 @@
 #include <errno.h>
 #include <debug.h>
 
+#include <time.h>
+#include <nuttx/wqueue.h>
+#include <nuttx/clock.h>
+#include <nuttx/wdog.h>
+#include <nuttx/sensors/sensor.h>
+#include <nuttx/sensors/lis3mdl.h>
+
 #include <nuttx/analog/adc.h>
 #include <nuttx/analog/ioctl.h>
 
 #include <nuttx/sensors/ioctl.h>
 
 #include "adc.h"
+// #include "write_to_file.h"
+
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define REG_LOW_MASK 0xFF00
+#define REG_HIGH_MASK 0x00FF
+#define MPU6050_FS_SEL 32.8f
+#define MPU6050_AFS_SEL 4096.0f
+#define DEVNAME_SIZE 32
+
 
 #define IOCTL_MODE  1
 // #define READ_MODE   1
 
 #define MAX_CHANNELS  12                // maximum channel for external ADC
+
+#define DELAY_ADC 4000
+#define ADC_DELAY 6000
+#define HK_DELAY 9000
+#define BEACON_DELAY 180
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 // struct 
 
+/*
+Defing work structures for work_queue thread
+*/
+
+static struct work_s work_adc;
+static struct work_s work_hk;
+static struct work_s work_internal_adc;
+
+/*
+Declaring structure necessary for collecting HK data
+*/
+struct sensor_accel imu_acc_data;
+struct sensor_gyro imu_gyro_data;
+struct mpu6500_imu_msg raw_imu;
+struct mpu6500_imu_msg
+{
+  int16_t acc_x;
+  int16_t acc_y;
+  int16_t acc_z;
+  int16_t temp;
+  int16_t gyro_x;
+  int16_t gyro_y;
+  int16_t gyro_z;
+  int16_t mag_x;
+  int16_t mag_y;
+  int16_t mag_z;
+};
+
+
 /****************************************************************************
  * spi_test_main
  ****************************************************************************/
-static void adc_devpath(FAR struct adc_state_s *adc, FAR const char *devpath);
-static int int_adc_main();
-static int ext_adc_main();
 
+
+
+static void adc_devpath(FAR struct adc_state_s *adc, FAR const char *devpath);
+static void int_adc_main();
+static void ext_adc_main();
+static void adc_main(){
+  int_adc_main();
+  ext_adc_main();
+  // work_queue(HPWORK, &work_adc, adc_main, NULL, MSEC2TICK(DELAY_ADC));
+
+}
+static void collect_hk();
+// void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyro_data, struct mpu6500_imu_msg *raw_imu);
+// void read_lis3mdl(int fd_mag, struct mpu6500_imu_msg *raw_imu, int16_t mag_data[4]);
+
+struct sensor_accel imu_acc_data;
+struct sensor_gyro imu_gyro_data;
+struct mpu6500_imu_msg raw_imu;
 
 struct satellite_health_s {
 	uint64_t timestamp;
@@ -126,25 +195,61 @@ ssize_t nbytes;
 int fd;
 int errval = 0;
 int ret;
-
+char adc[20];
 uint8_t raw_data[2] = {'\0'};
 uint16_t combined_data[MAX_CHANNELS] = {'\0'};
 
 /****************************************************************************
  * Name: parse_args
  ****************************************************************************/
+void test1(){
+  printf("reached test 1 \n");
+ work_queue(HPWORK, &work_adc,test1, NULL,MSEC2TICK(3000));
 
+}
+
+void test2(){
+  printf("reached test 2\n");
+ work_queue(HPWORK, &work_adc,test2, NULL,MSEC2TICK(6000));
+
+}
 int main(int argc, FAR char *argv[])
 {
+  work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+//  work_queue(HPWORK, &work_adc,test1, NULL,MSEC2TICK(3000));
+//  work_queue(HPWORK, &work_hk,test2, NULL,MSEC2TICK(6000));
+// int ret;
+//   ret = task_create("ADC",10,2048,int_adc_main,NULL);
+//  if(ret <0){
+//   printf("Error creatinf task ret:%d",ret);
+//  }
+//  else{
+//   printf("Task created");
+//  }
+//  usleep(5000);
+//   ret = task_create("ADC",10,2048,ext_adc_main,NULL);
+//  if(ret <0){
+//   printf("Error creatinf task ret:%d",ret);
+//  }
+//  else{
+//   printf("Task created");
+//  }
   printf("Custom_apps CUBUS external ADC: %d\n", CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC);
   #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC)
-    ext_adc_main();
+  //  work_queue(HPWORK, &work_adc, ext_adc_main, NULL, MSEC2TICK(DELAY_ADC+2000));
+
+    // ext_adc_main();
   #endif  //CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC
 
   #ifdef CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC
-    int_adc_main();
+    // int_adc_main();
+    work_queue(HPWORK, &work_internal_adc, adc_main, NULL, MSEC2TICK(DELAY_ADC));
   #endif  //CUSTOM_APPS_CUBUS_USE_INT_ADC
-
+  //  write_to_file("/mnt/fs/mfm/mtd_mainstorage","/numbers.txt","\nstraiht from main app\n");
+  
+  // #ifdef CONFIG_CUSTOM_APPS_CUBUS_USE_HK
+        // #endif
+  
   return 0;
 }
 
@@ -172,7 +277,7 @@ static void adc_devpath(FAR struct adc_state_s *adc, FAR const char *devpath)
  * Name: adc_main
  ****************************************************************************/
 
-static int int_adc_main()
+static void int_adc_main(void)
 {
   UNUSED(ret);
 
@@ -214,7 +319,7 @@ static int int_adc_main()
       goto errout;
     }
     elapsed = 0;
-    while(elapsed<required){
+    while(elapsed < required){
         usleep(1000);
         elapsed++;
     }
@@ -291,6 +396,8 @@ static int int_adc_main()
                 {
                   printf("%d: channel: %d value: %" PRId32 "\n",
                          i + 1, sample[i].am_channel, sample[i].am_data);
+                  sprintf(adc,"%d",sample[i].am_data);
+                  // write_to_file("/mnt/fs/mfm/mtd_mainstorage","/adc.txt",adc);
                 }
             }
         }
@@ -301,6 +408,8 @@ static int int_adc_main()
         }
     }
   close(fd);
+  printf("end of int_adcc\n***********\n");
+    work_queue(HPWORK, &work_internal_adc, int_adc_main, NULL, MSEC2TICK(3000));
   return OK;
 
   /* Error exits */
@@ -315,7 +424,100 @@ errout:
   return errval;
 }
 
-static int ext_adc_main(){
+
+void read_lis3mdl(int fd_mag, struct mpu6500_imu_msg *raw_imu, int16_t mag_data[4])
+{
+  assert(fd_mag >= 0);
+  int data_size = read(fd_mag, mag_data, 8);
+  if (data_size > 0)
+  {
+    printf("read sensor data from Mag. Len %i\n", data_size);
+    raw_imu->mag_x = mag_data[0];
+    raw_imu->mag_y = mag_data[1];
+    raw_imu->mag_z = mag_data[2];
+    printf("Magnetometer func: x:%d y:%d z:%d\n", mag_data[0], mag_data[1], mag_data[2]);
+  }
+  else
+  {
+    printf("Failed to read from sensor.\n");
+  }
+}
+
+void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyro_data, struct mpu6500_imu_msg *raw_imu)
+{
+  int16_t raw_data[7];
+  memset(raw_imu, 0, sizeof(struct mpu6500_imu_msg));
+  ret = read(fd, raw_data, sizeof(raw_data));
+  if (ret != sizeof(raw_data))
+  {
+    printf("Failed to read accelerometer data\n");
+  }
+  else
+  {
+    raw_imu->acc_x = ((raw_data[0] & REG_HIGH_MASK) << 8) + ((raw_data[0] & REG_LOW_MASK) >> 8);
+    raw_imu->acc_y = ((raw_data[1] & REG_HIGH_MASK) << 8) + ((raw_data[1] & REG_LOW_MASK) >> 8);
+    raw_imu->acc_z = ((raw_data[2] & REG_HIGH_MASK) << 8) + ((raw_data[2] & REG_LOW_MASK) >> 8);
+    raw_imu->gyro_x = ((raw_data[4] & REG_HIGH_MASK) << 8) + ((raw_data[4] & REG_LOW_MASK) >> 8);
+    raw_imu->gyro_y = ((raw_data[5] & REG_HIGH_MASK) << 8) + ((raw_data[5] & REG_LOW_MASK) >> 8);
+    raw_imu->gyro_z = ((raw_data[6] & REG_HIGH_MASK) << 8) + ((raw_data[6] & REG_LOW_MASK) >> 8);
+  }
+
+  acc_data->x = raw_imu->acc_x / MPU6050_AFS_SEL;
+  acc_data->y = raw_imu->acc_y / MPU6050_AFS_SEL;
+  acc_data->z = raw_imu->acc_z / MPU6050_AFS_SEL;
+
+  gyro_data->x = raw_imu->gyro_x / MPU6050_FS_SEL;
+  gyro_data->y = raw_imu->gyro_y / MPU6050_FS_SEL;
+  gyro_data->z = raw_imu->gyro_z / MPU6050_FS_SEL;
+}
+
+static void collect_hk()
+{
+  int opt;
+  float acq_period = CONFIG_EXAMPLES_SENSOR_FUSION_SAMPLE_RATE / 1000.0f;
+  printf("Sensor Fusion example\n");
+  printf("Sample Rate: %.2f Hz\n", 1.0 / acq_period);
+  printf("got inside sensor_work");
+  int fd, fd_mag;
+
+  int16_t mag_data[4];
+
+  fd = open("/dev/mpu6500", O_RDONLY);
+  if (fd < 0)
+  {
+    printf("Failed to open mpu6500\n");
+    return;
+  }
+
+  fd_mag = open("/dev/mag0", O_RDONLY);
+  if (fd_mag < 0)
+  {
+    printf("Failed to open magnetometer\n");
+    close(fd);
+    return;
+  }
+
+  read_mpu6050(fd, &imu_acc_data, &imu_gyro_data, &raw_imu);
+  read_lis3mdl(fd_mag, &raw_imu, mag_data);
+
+  printf("Timestamp: %f  Temperature: %f\n"
+         "Accelerometer X: %f | Y: %f | Z: %f\n"
+         "Gyroscope X: %f | Y: %f | Z: %f\n"
+         "Magnetometer X: %f | Y: %f | Z: %f\n",
+         imu_acc_data.timestamp, imu_acc_data.temperature,
+         imu_acc_data.x, imu_acc_data.y, imu_acc_data.z,
+         imu_gyro_data.x, imu_gyro_data.y, imu_gyro_data.z,
+         raw_imu.mag_x, raw_imu.mag_y, raw_imu.mag_z);
+
+  close(fd);
+  close(fd_mag);
+  printf("end of hk\n");
+
+  work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+  
+}
+
+static void ext_adc_main(){
    printf("Going to Test the External ADC\n");
   fd = open(EXT_ADC_PATH, O_RDONLY);
   if(fd < 0){
@@ -357,5 +559,8 @@ static int ext_adc_main(){
     printf("\n\n\n");
   }
   #endif  //IOCTL MODE
+  printf("end of ext_adcc\n");
+ //  work_queue(HPWORK, &work_adc, ext_adc_main, NULL, MSEC2TICK(DELAY_ADC+2000));
+
   return 0;
 }

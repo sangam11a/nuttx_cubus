@@ -32,12 +32,11 @@
 #include <nuttx/analog/ioctl.h>
 #include <nuttx/analog/ads7953.h>
 
-int16_t mag_data[4];
 
-#define IOCTL_MODE  1
+// #define IOCTL_MODE  1
 // #define READ_MODE   1
 
-#define MAX_CHANNELS  12
+// #define MAX_CHANNELS  12
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -51,7 +50,7 @@ int  main(int argc, FAR char *argv[])
   printf("SPI device LIS3MDL test, World!\n");
 
   /* Open SPI device driver */
-
+  int16_t mag_data[4];
   int fd = open("/dev/mag0", O_RDWR);
   assert(fd >= 0);
   int data_size = read(fd, mag_data,8);
