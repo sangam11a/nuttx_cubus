@@ -285,7 +285,6 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0]  = MANUAL_MODE_1;
           temp[1] = MANUAL_MODE_2;
           ads7953_write16(priv, temp);
-          printf("Manual Mode set: %x \n", temp[0] << 8 | temp[1]);
         }
         break;
 
@@ -295,7 +294,6 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0] = AUTO_2_MODE_1; 
           temp[1] = AUTO_2_MODE_2;
           ads7953_write16(priv, temp);
-          printf("Auto 2 Mode set: %x \n", temp[0] << 8 | temp[1]);
         }
         break;
       
@@ -305,7 +303,6 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0]  = ADC_AUTO_2_PROGRAM2_1;
           temp[1] = ADC_AUTO_2_PROGRAM2_2;
           ads7953_write16(priv, temp);
-          printf("Auto 2 Program mode set: %x \n", temp[0] << 8 | temp[1]);
         }
         break;
 
@@ -318,8 +315,6 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0]  = AUTO_2_MODE2_1;
           temp[1] = AUTO_2_MODE2_2;
           ads7953_read16(priv, temp, ptr);
-          printf("Auto 2 Read Mode: %x \n", temp[0] << 8 | temp[1]);
-          printf("Data from read function: %d \n", *ptr);
         }
         break;
 

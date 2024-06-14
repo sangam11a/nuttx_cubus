@@ -62,6 +62,7 @@
 
 /* Values for seeking */
 
+
 #define SEEK_SET    0  /* From the start of the file */
 #define SEEK_CUR    1  /* From the current file offset */
 #define SEEK_END    2  /* From the end of the file */
