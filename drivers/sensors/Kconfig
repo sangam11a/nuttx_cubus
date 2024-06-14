@@ -1307,6 +1307,37 @@ config SENSORS_LIS3MDL
 	---help---
 		Enable driver support for the STMicro LIS3MDL 3-axis magnetometer.
 
+if SENSORS_LIS3MDL
+ 
+config SENSORS_LIS3MDL_ORB
+  bool "use the sensor in uORB mode data transmission"
+  default n
+  select SPI
+  ---help---
+    Enable the uORB operation of the sensor
+
+config SENSORS_LIS3MDL_ORB_BUFFER_SIZE
+  int "size of the lis3mdl buffer size for data"
+  default 1
+  ---help---
+    The size of the circular buffer used. If the value equal to zero,
+    indicates that the circular buffer is disabled.
+
+config SENSORS_LIS3MDL_THREAD_STACKSIZE
+		int "worker thread stack size"
+		default 1024
+		---help----
+			The size of worker thread.
+
+config SENSORS_LIS3MDL_POLL_INTERVAL
+	int "Polling interval in microseconds, default 3 sec"
+	default 3000000
+	range 0 4294967295
+	---help---
+		The interval until a new sensor measurement will be triggered.
+
+endif #SENSORS_LIS3MDL
+
 config LM75_I2C
 	bool
 	default LM75

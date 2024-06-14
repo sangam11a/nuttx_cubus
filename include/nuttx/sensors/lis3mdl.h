@@ -135,6 +135,8 @@ extern "C"
 #define EXTERN extern
 #endif
 
+#ifndef CONFIG_SENSORS_LIS3MDL_ORB
+
 /****************************************************************************
  * Name: lis3mdl_register
  *
@@ -155,6 +157,30 @@ extern "C"
 
 int lis3mdl_register(FAR const char *devpath, FAR struct spi_dev_s *spi,
                      FAR struct lis3mdl_config_s const *config);
+#else
+/****************************************************************************
+ * Name: lis3mdl_register
+ *
+ * Description:
+ *   Register the LIS3MDL character device as 'devpath'
+ *
+ * Input Parameters:
+ *   devno   - The device number, used to build the device path
+ *             as /dev/sensor/mag_uncalN
+ *   spi     - An instance of the SPI interface to use to communicate with
+ *             LIS3MDL
+ *   config  - configuration for the LIS3MDL driver. For details see
+ *             description above.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int lis3mdl_register(int devno, FAR struct spi_dev_s *spi,
+                     FAR struct lis3mdl_config_s const *config);
+
+#endif
 
 #undef EXTERN
 #ifdef __cplusplus

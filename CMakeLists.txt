@@ -542,6 +542,7 @@ add_subdirectory(net)
 add_subdirectory(sched)
 add_subdirectory(syscall)
 add_subdirectory(wireless)
+add_subdirectory(umsg)
 
 # This picks up the chosen board (as well as common board code)
 

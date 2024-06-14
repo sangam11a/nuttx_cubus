@@ -1,0 +1,10 @@
+
+CSRCS += battery.c control.c example.c 
+CSRCS += port_posix.c sensors.c test.c umsg.c unused.c
+
+DEPPATH += --dep-path umsg_lib
+VPATH += :umsg_lib
+
+CFLAGS += -DLFS_CONFIG=../umsg.h
+
+
