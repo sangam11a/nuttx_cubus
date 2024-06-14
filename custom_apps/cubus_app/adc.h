@@ -18,15 +18,29 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_CUSTOM_APPS_ADC_ADC_H
-#define __APPS_CUSTOM_APPS_ADC_ADC_H
+#ifndef __APPS_CUSTOM_APPS_ADC_H
+#define __APPS_CUSTOM_APPS_ADC_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
+
+#include <nuttx/analog/adc.h>
+#include <nuttx/analog/ioctl.h>
 #include <nuttx/analog/ads7953.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <debug.h>
+
+#include <fcntl.h>
+#include "math.h"
+
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -71,6 +85,34 @@
 
 #define EXT_ADC_PATH    "/dev/ext_adc0"
 
+#define IOCTL_MODE  1
+// #define READ_MODE   1
+
+#define EXT_ADC_MAX_CHANNELS  12
+
+#define RES_LMP8640				0.025
+#define GAIN_LMP8640			10
+
+#define SENS_TMCS				0.265
+
+typedef struct {
+  size_t readsize;
+  ssize_t nbytes;
+  int fd;
+  int errval;
+  int ret;
+}int_adc_config_s;
+
+typedef struct {
+  int fd;
+}ext_adc_config_s;
+
+void RUN_ADC();
+
+int ext_adc_main();
+int read_int_adc1();
+int read_int_adc3();
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -81,6 +123,14 @@ struct adc_state_s
   FAR char *devpath;
   int       count;
 };
+
+typedef struct {
+    uint8_t chan;
+    float raw_data;
+    float processed_data;
+}ext_adc_s;
+
+extern ext_adc_s ext_adc_data[EXT_ADC_MAX_CHANNELS];
 
 /****************************************************************************
  * Public Data
