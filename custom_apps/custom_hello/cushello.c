@@ -46,9 +46,12 @@
 
 int main(int argc, FAR char *argv[])
 {
-  int buf_size = 30;  //size of data to read and write
-  uint8_t read_buf[30];
-  char write_buf[30] = "Hello everybody ....";
+  int buf_size = 100;  //size of data to read and write
+  uint8_t read_buf[100];
+  uint8_t write_buf[30];
+  for(int i=-0;i<30;i++){
+    write_buf[i] = i+1;
+  }
   
   int fd  = open("/dev/intflash", O_RDWR);   //opening the internal flash driver //LETS SEE IF WE CAN DO STUFF WITHOUT OPENING THE FILE OR NOT 
   if(fd < 0){
@@ -59,20 +62,20 @@ int main(int argc, FAR char *argv[])
     printf("Opened internal flash device successfully\n");
   }
 
-  up_progmem_eraseblock(22);    //erasing the sector of internal flash (block means sector here)
+  // up_progmem_eraseblock(22);    //erasing the sector of internal flash (block means sector here)
 
-  up_progmem_read(0x081C0000, read_buf, 30);  //reading after erasing
+  up_progmem_read(0x081C0000, read_buf, sizeof(read_buf));  //reading after erasing
   
+  printf("Reading...\n");
   /* reading after erasing */    
   for(int i=0;i<buf_size;i++){
     printf("%x ", read_buf[i]);
   }
+  printf("\n");
+  up_progmem_write(0x081C0000, write_buf, sizeof(write_buf));  //writing data into the internal flash
 
-  up_progmem_write(0x081C0000, write_buf, 30);  //writing data into the internal flash
-
-  up_progmem_read(0x081C0000, read_buf, 30);   //reading data from internal flash
-
-  /* reading after writing */    
+  up_progmem_read(0x081C0000, read_buf, sizeof(read_buf));   //reading data from internal flash
+  printf("reading after writing once..\n");
   for(int i=0;i<buf_size;i++){
     printf("%x ", read_buf[i]);
   }

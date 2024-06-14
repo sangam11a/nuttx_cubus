@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -39,7 +38,6 @@
 
 #include "math.h"
 
-#include <nuttx/fs/smart.h>
 #include <nuttx/fs/fs.h>
 
 #include <sys/mount.h>
@@ -60,11 +58,11 @@
 #define MOUNT_POINT "/m1"
 #define DATA "hello from nuttx apps"
 
-#define MFM_MSN_STRPATH		    "/mnt/fs/mfm/mtd_mission"
 #define MFM_MAIN_STRPATH        "/mnt/fs/mfm/mtd_mainstorage"
+#define MFM_MSN_STRPATH		    "/mnt/fs/mfm/mtd_mission"
 
-#define SFM_MSN_STRPATH		    "/mnt/fs/sfm/mtd_mission"
 #define SFM_MAIN_STRPATH        "/mnt/fs/sfm/mtd_mainstorage"
+#define SFM_MSN_STRPATH		    "/mnt/fs/sfm/mtd_mission"
 
 typedef struct {
   size_t readsize;
@@ -143,6 +141,7 @@ typedef struct {
 	uint8_t UL_STATE;			//uplink success
 	uint8_t OPER_MODE;			//operation modes
 	uint8_t KILL_SWITCH_STAT;	//kill switch status
+	uint8_t FILLER;				//to make sure data is stored in internal flash 
 }CRITICAL_FLAGS;
 
 typedef struct {
@@ -152,8 +151,8 @@ typedef struct {
 }ext_adc_s;
 
 typedef enum _OPERA_MODES {
-	NRML_MODE = 0x5A,
-	LOW_PWR_MODE = 0x6A,
+	NRML_MODE = 0x5A,	//90 on decimal
+	LOW_PWR_MODE = 0x6A,//
 	SAFE_MODE = 0x7A,
 	SAT_KILL_MODE = 0x8A,
 } OPERA_MODES;
@@ -179,6 +178,10 @@ typedef enum _UL_STATE {
 	UL_NOT_RX = 0x00, UL_RX = 0xAE,
 } UL_STATE;
 
+typedef enum _KILL_SWITCH_STATE {
+	KILL_SW_ON = 0x01, KILL_SW_OFF = 0x00,
+} KILL_SWITCH_STATE;
+
 /*
  * @brief	enumeration definition for status of Reservation commands
  */
@@ -186,9 +189,11 @@ typedef enum _RSV_CMD_STATE {
 	RSV_NOT_RUNNING = 0x00, RSV_RUNNING = 0xAE,
 } RSV_CMD_STATE;
 
+void retrieve_latest_sat_health_data(satellite_health_s *sat_health_buf);
 int ext_adc_main();
 int read_int_adc1();
 int read_int_adc3();
 void make_satellite_health();
+
 
 
