@@ -55,6 +55,10 @@
 #include <nuttx/sensors/lis3mdl.h>
 #endif
 
+#ifdef CONFIG_SENSORS_MPU60X0
+  #include <nuttx/sensors/mpu60x0.h>
+#endif
+
 // #ifdef CONFIG_ADC_ADS7953
 #include <nuttx/analog/ads7953.h>
 #include "../../../../drivers/analog/ads7953.c"
@@ -210,28 +214,59 @@ int stm32_bringup(void)
 
 #endif /* CONFIG_STM32_SPI3 */
 
+
+
 #ifdef CONFIG_STM32_SPI5
-#ifdef CONFIG_SENSORS_LIS3MDL
-  spi5 = stm32_spibus_initialize(5);
+spi5 = stm32_spibus_initialize(5);
   if (!spi5)
   {
     syslog(LOG_ERR,"[BRING_UP] ERROR: Failed to Initialize SPI 5 bus.\n");
   } else {
     syslog(LOG_INFO,"[BRING_UP] Initialized bus on SPI port 5.\n");
-
     SPI_SETFREQUENCY(spi5, 1000000);
     SPI_SETBITS(spi5, 8);
     SPI_SETMODE(spi5, SPIDEV_MODE0);
-  }
 
-  ret = lis3mdl_register(MAG_1_PATH, spi5, &mag0.dev);
-  if (ret < 0)
-  {
-    syslog(LOG_INFO,"[BRING_UP] Error: Failed to register LIS3MDL driver.\n");
-  } else {
-    syslog(LOG_INFO,"[BRING_UP] LIS3MDL registered on SPI 5.\n");
+  #ifdef CONFIG_SENSORS_MPU60X0
+    struct mpu_config_s *mpu_config = NULL;
+  //  SPI_SETFREQUENCY(spi5, 1000000);
+  //   SPI_SETBITS(spi5, 8);
+  //   SPI_SETMODE(spi5, SPIDEV_MODE0);
+      printf("got here in config_sensoors_mpu6500");
+      mpu_config = kmm_zalloc(sizeof(struct mpu_config_s));
+      printf("the size of mpu_config is %d", sizeof(mpu_config));
+        if (mpu_config == NULL)
+          {
+            printf("ERROR: Failed to allocate mpu60x0 driver\n");
+          }
+        else{
+          printf("INside else\n");
+            mpu_config->spi = spi5;
+            mpu_config->spi_devid = SPIDEV_IMU(0);
+            ret = mpu60x0_register("/dev/mpu6500", mpu_config);
+            printf("the value of ret is : %d\n",ret);
+            if(ret<0){
+              printf("[bring up] failed to initialize driver of mppu 6500");
+            }
+            else{
+              printf("[bringup ] successfully initialized driver of mpu 6500");
+            }
+          }
+  #endif  //mpu configuration
+    // SPI_SETFREQUENCY(spi5, 1000000);
+    // SPI_SETBITS(spi5, 8);
+    // SPI_SETMODE(spi5, SPIDEV_MODE0);
   }
-#endif  // CONFIG_SENSORS_LIS3MDL
+  #ifdef CONFIG_SENSORS_LIS3MDL
+
+    ret = lis3mdl_register("/dev/mag0", spi5, &mag0.dev);
+    if (ret < 0)
+    {
+      syslog(LOG_INFO,"[BRING_UP] Error: Failed to register LIS3MDL driver.\n");
+    } else {
+      syslog(LOG_INFO,"[BRING_UP] LIS3MDL registered on SPI 5.\n");
+    }
+  #endif  // CONFIG_SENSORS_LIS3MDL
 #endif  // CONFIG_STM32_SPI5
 
 #ifdef CONFIG_ADC
@@ -246,12 +281,7 @@ int stm32_bringup(void)
 
   UNUSED(ret);
 
-syslog(LOG_INFO, "INFO: Going to enter progmem: \n");
-
-printf("Going to enter progmem... \r\n");
-
 #if defined(CONFIG_MTD) && defined(CONFIG_MTD_PROGMEM)
-printf("Inside the progmem ifdef functions...\r\n");
   mtd = progmem_initialize();
   if (mtd == NULL)
     {

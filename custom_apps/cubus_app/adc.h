@@ -107,12 +107,6 @@ typedef struct {
   int fd;
 }ext_adc_config_s;
 
-void RUN_ADC();
-
-int ext_adc_main();
-int read_int_adc1();
-int read_int_adc3();
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -139,5 +133,10 @@ extern ext_adc_s ext_adc_data[EXT_ADC_MAX_CHANNELS];
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+int read_int_adc1();
+int read_int_adc3();
+int ext_adc_main();
+void int_adc1_data_convert(float *temp_buff);
+void int_adc3_data_convert(float *temp_buff_1);
 
 #endif /* __APPS_CUSTOM_APPS_ADC_ADC_H */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/examples/spi_test/spi_test_main.c
+ * apps/examples/spi_test/imu_mag.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,36 +17,5 @@
  * under the License.
  *
  ****************************************************************************/
-#ifndef __APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
-#define __APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
-
-#include <nuttx/config.h>
-
-#include <sys/types.h>
-#include <sys/ioctl.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
-#include <debug.h>
-
-#include "adc.h"
-#include "common_functions.h"
-#include <nuttx/fs/fs.h>
 #include "imu_mag.h"
-
-void make_satellite_health();
-void RUN_HK();
-
-void collect_imu_mag();
-
-void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyro_data, struct mpu6500_imu_msg *raw_imu);
-void read_lis3mdl(int fd_mag, struct mpu6500_imu_msg *raw_imu, int16_t mag_data[4]);
-
-
-#endif  //__APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
-
-
 

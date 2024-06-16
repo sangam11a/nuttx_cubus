@@ -27,6 +27,10 @@ CRITICAL_FLAGS critic_flags;
  * Name: adc_main
  ****************************************************************************/
 
+void Antenna_Deployment(){
+  
+}
+
 void store_sat_health_data(satellite_health_s *sat_health_data){
   struct file file_p;
   //TODO: discuss and figure out if we need to set limit to size of file and truncate contents once the file size limit is reached ... 
@@ -54,7 +58,7 @@ void retrieve_latest_sat_health_data(satellite_health_s *sat_health_buf){
   fd = open_file_flash(&fptr, MFM_MAIN_STRPATH, file_name_sat_health, O_RDONLY);
   if(fd >= 0){
     int size_file = file_seek(&fptr, 0, SEEK_END);
-    int off = file_seek(&fptr, size_file - 76, SEEK_SET);
+    int off = file_seek(&fptr, size_file - 112, SEEK_SET);
 
     //TODO: discuss and figure out if we need to set limit to size of file and truncate contents once the file size limit is reached ... 
     printf("Size of file : %d \n Offset: %d \n  ",size_file, off);
@@ -83,7 +87,7 @@ void retrieve_sat_health_data(satellite_health_s sat_health_buf[], int times){
   fd = open_file_flash(&fptr, MFM_MAIN_STRPATH, file_name_sat_health, O_RDONLY);
   if(fd >= 0){
     int size_file = file_seek(&fptr, 0, SEEK_END);
-    int off = file_seek(&fptr, size_file - 76*times, SEEK_SET);
+    int off = file_seek(&fptr, size_file - 112*times, SEEK_SET);
     printf("Size of file : %d \n Offset: %d \n  ",size_file, off);
     for(int i=0;i<times;i++){
       //TODO: discuss and figure out if we need to set limit to size of file and truncate contents once the file size limit is reached ... 
@@ -307,6 +311,18 @@ void Setup(){
 */
 void print_satellite_health_data(satellite_health_s *sat_health){
   printf(" *******************************************\r\n");
+  printf(" |   X axis acceleration    \t %f \t|\r\n",sat_health->accl_x);
+  printf(" |   Y axis acceleration    \t %f \t|\r\n",sat_health->accl_y);
+  printf(" |   Z axis acceleration    \t %f \t|\r\n",sat_health->accl_z);
+
+  printf(" |   X axis Gyro data       \t %f \t|\r\n",sat_health->gyro_x);
+  printf(" |   Y axis Gyro data       \t %f \t|\r\n",sat_health->gyro_y);
+  printf(" |   Z axis gyro data       \t %f \t|\r\n",sat_health->gyro_z);
+
+  printf(" |   X axis magnetic field  \t %f \t|\r\n",sat_health->mag_x);
+  printf(" |   Y axis magnetic field  \t %f \t|\r\n",sat_health->mag_y);
+  printf(" |   Z axis magnetic field  \t %f \t|\r\n",sat_health->mag_z);
+
   printf(" |   Solar Panel 1 Voltage: \t %d \t|\r\n",sat_health->sol_p1_v);
   printf(" |   Solar Panel 2 Voltage: \t %d \t|\r\n",sat_health->sol_p2_v);
   printf(" |   Solar Panel 3 Voltage: \t %d \t|\r\n",sat_health->sol_p3_v);

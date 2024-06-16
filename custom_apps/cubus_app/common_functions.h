@@ -42,15 +42,15 @@
 
 typedef struct  {
 	// uint64_t timestamp;
-	// float accl_x;
-	// float accl_y;
-	// float accl_z;
-	// float gyro_x;
-	// float gyro_y;
-	// float gyro_z;
-	// float mag_x;
-	// float mag_y;
-	// float mag_z;
+	float accl_x;
+	float accl_y;
+	float accl_z;
+	float gyro_x;
+	float gyro_y;
+	float gyro_z;
+	float mag_x;
+	float mag_y;
+	float mag_z;
 	int16_t temp_x;
 	int16_t temp_x1;
 	int16_t temp_y;
@@ -95,6 +95,74 @@ typedef struct  {
 
     int16_t ant_temp_out;
 }satellite_health_s;
+
+typedef struct __attribute__ ((__packed__))  _BEACON_A{
+uint8_t HEAD;//1 byte head -0x53
+uint8_t TYPE:4; //4bit
+int TIM_DAY:12; //12bit
+uint8_t TIM_HOUR; //1byte
+
+uint16_t BAT_V;//voltage 2 byte
+uint16_t BAT_C;//current 2 byte
+int16_t BAT_T;// battery temperatuerein Degree centigrade 2byte
+int8_t RAW_C;// 1byte
+uint16_t SOL_TOT_V;// in mV  2 byte
+int16_t SOL_TOT_C;//in mA 2 byte
+
+int8_t BPB_T;//backplane board temp 1byte
+int8_t OBC_T;//1 byte
+int8_t Y1_T;//1 byte
+int8_t Y_T;//1 byte
+int8_t Z1_T;//1 byte
+int8_t Z_T;//1 byte
+int8_t X1_T;//1 byte
+int8_t X_T;//1 byte
+
+uint8_t SOL_P1_STAT;//1 byte
+uint8_t SOL_P2_STAT;//1 byte
+uint8_t SOL_P3_STAT;//1 byte
+uint8_t SOL_P4_STAT;//1 byte
+uint8_t MSN_STAT;	//1 byte ()
+
+uint8_t ANT_STAT;//1 byte
+uint8_t KILL1_STAT;//1 byte
+uint8_t KILL2_STAT;//1 byte
+uint8_t UL_STAT;//1 byte
+
+uint8_t OPER_MODE;//1 byte
+
+uint16_t OBC_RESET_COUNT;//2 byte
+uint16_t LAST_RESET;//2 byte
+uint16_t CHK_CRC//2 byte
+} S2S_BEACON_A;
+
+typedef struct __attribute__ ((__packed__)) _S2S_BEACON_TYPE_B {
+    /*1-byte*/uint8_t HEAD;
+    /*4-bit*/uint8_t TYPE :4;
+    /*12-bit*/unsigned int TIM_DAY :12;
+
+    /*1-byte*/uint8_t SOL_P1_V; // voltage upto 1dp, without decimal
+    /*1-byte*/uint8_t SOL_P2_V;
+    /*1-byte*/uint8_t SOL_P3_V;
+    /*1-byte*/uint8_t SOL_P4_V;
+
+    /*1-byte*/int8_t SOL_P1_C;
+    /*1-byte*/int8_t SOL_P2_C;
+    /*1-byte*/int8_t SOL_P3_C;
+    /*1-byte*/int8_t SOL_P4_C;
+
+    /*2-byte*/int16_t GYRO_X;
+    /*2-byte*/int16_t GYRO_Y;
+    /*2-byte*/int16_t GYRO_Z;
+    /*2-byte*/int16_t ACCL_X;
+    /*2-byte*/int16_t ACCL_Y;
+    /*2-byte*/int16_t ACCL_Z;
+
+    /*2-byte*/int16_t MAG_X;
+    /*2-byte*/int16_t MAG_Y;
+    /*2-byte*/int16_t MAG_Z;
+    /*1-byte*/uint8_t CHK_CRC;
+} S2S_BEACON_TYPE_B;  // Use typedef for ease of use
 
 typedef struct {
 	uint8_t ANT_DEP_STAT;		//antenna deployment status

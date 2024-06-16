@@ -53,16 +53,6 @@ ext_adc_s ext_adc_data[EXT_ADC_MAX_CHANNELS];
 * TODO: Add number of samples and append in a two dimensional array and return the average value
 */
 
-/****************************************************************************
- * Name: adc_main
- ****************************************************************************/
-
-void RUN_ADC(){
-    read_int_adc1();
-    read_int_adc3();
-    ext_adc_main();
-}
-
 #ifdef CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1
 int read_int_adc1(){
 
