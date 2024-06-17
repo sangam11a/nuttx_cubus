@@ -59,13 +59,18 @@
   #include <nuttx/sensors/mpu60x0.h>
 #endif
 
-// #ifdef CONFIG_ADC_ADS7953
+#ifdef CONFIG_ADC_ADS7953
 #include <nuttx/analog/ads7953.h>
 #include "../../../../drivers/analog/ads7953.c"
-// #endif
+#endif
 
 #include "stm32.h"
 #include "stm32f427a.h"
+
+#ifdef CONFIG_STM32_OWN_LED
+#include "stm32_own_led.h"
+#endif
+
 
 #if defined(CONFIG_STM32_SPI2)
   struct spi_dev_s *spi2;
@@ -279,6 +284,14 @@ spi5 = stm32_spibus_initialize(5);
     }
 #endif
 
+  printf("External led driver initializing...\n");
+  int retval = etx_led_driver_init();
+  if (retval == -1){
+    printf("error on initializing led driver..\n");
+  }else{
+    printf("Initialized LED driver successfully");
+  }
+
   UNUSED(ret);
 
 #if defined(CONFIG_MTD) && defined(CONFIG_MTD_PROGMEM)
@@ -302,8 +315,6 @@ spi5 = stm32_spibus_initialize(5);
       printf("[BRINGUP: PROGMEM] Registerd internal flash mtd driver successfullyy.....\r\n");
 
     }
-
-
 #endif
-      return 0;
+    return 0;
 }
