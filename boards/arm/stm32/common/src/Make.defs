@@ -140,6 +140,10 @@ ifeq ($(CONFIG_BOARD_STM32_IHM16M1),y)
   CSRCS += stm32_ihm16m1.c
 endif
 
+ifeq ($(CONFIG_STM32_OWN_LED), y)
+  CSRCS += stm32_own_led.c
+endif
+
 DEPPATH += --dep-path src
 VPATH += :src
 CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src$(DELIM)board$(DELIM)src

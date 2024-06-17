@@ -69,3 +69,12 @@ config BOARD_STM32_HALL3PHASE_SAMPLES
 	default 10
 
 endif # SENSORS_HALL3PHASE
+
+menu "STM32 Led drivers"
+
+config STM32_OWN_LED
+	bool "STM32 Led driver (GPIO)"
+	default n
+	--help--
+	 Enables the GPIOs to control the LEDs 
+endmenu #stm32_own_led
