@@ -43,9 +43,10 @@
 
 /* Character driver methods */
 
-static int     etx_led_open(FAR struct file *filep);
-static int     etx_led_close(FAR struct file *filep);
-static ssize_t etx_led_write(FAR struct file *filep, FAR const char *buffer,
+static int     etx_gpio_open(FAR struct file *filep);
+static int     etx_gpio_close(FAR struct file *filep);
+static ssize_t etx_gpio_read(FAR struct file *filep, FAR const char *buffer, size_t len);
+static ssize_t etx_gpio_write(FAR struct file *filep, FAR const char *buffer,
                         size_t buflen);
 
 
@@ -53,12 +54,12 @@ static ssize_t etx_led_write(FAR struct file *filep, FAR const char *buffer,
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations etx_led_fops =
+static const struct file_operations etx_gpio_fops =
 {
-  etx_led_open,   /* open   */
-  etx_led_close,  /* close  */
-  NULL,           /* read   */
-  etx_led_write,  /* write  */
+  etx_gpio_open,   /* open   */
+  etx_gpio_close,  /* close  */
+  etx_gpio_read,           /* read   */
+  etx_gpio_write,  /* write  */
   NULL,           /* seek   */
   NULL,           /* ioctl  */
   NULL,           /* poll   */
@@ -79,7 +80,7 @@ static const struct file_operations etx_led_fops =
  *  opens the "/dev/etx_led" file.
  ****************************************************************************/
 
-static int etx_led_open(FAR struct file *filep)
+static int etx_gpio_open(FAR struct file *filep)
 {
   int ret = 0;
 
@@ -94,7 +95,7 @@ static int etx_led_open(FAR struct file *filep)
  *  closess the "/dev/etx_led" file.
  ****************************************************************************/
 
-static int etx_led_close(FAR struct file *filep)
+static int etx_gpio_close(FAR struct file *filep)
 {
   int ret = 0;
 
@@ -109,7 +110,7 @@ static int etx_led_close(FAR struct file *filep)
  *  writes data the "/dev/etx_led" file.
  ****************************************************************************/
 
-static ssize_t etx_led_write(FAR struct file *filep, FAR const char *buffer,
+static ssize_t etx_gpio_write(FAR struct file *filep, FAR const char *buffer,
                              size_t len)
 {
   DEBUGASSERT(buffer != NULL);
@@ -129,6 +130,15 @@ static ssize_t etx_led_write(FAR struct file *filep, FAR const char *buffer,
   return (len);
 }
 
+static ssize_t etx_gpio_read(FAR struct file *filep, FAR const char *buffer, size_t len){
+  int ret = 0;
+  DEBUGASSERT(buffer != NULL);
+
+  gpio *etx_gpio_read = (FAR gpio*)((uintptr_t)buffer);
+  etx_gpio_read->gpio_val = stm32_gpioread(etx_gpio_read->gpio_num);
+  return ret;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -145,13 +155,13 @@ static ssize_t etx_led_write(FAR struct file *filep, FAR const char *buffer,
  *
  ****************************************************************************/
 
-int etx_led_driver_init( void )
+int etx_gpio_driver_init( void )
 {
   int ret = 0;
-  ret = register_driver("/dev/etx_led", &etx_led_fops, 0666, NULL);
+  ret = register_driver("/dev/gpio_rw", &etx_gpio_fops, 0666, NULL);
   if (ret < 0)
   {
-    _err("ERROR: register_driver failed : /dev/etx_led : %d\n", ret);
+    _err("ERROR: register_driver failed : /dev/gpio_rw : %d\n", ret);
     ret = -1;;
   }
 

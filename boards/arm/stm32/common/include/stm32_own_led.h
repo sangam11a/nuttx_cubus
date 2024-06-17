@@ -56,7 +56,7 @@ typedef struct{
 }gpio;
 
 // #ifdef CONFIG_STM32_ETX_LED
-int etx_led_driver_init( void );
+int etx_gpio_driver_init( void );
 // #endif
 
 #undef EXTERN
