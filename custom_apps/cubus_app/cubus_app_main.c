@@ -86,13 +86,13 @@ int main(int argc, FAR char *argv[])
 {
 
   Setup();
-  printf("Checking flag data initial..\n");
-  check_flag_data();
-  print_critical_flag_data(&critic_flags);
+  if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
+    Antenna_Deployment();
+  }
   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
 
 #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-  RUN_HK();
+  // RUN_HK();
 #endif
 
   // make_satellite_health();
@@ -118,6 +118,34 @@ int main(int argc, FAR char *argv[])
   return 0;
 }
 
+void Antenna_Deployment(){
+  printf("Entering antenna deployment sequence\n");
+  int retval, retval1 = 0;
+  CRITICAL_FLAGS ant_check;
+  ant_check.ANT_DEP_STAT = critic_flags.ANT_DEP_STAT;
+  printf("Antenna Deployment Flag: %d\n", critic_flags.ANT_DEP_STAT);
+  //TODO: add redundancy (check UL status along with antenna deployment status)
+  if(critic_flags.ANT_DEP_STAT == UNDEPLOYED){
+    for(int i=0;i<3;i++){
+      printf("Turning on burner circut\nAttempt: %d", i+1);
+      retval = gpio_write(GPIO_BURNER_EN, true);
+      // retval1 = gpio_write(GPIO_UNREG_EN, true);
+      RUN_ADC();
+      usleep(6000000);
+      printf("Turning off burner circuit\n");
+      // gpio_write(GPIO_UNREG_EN, false);
+      gpio_write(GPIO_BURNER_EN, false);
+      usleep(2000000);
+    }
+  }
+  printf("Antenna deployment sequence complete\n");
+  ant_check.ANT_DEP_STAT = DEPLOYED;
+  store_flag_data(&ant_check);
+  printf("Updated flag data...\n");
+  check_flag_data();
+  print_critical_flag_data(&critic_flags);
+}
+
 /****************************************************************************
  * Name: adc_main
  ****************************************************************************/
@@ -134,6 +162,18 @@ void RUN_HK()
 
   store_sat_health_data(&sat_health);
   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+}
+
+/*
+* this is to be used between any processes only...
+*/
+void RUN_ADC(){
+  read_int_adc1();
+  read_int_adc3();
+  ext_adc_main();
+  make_satellite_health();
+  store_sat_health_data(&sat_health);
+  print_satellite_health_data(&sat_health);
 }
 
 

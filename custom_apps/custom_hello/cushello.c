@@ -36,7 +36,7 @@
  * Preprocessor Definitions
  ****************************************************************************/
 
-#define ETX_LED_DRIVER_PATH "/dev/etx_led"    // LED Driver path
+#define ETX_LED_DRIVER_PATH "/dev/gpio_rw"    // LED Driver path
 
 /****************************************************************************
  * Public Functions
@@ -62,45 +62,44 @@ int main(int argc, FAR char *argv[])
     if(fd < 0){
         printf("failed to open: %s\n", ETX_LED_DRIVER_PATH);
     }
-    printf("%s\n", argv[0]);
-    // if(!strcmp(argv[0], "COM_ON")){
-    printf("GPIO output value: %d", GPIO_3V3_COM_EN);
-    printf("Turning on COM mission...\n");
-    gpio_numval.gpio_num = GPIO_3V3_COM_EN;
-    gpio_numval.gpio_val = 1;
-    // gpio_numval.data = NULL;
-    ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_numval));
-    // }
-    // else if(!strcmp(argv[0], "COM_OFF")){
-    //     printf("Turning off COM mission...\n");
-    //     gpio_numval.gpio_num = GPIO_3V3_COM_EN;
-    //     gpio_numval.gpio_val = 0;
-    //     ret = write(fd, (const void * )&gpio_numval, sizeof(gpio_numval));
-    //     if(ret < 0){
-    //         syslog(LOG_ERR,"Error enabling GPIO pin...\n");
-    //     }
-    // }
+    if(!strcmp(argv[1], "COM_ON")){
+        printf("GPIO output value: %d", GPIO_3V3_COM_EN);
+        printf("Turning on COM mission...\n");
+        gpio_numval.gpio_num = GPIO_3V3_COM_EN;
+        gpio_numval.gpio_val = 1;
+        // gpio_numval.data = NULL;
+        ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_numval));
+    }
+    else if(!strcmp(argv[1], "COM_OFF")){
+        printf("Turning off COM mission...\n");
+        gpio_numval.gpio_num = GPIO_3V3_COM_EN;
+        gpio_numval.gpio_val = 0;
+        ret = write(fd, (const void * )&gpio_numval, sizeof(gpio_numval));
+        if(ret < 0){
+            syslog(LOG_ERR,"Error enabling GPIO pin...\n");
+        }
+    }
     close(fd);
 }
 
-int Turn_gpio_on_off(char *system_name, uint8_t mode){
+int Turn_gpio_on_off(uint32_t pin, uint8_t mode){
+
     int fd = open(ETX_LED_DRIVER_PATH, O_WRONLY);
     if(fd < 0){
-        syslog(LOG_ERR, "Error opening %s", ETX_LED_DRIVER_PATH);
+        syslog(LOG_ERR, "Error opening %s for GPIO WRITE...", ETX_LED_DRIVER_PATH);
         close(fd);
         return -1;
     }
-    if(!strcmp(system_name, "COM")){    //COM on/off
-        syslog(LOG_INFO,  "Setting COM GPIO Pin... %d\n", mode);
-    }else if(!strcmp(system_name, "CAM")){  //MSN1 on/off
-        
-    }else if(!strcmp(system_name, "ADCS")){    //MSN2 on/off
-
-    }else if(!strcmp(system_name, "EPDM")){     //MSN3 on/Off
-
-    }else if(!strcmp(system_name, "KILL")){    
-
+    gpio_numval.gpio_num = pin;
+    gpio_numval.gpio_val = mode;
+    if(gpio_numval.gpio_val > 1 || gpio_numval.gpio_num < 0){
+        syslog(LOG_ERR,"Undefined GPIO pin or set mode selected...\n");
+        return -2;
     }
+    int ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_numval));
     close(fd);
-    return 0;
+    if(ret < 0 ){
+        syslog(LOG_ERR, "Unable to write to gpio pin...\n");
+    }
+    return ret;
 }

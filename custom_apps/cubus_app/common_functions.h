@@ -22,7 +22,9 @@
 #define __APPS_CUSTOM_APPS_COMMON_FUNCTIONS_H
 
 #include <nuttx/config.h>
+#include <syslog.h>
 #include "file_operations.h"
+#include "gpio_definitions.h"
 
 #define FLAG_DATA_INT_ADDR    0x081C0000
 #define FLAG_DATA_SECTOR_NUM 
@@ -220,5 +222,8 @@ void retrieve_sat_health_data(satellite_health_s sat_health_buf[], int times);
 
 void print_satellite_health_data(satellite_health_s *sat_health);
 void print_critical_flag_data(CRITICAL_FLAGS *flags);
+
+int gpio_write(uint32_t pin, uint8_t mode);
+int gpio_read(uint32_t pin);
 
 #endif

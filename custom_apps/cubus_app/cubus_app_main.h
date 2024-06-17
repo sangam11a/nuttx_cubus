@@ -36,6 +36,7 @@
 #include "common_functions.h"
 #include <nuttx/fs/fs.h>
 #include "imu_mag.h"
+#include "gpio_definitions.h"
 
 void make_satellite_health();
 void RUN_HK();

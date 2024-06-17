@@ -1,6 +1,9 @@
 
 #ifndef __APPS_CUSTOM_APPS_GPIO_DEFINITIONS_H
 #define __APPS_CUSTOM_APPS_GPIO_DEFINITIONS_H
+
+#define ETX_LED_DRIVER_PATH "/dev/gpio_rw"    // LED Driver path
+
 /* Each port bit of the general-purpose I/O (GPIO) ports can be
  * individually configured by software in several modes:
  *
@@ -214,5 +217,12 @@
 /* Flash Memory MUX Control GPIOs */
 #define GPIO_SFM_MODE		        (GPIO_OUTPUT|GPIO_FLOAT|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTI|GPIO_PIN7)
 #define GPIO_MUX_EN		           	(GPIO_OUTPUT|GPIO_FLOAT|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTG|GPIO_PIN6)
+
+typedef struct{
+    uint8_t gpio_val;
+    uint32_t gpio_num;
+    // void *data;
+}gpio_config_s;
+
 
 #endif 

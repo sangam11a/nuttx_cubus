@@ -27,10 +27,6 @@ CRITICAL_FLAGS critic_flags;
  * Name: adc_main
  ****************************************************************************/
 
-void Antenna_Deployment(){
-  
-}
-
 void store_sat_health_data(satellite_health_s *sat_health_data){
   struct file file_p;
   //TODO: discuss and figure out if we need to set limit to size of file and truncate contents once the file size limit is reached ... 
@@ -304,7 +300,9 @@ void Setup(){
   }
   file_close(&flp4);
 
-  //TODO: check flags thing and put the check flags data into this function for now. Later, after uORB or uMSG is ready, we'll have a setup application and we wont need to put that in this function. Architecture will be completely different. 
+  syslog(LOG_INFO, "Checking initial flag data...\n");
+  check_flag_data();
+  print_critical_flag_data(&critic_flags);
 }
 
 /*
@@ -363,4 +361,51 @@ void print_critical_flag_data(CRITICAL_FLAGS *flags){
   printf(" |   Reservation Table Flag    \t %d \t|\r\n",flags->RSV_FLAG);
   printf(" |   Command uplink status     \t %d \t|\r\n",flags->UL_STATE);
   printf(" ********************************************\r\n");
+}
+
+/*
+*/
+int gpio_write(uint32_t pin, uint8_t mode){
+
+    gpio_config_s gpio_numval;
+    int fd = open(ETX_LED_DRIVER_PATH, O_WRONLY);
+    if(fd < 0){
+        syslog(LOG_ERR, "Error opening %s for GPIO WRITE...", ETX_LED_DRIVER_PATH);
+        close(fd);
+        return -1;
+    }
+    gpio_numval.gpio_num = pin;
+    gpio_numval.gpio_val = mode;
+    if(gpio_numval.gpio_val > 1 || gpio_numval.gpio_num < 0){
+        syslog(LOG_ERR,"Undefined GPIO pin or set mode selected...\n");
+        return -2;
+    }
+    int ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_config_s));
+    close(fd);
+    if(ret < 0 ){
+        syslog(LOG_ERR, "Unable to write to gpio pin...\n");
+    }
+    return ret;
+}
+
+int gpio_read(uint32_t pin){
+  gpio_config_s gpio_read;
+    int fd = open(ETX_LED_DRIVER_PATH, O_WRONLY);
+    if(fd < 0){
+        syslog(LOG_ERR, "Error opening %s for GPIO WRITE...", ETX_LED_DRIVER_PATH);
+        close(fd);
+        return -1;
+    }
+    gpio_read.gpio_num = pin;
+    if( gpio_read.gpio_num < 0){
+        syslog(LOG_ERR,"Undefined GPIO pin or set mode selected...\n");
+        return -2;
+    }
+    int ret = read(fd, (const void *)&gpio_read, sizeof(gpio_config_s));
+    close(fd);
+    if(ret < 0 ){
+        syslog(LOG_ERR, "Unable to write to gpio pin...\n");
+        return -3;
+    }
+    return gpio_read.gpio_val;
 }

@@ -284,14 +284,15 @@ spi5 = stm32_spibus_initialize(5);
     }
 #endif
 
-  printf("External led driver initializing...\n");
-  int retval = etx_led_driver_init();
+#ifdef CONFIG_STM32_OWN_LED
+  printf("External gpio driver initializing...\n");
+  int retval = etx_gpio_driver_init();
   if (retval == -1){
-    printf("error on initializing led driver..\n");
+    printf("error on initializing gpio driver..\n");
   }else{
-    printf("Initialized LED driver successfully");
+    printf("Initialized gpio driver successfully");
   }
-
+#endif
   UNUSED(ret);
 
 #if defined(CONFIG_MTD) && defined(CONFIG_MTD_PROGMEM)
