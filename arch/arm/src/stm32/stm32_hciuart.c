@@ -62,6 +62,8 @@
  * have also been selected.
  */
 
+#define DMAMAP_USART1_RX
+
 #ifdef CONFIG_STM32_HCIUART_RXDMA
 
 #  if defined(CONFIG_STM32_STM32F20XX) || defined(CONFIG_STM32_STM32F4XXX)
