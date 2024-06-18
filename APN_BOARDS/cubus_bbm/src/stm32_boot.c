@@ -88,7 +88,7 @@
 
 	usleep(ms * 1000);
 	syslog(LOG_DEBUG, "reset done, %d ms\n", ms);
-  printf("Reset Done.\n");
+  	printf("Reset Done.\n");
 }
 
 /****************************************************************************

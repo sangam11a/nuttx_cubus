@@ -218,6 +218,7 @@
 
 #define ADC1_DMA_CHAN DMAMAP_ADC1_1
 
+
 /* LIS3MDL configuration ****************************************************/
 
 #endif /* __BOARDS_BOARD_H */

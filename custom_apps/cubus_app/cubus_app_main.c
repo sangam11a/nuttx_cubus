@@ -92,7 +92,7 @@ int main(int argc, FAR char *argv[])
   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
 
 #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-  // RUN_HK();
+  RUN_HK();
 #endif
 
   // make_satellite_health();
