@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #ifdef CONFIG_TIMER
 
@@ -252,8 +253,10 @@ int timer_getstatus(FAR struct timer_lowerhalf_s *lower,
                      FAR struct timer_status_s *status)
 {
   int ret;
-
-  DEBUGASSERT(lower->ops->tick_getstatus);
+ 
+  if(lower->ops->tick_getstatus == NULL){
+    return -ENOTSUP;
+  }
 
   ret = lower->ops->tick_getstatus(lower, status);
   if (ret >= 0)
@@ -296,9 +299,12 @@ int timer_tick_getstatus(FAR struct timer_lowerhalf_s *lower,
 {
   int ret;
 
-  DEBUGASSERT(lower->ops->getstatus);
+  // DEBUGASSERT(lower->ops->getstatus);
 
   ret = lower->ops->getstatus(lower, status);
+  if(ret < 0){
+    return -ENOTSUP; 
+  }
   if (ret >= 0)
     {
       status->timeout = USEC2TICK(status->timeout);
