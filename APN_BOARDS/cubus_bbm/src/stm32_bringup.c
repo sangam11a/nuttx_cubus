@@ -71,6 +71,11 @@
 #include "stm32_own_led.h"
 #endif
 
+#if defined(CONFIG_STM32_IWDG) 
+// #include <nuttx/timers/watchdog.h>
+#include <nuttx/wdog.h>
+// #include <nuttx/arch/arm/src/stm32/stm32_wdg.h>
+#endif
 
 #if defined(CONFIG_STM32_SPI2)
   struct spi_dev_s *spi2;
@@ -316,6 +321,123 @@ spi5 = stm32_spibus_initialize(5);
       printf("[BRINGUP: PROGMEM] Registerd internal flash mtd driver successfullyy.....\r\n");
 
     }
+#endif
+
+#ifdef CONFIG_STM32_TIM6 
+
+   ret = stm32_timer_initialize("/dev/timer6",6);
+  if(ret<0){
+    printf("failed to initialize /dev/timer6 : %d\n",ret);
+  }
+  else{
+    printf("Timer 6 has been initialized successfully\n");
+  }
+#endif
+
+#ifdef CONFIG_STM32_TIM7 
+  ret = stm32_timer_initialize("/dev/timer7",7);
+  if(ret<0){
+    printf("failed to initialize /dev/timer7 : %d\n",ret);
+  }
+  else{
+    printf("Timer 77 has been initialized successfully\n");
+  }
+
+#endif
+
+
+#ifdef CONFIG_STM32_TIM8
+  ret = stm32_timer_initialize("/dev/timer8",8);
+  if(ret<0){
+    printf("failed to initialize /dev/timer8 : %d\n",ret);
+  }
+  else{
+    printf("Timer 87 has been initialized successfully\n");
+  }
+
+#endif
+
+#ifdef CONFIG_STM32_TIM9 
+
+   ret = stm32_timer_initialize("/dev/timer9",9);
+  if(ret<0){
+    printf("failed to initialize /dev/timer9 : %d\n",ret);
+  }
+  else{
+    printf("Timer 9 has been initialized successfully\n");
+  }
+
+
+#endif
+
+
+#ifdef CONFIG_STM32_TIM10 
+  ret = stm32_timer_initialize("/dev/timer10",10);
+  if(ret<0){
+    printf("failed to initialize /dev/timer10 : %d\n",ret);
+  }
+  else{
+    printf("Timer 10 has been initialized successfully\n");
+  }
+
+#endif
+
+#ifdef CONFIG_STM32_TIM11 
+  ret = stm32_timer_initialize("/dev/timer11",11);
+  if(ret<0){
+    printf("failed to initialize /dev/timer11 : %d\n",ret);
+  }
+  else{
+    printf("Timer 11 has been initialized successfully\n");
+  }
+
+#endif
+
+#ifdef CONFIG_STM32_TIM12 
+  ret = stm32_timer_initialize("/dev/timer12",12);
+  if(ret<0){
+    printf("failed to initialize /dev/timer12 : %d\n",ret);
+  }
+  else{
+    printf("Timer 12 has been initialized successfully\n");
+  }
+
+#endif
+
+
+#ifdef CONFIG_STM32_TIM13 
+  ret = stm32_timer_initialize("/dev/timer13",13);
+  if(ret<0){
+    printf("failed to initialize /dev/timer13 : %d\n",ret);
+  }
+  else{
+    printf("Timer 13 has been initialized successfully\n");
+  }
+
+#endif
+
+#ifdef CONFIG_STM32_IWDG
+// struct watchdog_lowerhalf_s lower;
+
+//   / Allocate the lower-half data structure /
+//   lower = (FAR struct watchdog_lowerhalf_s)kmm_zalloc(sizeof(struct watchdog_lowerhalf_s));
+//   if (!lower)
+//   {
+//     return -ENOMEM;
+//   }
+//     struct watchdog_ops_s g_my_watchdog_ops; 
+//   /* Initialize the lower-half structure */
+//   lower->ops = &g_my_watchdog_ops;
+// watchdog_register("/dev/watchdog0", &lower);
+
+stm32_iwdginitialize("/dev/iwdg0", 20000000);
+#endif
+
+// stm32_serial_dma_setup();
+  // stm32_serial_dma_initialize();
+// write();
+#ifdef CONFIG_STM32_WWDG
+stm32_wwdginitialize("/dev/wwdg0");
 #endif
     return 0;
 }
