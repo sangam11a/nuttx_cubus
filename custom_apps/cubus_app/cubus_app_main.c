@@ -87,6 +87,7 @@ int main(int argc, FAR char *argv[])
 
   Setup();
   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
+    //TODO: add work queue to perform antenna deployment after 30 minutes
     Antenna_Deployment();
   }
   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
@@ -95,29 +96,12 @@ int main(int argc, FAR char *argv[])
   RUN_HK();
 #endif
 
-  // make_satellite_health();
-
-  print_satellite_health_data(&sat_health);
-
-  // store_sat_health_data(&sat_health);
-
-  retrieve_latest_sat_health_data(&sat_health_rx_buf);
-
-  test_flags.ANT_DEP_STAT = UNDEPLOYED;
-  test_flags.KILL_SWITCH_STAT = 0x11;
-  test_flags.OPER_MODE = SAFE_MODE;
-
-  store_flag_data(&test_flags);
-
-  printf("Checking flag data after changing...\n");
-  check_flag_data();
-  print_critical_flag_data(&critic_flags);
-
   // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
 
   return 0;
 }
 
+//TODO: add work queue to antenna deployment
 void Antenna_Deployment(){
   printf("Entering antenna deployment sequence\n");
   int retval, retval1 = 0;
@@ -159,8 +143,8 @@ void RUN_HK()
   collect_imu_mag();
 
   make_satellite_health();
-
   store_sat_health_data(&sat_health);
+  print_satellite_health_data(&sat_health);
   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 }
 
