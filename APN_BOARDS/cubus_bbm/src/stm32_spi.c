@@ -145,7 +145,6 @@ void stm32_spi2select(struct spi_dev_s *dev,
   switch(devid)
   {
     case SPIDEV_USER(1):
-      printf("[SPI2_SELECT] setting ADC cs pin to: %i\n", !selected);
       stm32_gpiowrite(GPIO_EXT_ADC1_CS, !selected);
       break;
   }
@@ -201,7 +200,7 @@ uint8_t stm32_spi4status(struct spi_dev_s *dev, uint32_t devid)
 void stm32_spi5select(struct spi_dev_s *dev,
                       uint32_t devid, bool selected)
 {
-  spiinfo("devid: %%d CS: %s\n",
+  spiinfo("devid: %d CS: %s\n",
             (int)devid, selected ? "assert" : "de-assert");
   switch(devid)
   {

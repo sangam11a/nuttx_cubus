@@ -17,37 +17,21 @@
  * under the License.
  *
  ****************************************************************************/
-#ifndef __APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
-#define __APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
+#ifndef __APPS_CUSTOM_APPS_FILE_OPERATIONS_H
+#define __APPS_CUSTOM_APPS_FILE_OPERATIONS_H
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <sys/ioctl.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/statfs.h>
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
+#include <fcntl.h>
 #include <debug.h>
 
-#include "adc.h"
-#include "common_functions.h"
-#include <nuttx/fs/fs.h>
-#include "imu_mag.h"
-#include "gpio_definitions.h"
+int open_file_flash(struct file *file_pointer, char *flash_strpath, char *filename, int open_mode);
+int get_file_size(char *filepath, char *filename);
+int clear_file(char *fpath, char *fname);
 
-void make_satellite_health();
-void RUN_HK();
-
-void collect_imu_mag();
-
-void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyro_data, struct mpu6500_imu_msg *raw_imu);
-void read_lis3mdl(int fd_mag, struct mpu6500_imu_msg *raw_imu, int16_t mag_data[4]);
-
-
-#endif  //__APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
-
-
-
+#endif

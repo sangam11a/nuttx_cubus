@@ -31,4 +31,9 @@ MODULE    = $(CONFIG_CUSTOM_APPS_CUBUS_APP)
 
 MAINSRC = cubus_app_main.c
 
+CSRCS += adc.c
+CSRCS += file_operations.c
+CSRCS += common_functions.c
+CRSCS += imu_mag.c
+
 include $(APPDIR)/Application.mk
