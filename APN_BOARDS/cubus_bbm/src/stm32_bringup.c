@@ -146,8 +146,9 @@ static struct mag_priv_s mag0 =
 {
   .dev.attach = stm32_attach_mag_irq,
   .dev.spi_devid = SPIDEV_USER(0),
+  .dev.irq  = 0,
   .handler = NULL,
-  .intcfg = GPIO_LIS3MDL_INT,
+  .intcfg = GPIO_LIS3MDL_DRDY,
 };
 #endif
 

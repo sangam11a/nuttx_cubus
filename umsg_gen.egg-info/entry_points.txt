@@ -1,0 +1,2 @@
+[console_scripts]
+umsg-gen = umsg_gen.umsg_gen:main

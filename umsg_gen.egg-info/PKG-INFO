@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: umsg-gen
+Version: 0.0.0
+Summary: Code generator for the μMsg pub-sub c library
+Home-page: https://github.com/Amcolex/umsg_gen.git
+Author: Alex Pabouctsidis
+Author-email: alex.pabouct@gmail.com
+
+Generates the full μMsg library code from JSON message definitions.
