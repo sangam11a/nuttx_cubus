@@ -337,6 +337,7 @@ endif
 
 ifeq ($(CONFIG_SENSORS_LIS3MDL),y)
   CSRCS += lis3mdl.c
+  CSRCS += lis3mdl_uorb.c
 endif
 
 ifeq ($(CONFIG_SENSORS_LSM330SPI),y)
