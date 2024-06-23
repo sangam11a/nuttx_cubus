@@ -27,15 +27,6 @@
 #include <assert.h>
 #include <fcntl.h>
 
-#include <nuttx/sensors/lis3mdl.h>
-#include <nuttx/analog/ioctl.h>
-#include <nuttx/analog/ads7953.h>
-
-#define IOCTL_MODE  1
-// #define READ_MODE   1
-
-#define MAX_CHANNELS  12
-#define EXT_ADC_PATH  "/dev/ext_adc0"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -44,54 +35,41 @@
 /****************************************************************************
  * spi_test_main
  ****************************************************************************/
+static int task2(int argc, char *argv[]);
+static int task1(int argc, char *argv[]);
 
 int main(int argc, FAR char *argv[])
 {
-  int fd;
-  int ret;
-  uint8_t raw_data[2] = {'\0'};
-  uint16_t combined_data[MAX_CHANNELS] = {'\0'};
-  printf("Going to Test the External ADC\n");
-  fd = open(EXT_ADC_PATH, O_RDONLY);
-  if(fd < 0){
-    printf("Unable to open external ADC driver\n");
-    return -1;
+  printf("Multi-tasking application....\n");
+  int ret = 0;
+  ret = task_create("task1", 100, 528, task1, NULL);
+  if(ret < 0){
+    printf("Error starting task 1\n");
+  }else{
+    printf("task 1 started...\n");
   }
-  printf("opened external ADC driver successfully\n Setting Manual Select mode...\n");
-
-  /* Get the set of BUTTONs supported */
-  ret = ioctl(fd, ANIOC_ADC_MANUAL_SELECT, NULL);
-  usleep(10);
-
-  printf("Setting ADC Select mode ... \n");
-  ret = ioctl(fd, ANIOC_ADC_AUTO_2_SELECT, NULL);
-  usleep(1000);
-
-  printf("Setting ADC Program mode ...\n");
-  ret = ioctl(fd, ANIOC_ADC_AUTO_2_PROGRAM, NULL);
-  usleep(1000);
-
-  #ifdef IOCTL_MODE
-  for(int i=0;i<MAX_CHANNELS;i++){
-    printf("Reading data from ADC %i \n", i);
-    ioctl(fd, ANIOC_ADC_AUTO_2_SELECT_READ,raw_data);
-    combined_data[i] = raw_data[0] << 8 | raw_data[1];
-    printf("Raw data: %x \n",combined_data[i]);
-    // usleep(100);
+  ret = task_create("task2", 1, 528, task2, NULL);
+  if(ret < 0){
+    printf("Error starting task 2\n");
+  }else{
+    printf("task 2 started...\n");
   }
+}
 
-  #else //ifndef IOCTL MODE
-  for (int i=0;i<MAX_CHANNELS;i++){
-    int ret1 = read(fd, &raw_data, 2);
-    if(ret1<0){
-      printf("Data not received from ADC");
-      return -1;
-    }
-    printf("No of Bytes available: %d",ret1);
-    combined_data[i] = raw_data[0] << 8 | raw_data[1];
-    printf("\n\n\n");
+static int task1(int argc, char *argv[]){
+  for(;;){
+    printf("Inside Task 1 ... \n");
+    usleep(1000*1000);
+    printf("After delay...task 1\n");
+    usleep(1000 * 1000);
   }
-  #endif  //if not defined IOCTL MODE
+}
 
-  return 0;
+static int task2(int argc, char *argv[]){
+  for(;;){
+   printf("Inside Task 2 ... \n");
+   usleep(1000*1000);
+   printf("After delay...task 2\n");
+    usleep(1000 * 100);
+  }
 }

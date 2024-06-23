@@ -35,17 +35,15 @@
 #include <nuttx/sensors/lis3mdl.h>
 
 #include "spi_driver_test.h"
+#include <uORB/uORB.h>
 
 #define NB_LOWERHALFS 1
-
-
 
 struct data
 {
   void *data_struct;
   uint16_t data_size;
 };
-
 
 // #define IOCTL_MODE 1
 // #define READ_MODE   1
@@ -76,40 +74,40 @@ int main(int argc, FAR char *argv[])
     printf("Failed to open mag sensor\n");
     return -1;
   }
-
+  printf("Opened urob.");
   struct pollfd pfds[] = {
       {.fd = mag_fd, .events = POLLIN}};
 
   struct data sensor_data[] = {
       {.data_struct = &mag, .data_size = sizeof(struct sensor_mag)}};
 
-  seconds = 5*3;
+  // seconds = 5*3;
 
-  while (seconds > 0)
+  // while (seconds > 0)
+  // {
+  ret = poll(pfds, NB_LOWERHALFS, 15);
+  if (ret < 0)
   {
-    ret = poll(pfds, NB_LOWERHALFS, -1);
-    if (ret < 0)
-    {
-      perror("Could not poll sensor\n");
-      return ret;
-    }
+    perror("Could not poll sensor\n");
+    return ret;
+  }
 
-    for (int i = 0; i < NB_LOWERHALFS; i++)
+  for (int i = 0; i < NB_LOWERHALFS; i++)
+  {
+    if (pfds[i].revents & POLLIN)
     {
-      if (pfds[i].revents & POLLIN)
+      ret = read(pfds[i].fd, sensor_data[i].data_struct,
+                 sensor_data[i].data_size);
+
+      if (ret != sensor_data[i].data_size)
       {
-        ret = read(pfds[i].fd, sensor_data[i].data_struct,
-                   sensor_data[i].data_size);
-
-        if (ret != sensor_data[i].data_size)
-        {
-          perror("Could not read from sub-sensor.");
-          return ret;
-        }
+        perror("Could not read from sub-sensor.");
+        return ret;
       }
     }
-    seconds -= 3;
   }
+  // seconds -= 3;
+  // }
 
   printf("Timestamp = %lli\n"
          "Temperature [c] = %f\n"
@@ -127,23 +125,22 @@ int main(int argc, FAR char *argv[])
   // }
 
   // orb_publish(ORB_ID(sensor_mag), mag_afd, &mag);
-  
 
   // mag_sfd = orb_subscribe(ORB_ID(sensor_mag));
   // if (mag_sfd < 0)
   // {
   //   printf("subscribe failed: %d\n", errno);
   // }
-  
+
   // if (OK != orb_copy(ORB_ID(sensor_mag), mag_sfd, &mag_sub))
   // {
   //   printf("copy failed: %d\n", errno);
   // }
-  
+
   // if(mag_sub.timestamp != mag.timestamp)
   // {
   //   printf("mismatch adv val: %lli subb val: %lli\n", mag.timestamp, mag_sub.timestamp);
-  // } 
+  // }
 
   return 0;
 }
