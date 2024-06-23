@@ -7,7 +7,7 @@ config CUSTOM_APPS_GPIO_CONTROL
 	tristate "GPIO pins control application"
 	default n
 	---help---
-		Enable the LIS3MDL SPI device test example application
+		Enable or Disable gpio pins for Cubus as required
 
 if CUSTOM_APPS_GPIO_CONTROL
 
@@ -19,11 +19,11 @@ config CUSTOM_APPS_GPIO_CONTROL_PROGNAME
 		program is installed.
 
 config CUSTOM_APPS_GPIO_CONTROL_PRIORITY
-	int "spi device driver test priority"
+	int "GPIO control application priority"
 	default 100
 
 config CUSTOM_APPS_GPIO_CONTROL_STACKSIZE
-	int "spi device driver test stack size"
+	int "GPIO control application stack size"
 	default DEFAULT_TASK_STACKSIZE
 
 endif
