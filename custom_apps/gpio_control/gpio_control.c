@@ -68,7 +68,8 @@ int main(int argc, FAR char *argv[])
 {
   if (argc < 3)
   {
-    printf("Enter both subsystem name and gpio mode\n Enter: Application Name, Subsystem name (CAM, MSN1, MSN2, MSN3 etc.), GPIO Pin Mode (1 or 0)\n");
+    printf("Enter both subsystem name and gpio mode\n Enter: Application Name, Subsystem name (CAM, MSN1, MSN2, MSN3 etc.),GPIO Pin Mode (1 or 0)\n ");
+    printf("In case of MUX: 1 for OBC controls FLASH \t 0 to let MSN access FLASH\n");
     return -1;
   }
   uint8_t pin_mode = atoi(argv[2]);
@@ -90,6 +91,11 @@ int main(int argc, FAR char *argv[])
   { // EPDM
     gpio_write(GPIO_MSN_3V3_EN, pin_mode);
     gpio_write(GPIO_MSN3_EN, pin_mode);
+  }
+  else if (!strcmp(argv[1], "MUX"))
+  {
+    gpio_write(GPIO_MUX_EN, 1);  
+    gpio_write(GPIO_SFM_MODE, pin_mode);  //TODO: CHECK PULL UP PULL DOWN MODE FOR MSN and OBC access
   }
   else
   { // keep on adding other gpio pins as you go
