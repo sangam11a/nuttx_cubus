@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+#include "gpio_definitions.h"
+
 #define COM_UART "/dev/ttyS0"
 #define EPDM_UART "/dev/ttyS2"
 #define CAM_UART "/dev/ttyS2"
@@ -22,6 +24,36 @@ enum MSNS
     ADCS,
     CAM
 } MSN_CHOICE;
+
+uint8_t data[7] = {0x53, 0x01, 0x02, 0x03, 0x04, 0x7e};
+
+
+// int gpio_write(uint32_t pin, uint8_t mode)
+// {
+
+//   gpio_config_s gpio_numval;
+//   int fd = open(ETX_LED_DRIVER_PATH, O_WRONLY);
+//   if (fd < 0)
+//   {
+//     printf( "Error opening %s for GPIO WRITE...", ETX_LED_DRIVER_PATH);
+//     close(fd);
+//     return -1;
+//   }
+//   gpio_numval.gpio_num = pin;
+//   gpio_numval.gpio_val = mode;
+//   if (gpio_numval.gpio_val > 1 || gpio_numval.gpio_num < 0)
+//   {
+//     printf( "Undefined GPIO pin or set mode selected...\n");
+//     return -2;
+//   }
+//   int ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_config_s));
+//   close(fd);
+//   if (ret < 0)
+//   {
+//     printf("Unable to write to gpio pin...\n");
+//   }
+//   return ret;
+// }
 
 void send_data_uart(char *dev_path, uint8_t *data)
 {
@@ -42,7 +74,7 @@ void send_data_uart(char *dev_path, uint8_t *data)
     /*
     ---------------------
     */
-    fd = open(CAM_UART, O_RDWR);
+    fd = open(dev_path, O_RDWR);
     if (fd < 0)
     {
         printf("error opening %s\n", CAM_UART);
@@ -50,10 +82,10 @@ void send_data_uart(char *dev_path, uint8_t *data)
     }
 
     int wr1 = write(fd, data, 7);
-    printf("%d bytes written\n", wr1);
+    printf("\n%d bytes written\n", wr1);
     do
     {
-        printf("Elapsed: %d", elapsed);
+        printf("Elapsed: %d\n", elapsed);
         usleep(10000);
         for (i = 0; i < 7; i++)
         {
@@ -75,13 +107,45 @@ void send_data_uart(char *dev_path, uint8_t *data)
                 printf("\n******Acknowledgement received\n");
                 break;
             }
+            break;
             // return;
         }
         elapsed += 10000;
         if (elapsed > required)
             break;
     } while (ret < 6);
+    printf("handshake complete\n");
+    uint8_t send_data[84]; //={0x53,0x01,0x54};
+    send_data[0] = 0x53;
+    send_data[1] = 0x01;
+    send_data[2] = 0x54;
+    for (int i = 3; i < 83; i++)
+    {
+        send_data[i] = i;
+    }
+    send_data[83] = 0x7e;
+    close(fd);
+    usleep(10000);
+    fd = open(COM_UART, O_WRONLY);
 
+    if (fd < 0)
+    {
+        printf("unable to open file \n");
+        return -2;
+    }
+    gpio_write(GPIO_COM_4V_EN, 1);
+    ret = write(fd, send_data, 84);
+    usleep(10000);
+    if(ret < 0){
+        printf("unable to send data\n ret value: %d\n", ret);
+        for(i=0;i<84;i++){
+            ret = write(fd, &send_data[i], 1);
+            usleep(1000);
+        }
+    }
+    usleep(1000 * 1000 *  5);
+    gpio_write(GPIO_COM_4V_EN, 0);
+    printf("value of ret: %d\n", ret);
     close(fd);
     printf("Com app finished\n");
 
@@ -165,7 +229,11 @@ Beacon type 1 is of 84 including header+packet_type+ data + information/data + f
 */
 void beacon_type_1()
 {
-    uint8_t data[85]; //={0x53,0x01,0x54};
+    int fd = open(COM_UART, O_RDWR);
+    if(fd<0){
+        printf("unable to open uart\n");
+    }
+    uint8_t data[84]; //={0x53,0x01,0x54};
     data[0] = 0x53;
     data[1] = 0x01;
     data[2] = 0x54;
@@ -174,9 +242,12 @@ void beacon_type_1()
         data[i] = i;
     }
     data[83] = 0x73;
-    data[84] = "\0";
-    write(COM_UART, data, sizeof(data));
-    usleep(10000);
+    int ret = write(COM_UART, data, 84);
+    if(ret < 0){
+        printf("unable to send data\n");
+    }
+    usleep(50000);
+    close(fd);
 }
 
 /*
@@ -239,25 +310,26 @@ void handshake(int choice, uint8_t ack[])
         printf("COM uart");
         send_data_uart(COM_UART, ack);// handshaking
         usleep(1000 * 2000);
-        beacon_type_1(); //sending beacon 1
-        // usleep(90000*1000);
-        while (counter < expected)
-        {
-            receive_data_uart(COM_UART, data);
-            printf("COM uart here %d\n", counter);
-            usleep(1000);
-            counter += 1000;
-        }
+        // gpio_write(GPIO_COM_4V_EN, 1);
+        // beacon_type_1(); //sending beacon 1
+        usleep(1000 * 1000 * 6);
+        // gpio_write(GPIO_COM_4V_EN, 0);
+        // while (counter < expected)
+        // {
+        //     receive_data_uart(COM_UART, data);
+        //     printf("COM uart here %d\n", counter);
+        //     usleep(1000);
+        //     counter += 1000;
+        // }
         myPrintf(data);
-        beacon_type_2();
+        // beacon_type_2();
         memset(data, '\0', sizeof(data));
-        do
-        {
-            digipeater_mode(data);
+        // do
+        // {
+        //     digipeater_mode(data);
 
-        } while (data[0] != 0 & data[1] != 0);
+        // } while (data[0] != 0 & data[1] != 0);
         myPrintf(data);
-
         break;
     case EPDM:
         printf("COM epdm");
@@ -283,15 +355,12 @@ void handshake(int choice, uint8_t ack[])
 int main(int argc, FAR char *argv[])
 {
     // printf("Custom com cmd %d", argc);
-    uint8_t data[7] = {0x53, 0x01, 0x02, 0x03, 0x04, 0x7e};
-
     if (argc > 1)
     {
         printf("\n");
-
         if (strcmp(argv[1], "com") == 0x00)
         {
-            handshake(COM, data);
+            int retval = task_create("task1", 100, 528, COM_TASK, NULL);
         }
         else if (strcmp(argv[1], "epdm") == 0x00)
         {
@@ -321,7 +390,7 @@ int main(int argc, FAR char *argv[])
             return -1;
         }
 
-        int wr1 = write(fd, data, 7);
+        int wr1 = write(fd, data, 6);
         printf("%d bytes written\n", wr1);
         do
         {
@@ -343,8 +412,8 @@ int main(int argc, FAR char *argv[])
                 if (data[0] == data1[0] && data[1] == data1[1] && data[2] == data1[2] && data[3] == data1[3] && data[4] == data1[4] && data[5] == data1[5])
                 {
                     printf("\n******Acknowledgement received\n");
-                    break;
                 }
+                break;
                 // return;
             }
         } while (ret < 6);
@@ -354,4 +423,11 @@ int main(int argc, FAR char *argv[])
     }
 
     return 0;
+}
+
+static int COM_TASK(int argc, char *argv[]){
+    handshake(COM, data);
+  for(;;){
+    
+  }
 }
