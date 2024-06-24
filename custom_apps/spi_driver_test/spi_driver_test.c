@@ -118,29 +118,5 @@ int main(int argc, FAR char *argv[])
 
   close(mag_fd);
 
-  // mag_afd = orb_advertise(ORB_ID(sensor_mag),&mag);
-  // if (mag_afd < 0)
-  // {
-  //   printf("advertise failed: %d\n", errno);
-  // }
-
-  // orb_publish(ORB_ID(sensor_mag), mag_afd, &mag);
-
-  // mag_sfd = orb_subscribe(ORB_ID(sensor_mag));
-  // if (mag_sfd < 0)
-  // {
-  //   printf("subscribe failed: %d\n", errno);
-  // }
-
-  // if (OK != orb_copy(ORB_ID(sensor_mag), mag_sfd, &mag_sub))
-  // {
-  //   printf("copy failed: %d\n", errno);
-  // }
-
-  // if(mag_sub.timestamp != mag.timestamp)
-  // {
-  //   printf("mismatch adv val: %lli subb val: %lli\n", mag.timestamp, mag_sub.timestamp);
-  // }
-
   return 0;
 }
