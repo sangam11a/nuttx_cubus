@@ -66,14 +66,17 @@ S2S_BEACON_TYPE_B s2s_beacon_type_b;
 
 // #define DELAY_ADC 4000
 // #define ADC_DELAY 6000
-#define HK_DELAY 90
+#define HK_DELAY 90   
+#define ANT_DEP_DELAY 30*60  
 #define BEACON_DELAY 180
 
 /*
 Defing work structures for work_queue thread
 */
-
 static struct work_s work_hk;
+static struct work_s work_ant_dep;
+
+void Antenna_Deployment();
 
 /*
 Declaring structure necessary for collecting HK data
@@ -88,12 +91,12 @@ int main(int argc, FAR char *argv[])
   Setup();
   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
     //TODO: add work queue to perform antenna deployment after 30 minutes
-    Antenna_Deployment();
+    work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
   }
   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
 
 #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-  RUN_HK();
+  work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 #endif
 
   // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
@@ -136,6 +139,7 @@ void Antenna_Deployment(){
 
 void RUN_HK()
 {
+  work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
   read_int_adc1();  //GET DATA FROM INTERNAL ADCs
   read_int_adc3();
   ext_adc_main();   
@@ -145,7 +149,7 @@ void RUN_HK()
   make_satellite_health();
   store_sat_health_data(&sat_health);
   print_satellite_health_data(&sat_health);
-  work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+  usleep(10000);
 }
 
 /*
