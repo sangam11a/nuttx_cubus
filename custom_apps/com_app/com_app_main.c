@@ -34,7 +34,8 @@ uint8_t NACK[7] = {0x53, 0xee, 0xff, 0xee, 0xff, 0x7e};
 uint8_t RX_DATA_EPDM[48] = {'\0'};
 
 #define BEACON_DELAY 90
-#define BEACON_DATA_SIZE 84
+#define BEACON_DATA_SIZE 85
+
 uint8_t COM_BUSY = 0;
 static struct work_s work_beacon;
 uint8_t beacon_type = 0;
@@ -45,28 +46,32 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack);
 /****************************************************************************
  * Send data from UART through any UART path
  ****************************************************************************/
-int send_data_uart(char *dev_path, uint8_t *data)
+int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
 {
     double fd;
     uint8_t data1[7] = {'\0'};
     int i;
     int count = 0, ret;
     printf("Opening uart dev path : %s", dev_path);
-    usleep(1000);
-    fd = open(dev_path, O_RDWR);
+    // usleep(1000);
+    fd = open(dev_path, O_WRONLY);
+    
     if (fd < 0)
     {
-        printf("error opening %s\n", CAM_UART);
+        printf("error opening %s\n", dev_path);
         return fd;
     }
-
-    int wr1 = write(fd, data, 7);
+    int wr1 = write(fd, data, size);
     if (wr1 < 0)
     {
         printf("Unable to write data\n");
         return wr1;
     }
     printf("\n%d bytes written\n", wr1);
+    // ioctl(fd, TCFLSH, 2);
+    // printf("flused tx rx buffer\n");
+    // ioctl(fd, TCDRN, NULL);
+    // printf("drained tx rx buffer\n");
     close(fd);
     return wr1;
 }
@@ -74,10 +79,14 @@ int send_data_uart(char *dev_path, uint8_t *data)
 /****************************************************************************
  * Receive data from UART
  ****************************************************************************/
-int receive_data_uart(char *dev_path, uint8_t *data)
+int receive_data_uart(char *dev_path, uint8_t *data, uint16_t size)
 {
     int fd, ret;
     fd = open(dev_path, O_RDONLY);
+    ioctl(fd, TCFLSH, 2);
+    printf("flused tx rx buffer\n");
+    ioctl(fd, TCDRN, NULL);
+    printf("drained tx rx buffer\n");
     if (fd < 0)
     {
         printf("Unable to open %s\n", dev_path);
@@ -85,7 +94,8 @@ int receive_data_uart(char *dev_path, uint8_t *data)
     }
 
     // int ret = read(fd, data, sizeof(data));
-    for (int i = 0; i < sizeof(data); i++)
+    printf("size of data to receive: %d\n", size);
+    for (int i = 0; i < size; i++)
     {
         ret = read(fd, &data[i], 1);
     }
@@ -94,12 +104,15 @@ int receive_data_uart(char *dev_path, uint8_t *data)
         printf("data Not received from %s\n", dev_path);
         return ret;
     }
-    printf("size of data variable: %d\n", sizeof(data));
-    for (int i = 0; i < sizeof(data); i++)
+    for (int i = 0; i < size; i++)
     {
         printf("%x ", data[i]);
     }
     printf("\n");
+    ioctl(fd, TCFLSH, 2);
+    printf("flused tx rx buffer\n");
+    ioctl(fd, TCDRN, NULL);
+    printf("drained tx rx buffer\n");
     close(fd);
     return ret;
 }
@@ -110,7 +123,7 @@ int receive_data_uart(char *dev_path, uint8_t *data)
  ****************************************************************************/
 int send_beacon_data()
 {
-    work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
+    // work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
     beacon_type = !beacon_type;
     if (COM_BUSY == 1)
     {
@@ -120,7 +133,6 @@ int send_beacon_data()
     switch (beacon_type)
     {
     case 0:
-        beacon_data[84]; //={0x53,0x01,0x54};
         beacon_data[0] = 0x53;
         beacon_data[1] = 0x01;
         beacon_data[2] = 0x54;
@@ -145,21 +157,25 @@ int send_beacon_data()
         return -1;
         break;
     }
-
-    int fd = open(COM_UART, O_RDWR);
+    beacon_data[84] = '0';
+    int fd = open(COM_UART, O_WRONLY);
     if (fd < 0)
     {
         printf("unable to open: %s\n", COM_UART);
         return -1;
     }
+    ioctl(fd,TCFLSH, 2);   //flusing tx/rx buffer
+    printf("tx buffer flushed\n");
+    ioctl(fd, TCDRN, NULL);
+    printf("RX buffer flused\n");
     printf("Turning on COM 4V line..\n");
     gpio_write(GPIO_COM_4V_EN, 1);
-    int ret = write(fd, beacon_data, 84);
+    int ret = write(fd, beacon_data, BEACON_DATA_SIZE);
     usleep(10000);
     if (ret < 0)
     {
         printf("unable to send data\n");
-        for (int i = 0; i < 84; i++)
+        for (int i = 0; i < BEACON_DATA_SIZE; i++)
         {
             ret = write(fd, &beacon_data[i], 1);
             usleep(1000);
@@ -172,6 +188,10 @@ int send_beacon_data()
     }
     usleep(1000 * 1000 * 4); // 4 seconds
     gpio_write(GPIO_COM_4V_EN, 0);
+    ioctl(fd,TCFLSH, 2);   //flusing tx/rx buffer
+    printf("tx buffer flushed\n");
+    ioctl(fd, TCDRN, 2);
+    printf("RX buffer flused\n");
     close(fd);
     printf("Turned off COM 4V line..\n");
     printf("Beacon Type %d sequence complete\n", beacon_type);
@@ -181,29 +201,30 @@ int send_beacon_data()
 /****************************************************************************
  * COM RX telecommands
  ****************************************************************************/
-int receive_telecommand_rx(uint8_t *data)
+int receive_telecommand_rx(uint8_t *COM_RX_DATA)
 {
     printf("waiting for telecommands from COM\n");
-    int ret = receive_data_uart(COM_UART, data);
+    int ret = receive_data_uart(COM_UART, COM_RX_DATA, 35);
     if (ret < 0)
     {
-        send_data_uart(COM_UART, NACK);
+        // send_data_uart(COM_UART, NACK, 7);
+        printf("data not received from COM\n");
         return ret;
     }
-    ret = send_data_uart(COM_UART, ACK);
-    if (ret < 0)
-    {
-        ret = send_data_uart(COM_UART, ACK); // TRYING SECOND TIME
-    }
+    // ret = send_data_uart(COM_UART, ACK, 7);
     return ret;
 }
 
 /****************************************************************************
  * COM RX telecommands parse
  ****************************************************************************/
-int parse_telecommand()
+int parse_telecommand(uint8_t *rx_data)
 {
-    // uint8_t cmd[];
+    printf("Data redirected to EPDM\n");
+    if(Execute_EPDM() == 0){
+        printf("sending EPDM data to COM\n");
+        send_data_uart(COM_UART, RX_DATA_EPDM, sizeof(RX_DATA_EPDM));
+    }
 }
 
 /****************************************************************************
@@ -213,7 +234,11 @@ int parse_telecommand()
  ****************************************************************************/
 void digipeater_mode(uint8_t *data)
 {
-    receive_data_uart(COM_UART, data);
+    receive_data_uart(COM_UART, data, 35);
+    for(int i = 35;i<84;i++){
+        data[i] = 0xff;
+    }
+    send_data_uart(COM_UART, data, 84);
 }
 
 /****************************************************************************
@@ -265,7 +290,7 @@ int main(int argc, FAR char *argv[])
 static int COM_TASK(int argc, char *argv[])
 {
     int ret = -1;
-    uint8_t rx_data[80];
+    uint8_t rx_data[35] = {'\0'};
     printf("Turning on COM MSN...\n");
     gpio_write(GPIO_3V3_COM_EN, 1);
     usleep(2000000);
@@ -284,6 +309,7 @@ static int COM_TASK(int argc, char *argv[])
     usleep(10000);
     beacon_type = 1;
     ret = send_beacon_data();
+    // ret = send_beacon_data();
     usleep(PRINT_DELAY * 100);
     if (ret < 0)
     {
@@ -291,6 +317,9 @@ static int COM_TASK(int argc, char *argv[])
     }
     printf("Going to receiver mode...\n");
     receive_telecommand_rx(rx_data);
+    // usleep(1000 * 1000 * 10);
+    // digipeater_mode(rx_data);
+    printf("digipeating completed\n");
     for (;;)
     {
 
@@ -345,9 +374,9 @@ int handshake_COM(uint8_t *ack)
         usleep(PRINT_DELAY);
     }
     printf("handshake complete\n");
-    usleep(PRINT_DELAY);
     printf("\n");
-    usleep(PRINT_DELAY);
+    ioctl(fd, TCFLSH, 2);
+    printf("flused tx rx buffer\n");
     close(fd);
     return 0;
 }
@@ -437,7 +466,6 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 int Execute_EPDM()
 {
     int handshake_success = -1;
-    uint8_t RX_DATA_EPDM[48];
     for (int i = 0; i < 3; i++)
     {
         handshake_success = handshake_MSN(3, data);
@@ -454,9 +482,12 @@ int Execute_EPDM()
         return -1;
     }
     printf("handshake success...\n");
-    if(send_data_uart(EPDM_UART, Msn_Start_Cmd) != 0){
+    if(send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) != 0){
         printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
         return -1;
     }
-    receive_data_uart(EPDM_UART, RX_DATA_EPDM);
+    if(receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) == 0){
+        printf("Data received from EPDM mission\n");
+    }
+    return 0;
 }
