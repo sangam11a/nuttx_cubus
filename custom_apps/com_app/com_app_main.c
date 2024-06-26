@@ -28,8 +28,10 @@
 static int COM_TASK(int argc, char *argv[]);
 
 uint8_t data[7] = {0x53, 0x01, 0x02, 0x03, 0x04, 0x7e};
+uint8_t Msn_Start_Cmd[7] = {0x53, 0xad, 0xba, 0xcd, 0x9e, 0x7e};
 uint8_t ACK[7] = {0x53, 0xaa, 0xcc, 0xaa, 0xcc, 0x7e};
 uint8_t NACK[7] = {0x53, 0xee, 0xff, 0xee, 0xff, 0x7e};
+uint8_t RX_DATA_EPDM[48] = {'\0'};
 
 #define BEACON_DELAY 90
 #define BEACON_DATA_SIZE 84
@@ -38,7 +40,11 @@ static struct work_s work_beacon;
 uint8_t beacon_type = 0;
 
 int handshake_COM(uint8_t *ack);
+int handshake_MSN(uint8_t subsystem, uint8_t *ack);
 
+/****************************************************************************
+ * Send data from UART through any UART path
+ ****************************************************************************/
 int send_data_uart(char *dev_path, uint8_t *data)
 {
     double fd;
@@ -55,17 +61,22 @@ int send_data_uart(char *dev_path, uint8_t *data)
     }
 
     int wr1 = write(fd, data, 7);
-    if(wr1 < 0){
+    if (wr1 < 0)
+    {
         printf("Unable to write data\n");
         return wr1;
     }
     printf("\n%d bytes written\n", wr1);
+    close(fd);
     return wr1;
 }
 
+/****************************************************************************
+ * Receive data from UART
+ ****************************************************************************/
 int receive_data_uart(char *dev_path, uint8_t *data)
 {
-    int fd;
+    int fd, ret;
     fd = open(dev_path, O_RDONLY);
     if (fd < 0)
     {
@@ -73,7 +84,11 @@ int receive_data_uart(char *dev_path, uint8_t *data)
         return fd;
     }
 
-    int ret = read(fd, data, sizeof(data));
+    // int ret = read(fd, data, sizeof(data));
+    for (int i = 0; i < sizeof(data); i++)
+    {
+        ret = read(fd, &data[i], 1);
+    }
     if (ret < 0)
     {
         printf("data Not received from %s\n", dev_path);
@@ -89,9 +104,10 @@ int receive_data_uart(char *dev_path, uint8_t *data)
     return ret;
 }
 
-/*
-Beacon type 1 is of 84 including header+packet_type+ data + information/data + footer
-*/
+/****************************************************************************
+ * Send beacon data to COM
+ * To be done every 90 seconds
+ ****************************************************************************/
 int send_beacon_data()
 {
     work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
@@ -162,65 +178,46 @@ int send_beacon_data()
     return 0;
 }
 
-/*
-Receive telecommand from GS for 90 seconds
-*/
+/****************************************************************************
+ * COM RX telecommands
+ ****************************************************************************/
 int receive_telecommand_rx(uint8_t *data)
 {
+    printf("waiting for telecommands from COM\n");
     int ret = receive_data_uart(COM_UART, data);
-    if(ret < 0){
+    if (ret < 0)
+    {
         send_data_uart(COM_UART, NACK);
         return ret;
     }
     ret = send_data_uart(COM_UART, ACK);
-    if(ret < 0){
-        ret = send_data_uart(COM_UART, ACK);  //TRYING SECOND TIME
+    if (ret < 0)
+    {
+        ret = send_data_uart(COM_UART, ACK); // TRYING SECOND TIME
     }
     return ret;
 }
 
-int parse_telecommand(){
+/****************************************************************************
+ * COM RX telecommands parse
+ ****************************************************************************/
+int parse_telecommand()
+{
     // uint8_t cmd[];
 }
-/*
-COM will be in digipeater mode till a digipeating message is received and digipeated
-*/
+
+/****************************************************************************
+ * COM TASK task
+ *
+ * COM will be in digipeater mode till a digipeating message is received and digipeated
+ ****************************************************************************/
 void digipeater_mode(uint8_t *data)
 {
     receive_data_uart(COM_UART, data);
 }
 
-/*
-Handshake command is to be provided 6bytes with a header 0x53 and footer 0x7e
-*/
-void handshake(int choice, uint8_t ack[])
-{
-    float counter = 0, expected = 90000 * 1000;
-
-    uint8_t data[100];
-    printf("handshake fun called choice is %d\n", choice);
-
-    switch (choice)
-    {
-    case EPDM:
-        printf("COM epdm");
-        send_data_uart(EPDM_UART, ack);
-        break;
-    case ADCS:
-        printf("ADCS uart");
-        send_data_uart(ADCS_UART, ack);
-        break;
-    case CAM:
-        printf("CAM uart");
-        send_data_uart(CAM_UART, ack);
-        break;
-    default:
-        break;
-    };
-}
-
 /****************************************************************************
- * custom_hello_thread
+ * main function
  ****************************************************************************/
 int main(int argc, FAR char *argv[])
 {
@@ -237,30 +234,34 @@ int main(int argc, FAR char *argv[])
                 return -1;
             }
         }
-        else if (strcmp(argv[1], "epdm") == 0x00)
+        else if (strcmp(argv[1], "adcs") == 0x00)
         {
-            handshake(EPDM, data);
+            handshake_MSN(1, data);
         }
         else if (strcmp(argv[1], "cam") == 0x00)
         {
-            handshake(CAM, data);
+            handshake_MSN(2, data);
         }
-        else if (strcmp(argv[1], "adcs") == 0x00)
+        else if (strcmp(argv[1], "epdm") == 0x00)
         {
-            handshake(ADCS, data);
+            handshake_MSN(3, data);
         }
         else
         {
-            handshake(77, data);
+            printf("Incorrect name for subsystem\n Enter <application name> <subsystem name>[com, adcs, cam, epdm] \n");
         }
     }
     else
     {
-        printf("too few argumnets\n");
+        printf("Too few arguments\n Enter <application name> <subsystem name>[com, adcs, cam, epdm] \n");
+        return -1;
     }
     return 0;
 }
 
+/****************************************************************************
+ * COM TASK task
+ ****************************************************************************/
 static int COM_TASK(int argc, char *argv[])
 {
     int ret = -1;
@@ -297,6 +298,9 @@ static int COM_TASK(int argc, char *argv[])
     }
 }
 
+/****************************************************************************
+ * COM handshake function
+ ****************************************************************************/
 int handshake_COM(uint8_t *ack)
 {
     double fd, elapsed = 0, required = 15000 * 1000;
@@ -344,46 +348,69 @@ int handshake_COM(uint8_t *ack)
     usleep(PRINT_DELAY);
     printf("\n");
     usleep(PRINT_DELAY);
+    close(fd);
     return 0;
 }
 
+/****************************************************************************
+ * MSN handshake function
+ ****************************************************************************/
 int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 {
-    double fd, elapsed = 0, required = 15000 * 1000;
+    int fd;
+    char devpath[15];
     uint8_t data1[7] = {'\0'};
     int i;
     int count = 0, ret;
 
-    switch(subsystem){
-        case 1:
-            
+    switch (subsystem)
+    {
+    case 1:
+        strcpy(devpath, ADCS_UART);
+        gpio_write(GPIO_MSN1_EN, 1);
+        printf("Turned on power line for ADCS\n");
+        break;
+    case 2:
+        strcpy(devpath, CAM_UART);
+        gpio_write(GPIO_MSN2_EN, 2);
+        printf("Turned on power line for CAM\n");
+        break;
+    case 3:
+        strcpy(devpath, EPDM_UART);
+        gpio_write(GPIO_MSN3_EN, 3);
+        printf("Turned on power line for EPDM\n");
+        break;
+    default:
+        printf("Unknown MSN subsystem selected\n");
+        return -1;
+        break;
     }
 
-    printf("Opening uart dev path : %s ret : %d", COM_UART, fd);
+    printf("Opening uart dev path : %s \n", devpath);
     usleep(PRINT_DELAY);
-    fd = open(COM_UART, O_RDWR);
+    fd = open(devpath, O_RDWR);
     if (fd < 0)
     {
-        printf("error opening %s\n", COM_UART);
+        printf("error opening %s\n", devpath);
         usleep(PRINT_DELAY);
         return -1;
     }
 
-    int wr1 = write(fd, data, 7); // writing handshake data
+    int wr1 = write(fd, data, 6); // writing handshake data
     if (wr1 < 0)
     {
-        printf("Unable to send data through %d UART", COM_UART);
-        usleep(PRINT_DELAY);
+        printf("Unable to send data through %d UART", devpath);
+        // usleep(PRINT_DELAY);
         return -1;
     }
     printf("\n%d bytes written\n", wr1);
-    usleep(PRINT_DELAY);
-    // ret = read(fd, data1, 10);
-    for (i = 0; i < 7; i++)
+    usleep(1000 * 3000);
+    // ret = read(fd, data1, 7);
+    for (i = 0; i < 6; i++)
     {
         ret = read(fd, &data1[i], 1);
     }
-    printf("data received from %s \n", COM_UART, fd);
+    printf("data received from %s \n", devpath);
     usleep(PRINT_DELAY);
     for (int i = 0; i < 7; i++)
     {
@@ -400,5 +427,36 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
     usleep(PRINT_DELAY);
     printf("\n");
     usleep(PRINT_DELAY);
+    close(fd);
     return 0;
+}
+
+/****************************************************************************
+ * execute EPDM mission function
+ ****************************************************************************/
+int Execute_EPDM()
+{
+    int handshake_success = -1;
+    uint8_t RX_DATA_EPDM[48];
+    for (int i = 0; i < 3; i++)
+    {
+        handshake_success = handshake_MSN(3, data);
+        if (handshake_success == 0)
+        {
+            break;
+        }
+        gpio_write(GPIO_MSN3_EN, 0);
+        usleep(1000 * 1000);
+    }
+    if (handshake_success != 0)
+    {
+        printf("Handshake failure 3 times\n aborting EPDM mission execution\n");
+        return -1;
+    }
+    printf("handshake success...\n");
+    if(send_data_uart(EPDM_UART, Msn_Start_Cmd) != 0){
+        printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
+        return -1;
+    }
+    receive_data_uart(EPDM_UART, RX_DATA_EPDM);
 }
