@@ -332,7 +332,7 @@ static int COM_TASK(int argc, char *argv[])
  ****************************************************************************/
 int handshake_COM(uint8_t *ack)
 {
-    double fd, elapsed = 0, required = 15000 * 1000;
+    double fd;
     uint8_t data1[7] = {'\0'};
     int i;
     int count = 0, ret;

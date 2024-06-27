@@ -92,6 +92,8 @@ int main(int argc, FAR char *argv[])
   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
     //TODO: add work queue to perform antenna deployment after 30 minutes
     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
+  }else{
+    printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
   }
   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
 
@@ -114,15 +116,15 @@ void Antenna_Deployment(){
   //TODO: add redundancy (check UL status along with antenna deployment status)
   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED){
     for(int i=0;i<3;i++){
-      printf("Turning on burner circut\nAttempt: %d", i+1);
+      printf("Turning on burner circut\nAttempt: %d\n", i+1);
       retval = gpio_write(GPIO_BURNER_EN, true);
-      // retval1 = gpio_write(GPIO_UNREG_EN, true);
+      retval1 = gpio_write(GPIO_UNREG_EN, true);
       RUN_ADC();
-      usleep(6000000);
+      usleep(1000 * 1000 * 6);  //6 seconds
       printf("Turning off burner circuit\n");
-      // gpio_write(GPIO_UNREG_EN, false);
+      gpio_write(GPIO_UNREG_EN, false);
       gpio_write(GPIO_BURNER_EN, false);
-      usleep(2000000);
+      usleep(1000 * 1000 * 2);  //2 seconds
     }
   }
   printf("Antenna deployment sequence complete\n");
@@ -293,7 +295,6 @@ void make_satellite_health()
 
 void collect_imu_mag()
 {
-  int opt;
   float acq_period = CONFIG_EXAMPLES_SENSOR_FUSION_SAMPLE_RATE / 1000.0f;
   printf("Sensor Fusion example\n");
   printf("Sample Rate: %.2f Hz\n", 1.0 / acq_period);
@@ -346,8 +347,6 @@ void collect_imu_mag()
 
   printf("Accelerometer X: %d | Y: %d | Z: %d\n  Magnetometer X: %d | Y: %d | Z: %d\n", sat_health.accl_x, sat_health.accl_y,
          sat_health.accl_z, sat_health.mag_x, sat_health.mag_y, sat_health.mag_z);
-
-  printf("end of hk\n");
 }
 
 void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyro_data, struct mpu6500_imu_msg *raw_imu)
