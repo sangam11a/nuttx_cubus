@@ -17,38 +17,41 @@
  * under the License.
  *
  ****************************************************************************/
-#ifndef __APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
-#define __APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
+
+#ifndef __APPS_CUSTOM_APPS_MISSION_OPERATIONS_H
+#define __APPS_CUSTOM_MISSION_OPERATIONS_H
 
 #include <nuttx/config.h>
-
 #include <sys/types.h>
-#include <sys/ioctl.h>
+
+#include <errno.h>
+#include <debug.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
+#include <pthread.h>
+#include <stdint.h>
 #include <string.h>
-#include <errno.h>
-#include <debug.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include </home/sushant/apn_cubus/CubeOS/nuttx/include/nuttx/serial/tioctl.h>
+#include <nuttx/serial/serial.h>
 
-#include "adc.h"
-#include "common_functions.h"
-#include <nuttx/fs/fs.h>
-#include "imu_mag.h"
-#include "gpio_definitions.h"
-#include "mission_operations.h"
+#define PRINT_DELAY 500
 
-void make_satellite_health();
-void RUN_HK();
+#define COM_UART "/dev/ttyS0"
+#define EPDM_UART "/dev/ttyS2"
+#define CAM_UART "/dev/ttyS2"
+#define ADCS_UART "/dev/ttyS2"
 
-void collect_imu_mag();
+// enum MSNS
+// {
+//     COM,
+//     EPDM,
+//     ADCS,
+//     CAM
+// } MSN_CHOICE;
 
-void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyro_data, struct mpu6500_imu_msg *raw_imu);
-void read_lis3mdl(int fd_mag, struct mpu6500_imu_msg *raw_imu, int16_t mag_data[4]);
-
-
-#endif  //__APPS_CUSTOM_APPS_CUBUS_APP_MAIN_H
-
-
-
+#endif

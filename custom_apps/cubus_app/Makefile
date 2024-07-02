@@ -35,5 +35,6 @@ CSRCS += adc.c
 CSRCS += file_operations.c
 CSRCS += common_functions.c
 CRSCS += imu_mag.c
+CRSCS += mission_operations.c
 
 include $(APPDIR)/Application.mk

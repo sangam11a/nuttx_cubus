@@ -96,6 +96,10 @@ int main(int argc, FAR char *argv[])
   {
     gpio_write(GPIO_MUX_EN, 1);  
     gpio_write(GPIO_SFM_MODE, pin_mode);  //TODO: CHECK PULL UP PULL DOWN MODE FOR MSN and OBC access
+  }else if(!strcmp(argv[1], "ANT")){
+    printf("Starting antenna deployment sequence..\n Turning Burner EN line: %d\n Turning Unreg line: %d\n", pin_mode, pin_mode);
+    gpio_write(GPIO_BURNER_EN, pin_mode);
+    gpio_write(GPIO_UNREG_EN, pin_mode);
   }
   else
   { // keep on adding other gpio pins as you go
