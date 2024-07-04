@@ -1326,7 +1326,7 @@ config SENSORS_LIS3MDL_ORB_BUFFER_SIZE
 config SENSORS_LIS3MDL_THREAD_STACKSIZE
 		int "worker thread stack size"
 		default 1024
-		---help----
+		---help---
 			The size of worker thread.
 
 config SENSORS_LIS3MDL_POLL_INTERVAL
