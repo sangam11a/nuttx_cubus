@@ -117,13 +117,13 @@ void Antenna_Deployment(){
   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED){
     for(int i=0;i<3;i++){
       printf("Turning on burner circut\nAttempt: %d\n", i+1);
-      retval = gpio_write(GPIO_BURNER_EN, true);
-      retval1 = gpio_write(GPIO_UNREG_EN, true);
+      retval = gpio_write1(GPIO_BURNER_EN, true);
+      retval1 = gpio_write1(GPIO_UNREG_EN, true);
       RUN_ADC();
       usleep(1000 * 1000 * 6);  //6 seconds
       printf("Turning off burner circuit\n");
-      gpio_write(GPIO_UNREG_EN, false);
-      gpio_write(GPIO_BURNER_EN, false);
+      gpio_write1(GPIO_UNREG_EN, false);
+      gpio_write1(GPIO_BURNER_EN, false);
       usleep(1000 * 1000 * 2);  //2 seconds
     }
   }

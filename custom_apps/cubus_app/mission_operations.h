@@ -36,7 +36,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include </home/sushant/apn_cubus/CubeOS/nuttx/include/nuttx/serial/tioctl.h>
+// #include </home/sushant/apn_cubus/CubeOS/nuttx/include/nuttx/serial/tioctl.h>
 #include <nuttx/serial/serial.h>
 
 #define PRINT_DELAY 500

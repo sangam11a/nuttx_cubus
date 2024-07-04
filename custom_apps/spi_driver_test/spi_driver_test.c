@@ -22,6 +22,15 @@
  * Included Files
  ****************************************************************************/
 
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <mqueue.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+
 #include <nuttx/config.h>
 #include <stdio.h>
 #include <assert.h>
@@ -36,6 +45,7 @@
 
 #include "spi_driver_test.h"
 #include <uORB/uORB.h>
+#include <mqueue.h>
 
 #define NB_LOWERHALFS 1
 
@@ -50,6 +60,43 @@ struct data
 
 // #define MAX_CHANNELS 12
 
+void reader_mq()
+{
+  struct mq_attr attr;
+  mqd_t mqd;
+  mqd = mq_open("/mqp", O_RDONLY, S_IRUSR | S_IWUSR, attr);
+  printf("value of mqd is %d\n", mqd);
+  if (mqd == (mqd_t)-1)
+  {
+    perror("mq_open");
+    exit(1);
+  }
+  // if (mqd > 0)
+  else
+  {
+    printf("Reading messages from the POSIX message queue: \n");
+    char buf[255];
+    // char buff1[8192] = {'\0'};
+    for (int i = 0; i < sizeof(buf); i++)
+    {
+
+      //   // Read from the POSIX message queue
+      mq_receive(mqd, buf, attr.mq_msgsize, NULL);
+      printf("The message read from the queue: %s\n", buf);
+
+      //   // Read the number of messages in the queue
+      mq_getattr(mqd, &attr);
+      printf("Number of messages in the queue: %d\n", attr.mq_curmsgs);
+      if(attr.mq_curmsgs == 0){
+        break;
+      }
+      sleep(0.5);
+    }
+    mq_close(mqd);
+    // Delete the corresponding file from the filesystem
+    mq_unlink("/mqp");
+  }
+}
 /****************************************************************************
  * spi_driver_test_main
  ****************************************************************************/
@@ -64,7 +111,7 @@ int main(int argc, FAR char *argv[])
   struct sensor_mag mag_sub;
 
   int mag_afd, mag_sfd;
-
+  reader_mq();
   printf("SPI device LIS3MDL uorb test, World!\n");
 
   /* Open SPI device driver */

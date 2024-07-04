@@ -365,28 +365,28 @@ void print_critical_flag_data(CRITICAL_FLAGS *flags){
 
 /*
 */
-// int gpio_write(uint32_t pin, uint8_t mode){
+int gpio_write1(uint32_t pin, uint8_t mode){
 
-//     gpio_config_s gpio_numval;
-//     int fd = open(ETX_LED_DRIVER_PATH, O_WRONLY);
-//     if(fd < 0){
-//         syslog(LOG_ERR, "Error opening %s for GPIO WRITE...", ETX_LED_DRIVER_PATH);
-//         close(fd);
-//         return -1;
-//     }
-//     gpio_numval.gpio_num = pin;
-//     gpio_numval.gpio_val = mode;
-//     if(gpio_numval.gpio_val > 1 || gpio_numval.gpio_num < 0){
-//         syslog(LOG_ERR,"Undefined GPIO pin or set mode selected...\n");
-//         return -2;
-//     }
-//     int ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_config_s));
-//     close(fd);
-//     if(ret < 0 ){
-//         syslog(LOG_ERR, "Unable to write to gpio pin...\n");
-//     }
-//     return ret;
-// }
+    gpio_config_s gpio_numval;
+    int fd = open(ETX_LED_DRIVER_PATH, O_WRONLY);
+    if(fd < 0){
+        syslog(LOG_ERR, "Error opening %s for GPIO WRITE...", ETX_LED_DRIVER_PATH);
+        close(fd);
+        return -1;
+    }
+    gpio_numval.gpio_num = pin;
+    gpio_numval.gpio_val = mode;
+    if(gpio_numval.gpio_val > 1 || gpio_numval.gpio_num < 0){
+        syslog(LOG_ERR,"Undefined GPIO pin or set mode selected...\n");
+        return -2;
+    }
+    int ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_config_s));
+    close(fd);
+    if(ret < 0 ){
+        syslog(LOG_ERR, "Unable to write to gpio pin...\n");
+    }
+    return ret;
+}
 
 int gpio_read(uint32_t pin){
   gpio_config_s gpio_read;
