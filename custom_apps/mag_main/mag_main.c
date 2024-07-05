@@ -1,5 +1,5 @@
 /****************************************************************************
- * custom_apps/custom_hello/custom_hello.c
+ * custom_apps/mag_main/custom_hello.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -24,10 +24,10 @@
 
 #include <nuttx/config.h>
 #include <stdio.h>
-#include "cushello.h"
+#include "mag_main.h"
 
 
-static bool g_cushello_daemon_started;
+static bool g_mag_daemon_started;
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -56,14 +56,10 @@ ORB_DEFINE(orb_mag_scaled, struct orb_mag_scaled_s, print_orb_mag_scaled_msg);
  * custom_hello_main
  ****************************************************************************/
 
-int  cushello_daemon(int argc, FAR char *argv[])
+int  mag_daemon(int argc, FAR char *argv[])
 {
   
-  g_cushello_daemon_started = true;
-  syslog(LOG_INFO, "Hello World application for writing data to flash.\n");
-
-  syslog(LOG_INFO, "opening a uORB topic to subscribe messages.\n");
-
+  g_mag_daemon_started = true;
   struct orb_mag_scaled_s mag_scaled;
   int instance =0;
   bool updated;
@@ -142,32 +138,32 @@ int  cushello_daemon(int argc, FAR char *argv[])
 
 
 /****************************************************************************
- * custom_hello_thread
+ * mag_main thread
  ****************************************************************************/
 int main(int argc, FAR char *argv[])
 {
   int ret;
 
-  printf("[Cushello] Starting task.\n");
-  if (g_cushello_daemon_started)
+  printf("[mag] Starting task.\n");
+  if (g_mag_daemon_started)
   {
-    printf("[Cushello] Task already started.\n");
+    printf("[mag] Task already started.\n");
+  return EXIT_SUCCESS;
   }
 
-  ret = task_create("cushello_daemon",SCHED_PRIORITY_DEFAULT,
-                    CONFIG_CUSTOM_APPS_CUSTOM_HELLO_STACKSIZE, cushello_daemon,
+  ret = task_create("mag_daemon",SCHED_PRIORITY_DEFAULT,
+                    CONFIG_CUSTOM_APPS_MAG_MAIN_STACKSIZE, mag_daemon,
                     NULL);
 
   if (ret < 0)
   {
     int errcode = errno;
-    printf("[cushello] ERROR: Failed to start cushello_dameon: %d\n",
+    printf("[mag] ERROR: Failed to start mag_dameon: %d\n",
            errcode);
     return EXIT_FAILURE;
   }
 
-  printf("[cushello] cushello_daemon started\n");
-  return EXIT_SUCCESS;
+  printf("[mag] mag_daemon started\n");
   
   
 }

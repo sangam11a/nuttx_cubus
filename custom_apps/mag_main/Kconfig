@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_MAG_MAIN
+	tristate "Magnetometer data process"
+	default n
+	---help---
+		Enable the magnetometer data process application" example
+
+if CUSTOM_APPS_MAG_MAIN
+
+config CUSTOM_APPS_MAG_MAIN_PROGNAME
+	string "Program name"
+	default "magmain"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_MAG_MAIN_PRIORITY
+	int "Mag Main task priority"
+	default 100
+
+config CUSTOM_APPS_MAG_MAIN_STACKSIZE
+	int "mag main stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+endif

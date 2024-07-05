@@ -1,5 +1,5 @@
 ############################################################################
-# boards/arm/stm32/stm32f427a-minimal/src/Make.defs
+# apps/custom_apps/custom_hello/Makefile
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,51 +18,16 @@
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-CSRCS = stm32_boot.c stm32_bringup.c stm32_spi.c
+# Custom Hello World, application
 
+PROGNAME  = $(CONFIG_CUSTOM_APPS_MAG_MAIN_PROGNAME)
+PRIORITY  = $(CONFIG_CUSTOM_APPS_MAG_MAIN_PRIORITY)
+STACKSIZE = $(CONFIG_CUSTOM_APPS_MAG_MAIN_STACKSIZE)
+MODULE    = $(CONFIG_CUSTOM_APPS_MAG_MAIN)
 
+# Custom Hello
 
-ifeq ($(CONFIG_BOARDCTL),y)
-CSRCS += stm32_appinit.c
-endif
-
-ifeq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
-CSRCS += stm32_idle.c
-endif
-
-
-ifeq ($(CONFIG_STM32_OTGFS),y)
-CSRCS += stm32_usb.c
-endif
-
-ifeq ($(CONFIG_INPUT_STMPE811),y)
-CSRCS += stm32_stmpe811.c
-endif
-
-
-ifeq ($(CONFIG_PWM),y)
-CSRCS += stm32_pwm.c
-endif
-
-ifeq ($(CONFIG_ADC),y)
-CSRCS += stm32_adc.c
-endif
-
-ifeq ($(CONFIG_MTD),y)
-CSRCS += cubus_mtd.c
-endif
-
-ifeq ($(CONFIG_STM32F427A_HIGHPRI),y)
-CSRCS += stm32_highpri.c
-endif
-
-ifeq ($(CONFIG_ETC_ROMFS),y)
-RSRCS += etc/init.d/rc.sysinit etc/init.d/rcS
-CSRCS += etc_romfs.c
-endif
-
-DEPPATH += --dep-path board
-VPATH += :board
-CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src$(DELIM)board$(DELIM)board
+MAINSRC = mag_main.c
+include $(APPDIR)/Application.mk

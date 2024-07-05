@@ -1,5 +1,5 @@
 # ##############################################################################
-# custom_apps/custom_hello/CMakeLists.txt
+# custom_apps/ads7953/CMakeLists.txt
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more contributor
 # license agreements.  See the NOTICE file distributed with this work for
@@ -18,14 +18,16 @@
 #
 # ##############################################################################
 
-if(CONFIG_CUSTOM_APPS_CUSTOM_HELLO)
+if(CONFIG_CUSTOM_APPS_INT_ADC)
   nuttx_add_application(
     NAME
-    ${CONFIG_CUSTOM_APPS_CUSTOM_HELLO_PROGNAME}
+    ${CONFIG_CUSTOM_APPS_INT_ADC_PROGNAME}
     SRCS
-    cushello.c
+    adc_main.c
     STACKSIZE
-    ${CONFIG_CUSTOM_APPS_CUSTOM_HELLO_STACKSIZE}
+    ${CONFIG_CUSTOM_APPS_INT_ADC_STACKSIZE}
     PRIORITY
-    ${CONFIG_CUSTOM_APPS_CUSTOM_HELLO_PRIORITY})
+    ${CONFIG_CUSTOM_APPS_INT_ADC_PRIORITY})
+
+    DEPEND SRCS
 endif()

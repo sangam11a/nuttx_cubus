@@ -1,5 +1,5 @@
 ############################################################################
-# apps/custom_apps/custom_hello/Makefile
+# custom_apps/adc/Make.defs
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,16 +18,6 @@
 #
 ############################################################################
 
-include $(APPDIR)/Make.defs
-
-# Custom Hello World, application
-
-PROGNAME  = $(CONFIG_CUSTOM_APPS_CUSTOM_HELLO_PROGNAME)
-PRIORITY  = $(CONFIG_CUSTOM_APPS_CUSTOM_HELLO_PRIORITY)
-STACKSIZE = $(CONFIG_CUSTOM_APPS_CUSTOM_HELLO_STACKSIZE)
-MODULE    = $(CONFIG_CUSTOM_APPS_CUSTOM_HELLO)
-
-# Custom Hello
-
-MAINSRC = cushello.c
-include $(APPDIR)/Application.mk
+ifneq ($(CONFIG_CUSTOM_APPS_INT_ADC),)
+CONFIGURED_APPS += $(APPDIR)/custom_apps/adc
+endif

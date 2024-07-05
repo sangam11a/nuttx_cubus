@@ -55,6 +55,10 @@
 #include <nuttx/sensors/lis3mdl.h>
 #endif
 
+#ifdef CONFIG_SENSORS_MPU60X0
+#include <nuttx/sensors/mpu60x0.h>
+#endif
+
 // #ifdef CONFIG_ADC_ADS7953
 #include <nuttx/analog/ads7953.h>
 #include "../../../../drivers/analog/ads7953.c"
@@ -136,11 +140,21 @@ static struct mag_priv_s mag0 =
 };
 #endif
 
+
+#ifdef CONFIG_SENSORS_MPU60X0
+struct mpu_config_s mpu0 =
+{
+  .spi_devid = SPIDEV_IMU(0),
+};
+#endif
+
 #ifdef CONFIG_ADC_ADS7953
 static struct adc_priv_s adc0 =
 {
   .dev.spi = NULL,
   .dev.spi_devid = SPIDEV_USER(1),
+  .handler = NULL,
+  .intcfg = NULL,
 };
 #endif
 
@@ -168,12 +182,14 @@ int stm32_bringup(void)
   int ret;
 
   /* Configure SPI-based devices */
+#ifdef CONFIG_STM32_SPI2
 
 #ifdef CONFIG_ADC_ADS7953
 
   /* Init SPI Bus again */
 
   spi2 = stm32_spibus_initialize(2);
+  
   if (!spi2)
   {
     syslog(LOG_ERR,"[BRINGUP] Failed to initialize SPI Port 2.\n");
@@ -184,14 +200,18 @@ int stm32_bringup(void)
     SPI_SETBITS(spi2, 8);
     SPI_SETMODE(spi2, SPIDEV_MODE0);
   }
-  ret = ads7953_register(EXT_ADC_PATH, adc0.dev.spi, adc0.dev.spi_devid);
+
+  ret = ads7953_register(CONFIG_EADC0_PATH, adc0.dev.spi, adc0.dev.spi_devid);
+
   if (ret < 0)
   {
     syslog(LOG_ERR,"[BRINGUP] ads7953 register failed.\n");
   } else {
     syslog(LOG_INFO,"[BRINGUP] Registered ads7953.\n");
   }
+
 #endif  // CONFIG_ADC_ADS7953
+#endif  // CONFIG_STM32_SPI2
 
 #ifdef CONFIG_STM32_SPI3
   /* Get the SPI port */
@@ -210,7 +230,6 @@ int stm32_bringup(void)
 #endif /* CONFIG_STM32_SPI3 */
 
 #ifdef CONFIG_STM32_SPI5
-#ifdef CONFIG_SENSORS_LIS3MDL
   spi5 = stm32_spibus_initialize(5);
   if (!spi5)
   {
@@ -223,6 +242,7 @@ int stm32_bringup(void)
     SPI_SETMODE(spi5, SPIDEV_MODE0);
   }
 
+#ifdef CONFIG_SENSORS_LIS3MDL
   ret = lis3mdl_register(0, spi5, &mag0.dev);
   // ret - lis3mdl_activate()
   if (ret < 0)
@@ -232,6 +252,19 @@ int stm32_bringup(void)
     syslog(LOG_INFO,"[BRING_UP] LIS3MDL registered on SPI 5.\n");
   }
 #endif  // CONFIG_SENSORS_LIS3MDL
+
+#ifdef CONFIG_SENSORS_MPU60X0
+  mpu0.spi = spi5;
+  ret = mpu60x0_register(CONFIG_IMU0_PATH, &mpu0);
+  if (ret < 0)
+  {
+    syslog(LOG_ERR, "[bringup] Failed to initialize MPU6500\n");
+  } else {
+    syslog(LOG_INFO, "[bringup] Initialized MPU6500.\n");
+  }
+  
+#endif  // CONFIG_SENSORS_MP60X0
+
 #endif  // CONFIG_STM32_SPI5
 
 #ifdef CONFIG_ADC
@@ -246,4 +279,5 @@ int stm32_bringup(void)
 
   UNUSED(ret);
   return OK;
+
 }

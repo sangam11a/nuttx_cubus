@@ -145,7 +145,6 @@ void stm32_spi2select(struct spi_dev_s *dev,
   switch(devid)
   {
     case SPIDEV_USER(1):
-      printf("[SPI2_SELECT] setting ADC cs pin to: %i\n", !selected);
       stm32_gpiowrite(GPIO_EXT_ADC1_CS, !selected);
       break;
   }

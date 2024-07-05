@@ -1,0 +1,6 @@
+
+#include <nuttx/config.h>
+
+#ifdef CONFIG_ETC_ROMFS
+mount -t romfs CONFIG_ETC_ROMFSMOUNTPT
+#endif

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# print a message to indicate a script is running
+echo "Running startup script... "
+# Starting applicaiton Cushello
+magmain &
+mpu6500 &
+ads7953 &
+int_adc &
+
+echo "Cushello started... "
+echo "mpu6500 started"
+echo "Ending startup script... "

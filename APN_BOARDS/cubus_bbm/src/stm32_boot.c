@@ -144,6 +144,7 @@ void stm32_boardinitialize(void)
   stm32_configgpio(GPIO_LIS3MDL_INT);
   stm32_configgpio(GPIO_EXT_ADC1_CS);
 	stm32_configgpio(GPIO_MPU_INT);
+  stm32_configgpio(GPIO_MPU_CS);
   
   stm32_configgpio(GPIO_MFM_CS);
   stm32_configgpio(GPIO_SFM_CS);

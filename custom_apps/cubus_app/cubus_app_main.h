@@ -39,13 +39,9 @@
 
 #include "math.h"
 
-#include <nuttx/fs/smart.h>
 #include <nuttx/fs/fs.h>
 
 #include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/statfs.h>
-
 
 #define IOCTL_MODE  1
 // #define READ_MODE   1
@@ -56,9 +52,6 @@
 #define GAIN_LMP8640			10
 
 #define SENS_TMCS				0.265
-
-#define MOUNT_POINT "/m1"
-#define DATA "hello from nuttx apps"
 
 #define MFM_MSN_STRPATH		    "/mnt/fs/mfm/mtd_mission"
 #define MFM_MAIN_STRPATH        "/mnt/fs/mfm/mtd_mainstorage"
