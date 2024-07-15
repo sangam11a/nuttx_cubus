@@ -64,7 +64,7 @@ struct spi_dev_s *g_spidev5 = NULL;
 
 void weak_function stm32_spidev_initialize(void)
 {
-  #ifdef CONFIG_MT25QL
+  #ifdef CONFIG_MT25QL | CONFIG_MTD_MT25QL
   printf("Configure GPIO for MT25QL flash memory.\n");
   // stm32_configgpio(GPIO_MFM_CS);
   // stm32_configgpio(GPIO_SFM_CS);
@@ -79,16 +79,25 @@ void weak_function stm32_spidev_initialize(void)
 
   #  ifdef CONFIG_SENSORS_LIS3MDL
   /* Configure the SPI-based LIS3MDL MAG chip select GPIO */
+  printf("Configure GPIO for MT25QL flash memory.\n");
+
+  stm32_gpiowrite(GPIO_MFM_CS, true);
+  stm32_gpiowrite(GPIO_SFM_CS, true);
+  stm32_gpiowrite(GPIO_SFM_MODE, true);
+  stm32_gpiowrite(GPIO_MUX_EN, true);
   printf("Configure GPIO for Lis3mdl SPI5 CS\n");
-  // stm32_configgpio(GPIO_LIS3MDL_CS);
+  stm32_configgpio(GPIO_LIS3MDL_CS);
   stm32_gpiowrite(GPIO_LIS3MDL_CS, true);
-  // stm32_configgpio(GPIO_LIS3MDL_DRDY);
-  // stm32_configgpio(GPIO_LIS3MDL_INT);
+  stm32_configgpio(GPIO_LIS3MDL_DRDY);
+  stm32_configgpio(GPIO_LIS3MDL_INT);
+
+  stm32_configgpio(GPIO_EXT_ADC1_CS);
+  stm32_gpiowrite(GPIO_EXT_ADC1_CS, true);
   #  endif
 
-  #ifdef CONFIG_A_ADS7953
+  #ifdef CONFIG_A_ADS7953 | CONFIG_ADC_ADS7953
   printf("Configuring GPIO for ADS7953.\n");
-  // stm32_configgpio(GPIO_EXT_ADC1_CS);
+  stm32_configgpio(GPIO_EXT_ADC1_CS);
   stm32_gpiowrite(GPIO_EXT_ADC1_CS, true);
   #endif
 
@@ -142,6 +151,8 @@ void stm32_spi5select(struct spi_dev_s *dev,
 {
   spiinfo("devid: %d CS: %s\n",
          (int)devid, (selected ? "assert" : "de-assert"));
+  // printf("\n spi5 devid: %d CS: %s\n",
+  //        (int)devid, (selected ? "assert" : "de-assert"));
   switch(devid)
   {
     case SPIDEV_USER(1):
@@ -162,6 +173,8 @@ void stm32_spi3select(struct spi_dev_s *dev,
 {
   spiinfo("devid: %d CS: %s\n",
           (int)devid, selected ? "assert" : "de-assert");
+  // printf("\n spi3 devid: %d CS: %s\n",
+  // (int)devid, (selected ? "assert" : "de-assert"));
   switch (devid)
   {
     case SPIDEV_FLASH(0):

@@ -27,9 +27,9 @@
 #include <nuttx/mtd/mtd.h>
 #include <nuttx/progmem.h>
 #include <fcntl.h>
-
+#include <stdio.h>
 #include <nuttx/irq.h>
-
+#include <stdio.h>
 #include <nuttx/wqueue.h>
 #include <nuttx/clock.h>
 #include <time.h>
@@ -96,10 +96,14 @@ int main(int argc, FAR char *argv[])
     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
   }
   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+  printf("************************************************\n");
 
 #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
+  RUN_HK();
   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+
 #endif
+  printf("************************************************\n");
 
   // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
 
@@ -158,8 +162,8 @@ void RUN_HK()
 * this is to be used between any processes only...
 */
 void RUN_ADC(){
-  read_int_adc1();
-  read_int_adc3();
+  // read_int_adc1();
+  // read_int_adc3();
   ext_adc_main();
   make_satellite_health();
   store_sat_health_data(&sat_health);
@@ -317,6 +321,7 @@ void collect_imu_mag()
     close(fd);
     return;
   }
+  printf("************************************************\n");
 
   read_mpu6050(fd, &imu_acc_data, &imu_gyro_data, &raw_imu);
   read_lis3mdl(fd_mag, &raw_imu, mag_data);
@@ -329,6 +334,7 @@ void collect_imu_mag()
          imu_acc_data.x, imu_acc_data.y, imu_acc_data.z,
          imu_gyro_data.x, imu_gyro_data.y, imu_gyro_data.z,
          raw_imu.mag_x, raw_imu.mag_y, raw_imu.mag_z);
+  printf("************************************************\n");
 
   close(fd);
   close(fd_mag);

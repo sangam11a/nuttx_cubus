@@ -71,7 +71,6 @@
 #include "stm32_own_led.h"
 #endif
 
-
 #if defined(CONFIG_STM32_IWDG)
 // #include <nuttx/timers/watchdog.h>
 #include <nuttx/wdog.h>
@@ -186,52 +185,6 @@ int stm32_bringup(void)
 
   /* Configure SPI-based devices */
 
-#ifdef CONFIG_ADC_ADS7953
-
-  /* Init SPI Bus again */
-
-  spi5 = stm32_spibus_initialize(5);
-  if (!spi5)
-  {
-    syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 5.\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "[BRINGUP] Successfully Initalized SPI Port 5.\n");
-    adc0.dev.spi = spi5;
-    SPI_SETFREQUENCY(spi5, 1000000);
-    SPI_SETBITS(spi5, 8);
-    SPI_SETMODE(spi5, SPIDEV_MODE0);
-  }
-  ret = ads7953_register(EXT_ADC_PATH, adc0.dev.spi, adc0.dev.spi_devid);
-  if (ret < 0)
-  {
-    syslog(LOG_ERR, "[BRINGUP] ads7953 register failed.\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "[BRINGUP] Registered ads7953.\n");
-  }
-#endif // CONFIG_ADC_ADS7953
-
-#ifdef CONFIG_STM32_SPI3
-  /* Get the SPI port */
-
-  syslog(LOG_INFO, "Initializing SPI port 3\n");
-  spi3 = stm32_spibus_initialize(3);
-  if (!spi3)
-  {
-    syslog(LOG_ERR, "ERROR: Failed to initialize SPI port 3\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "Successfully initialized SPI port 3\n");
-  }
-
-  cubus_mft_configure(board_get_manifest());
-
-#endif /* CONFIG_STM32_SPI3 */
-
 #ifdef CONFIG_STM32_SPI2
   spi2 = stm32_spibus_initialize(2);
   if (!spi2)
@@ -247,10 +200,7 @@ int stm32_bringup(void)
 
 #ifdef CONFIG_SENSORS_MPU60X0
     struct mpu_config_s *mpu_config = NULL;
-    //  SPI_SETFREQUENCY(spi2, 1000000);
-    //   SPI_SETBITS(spi2, 8);
-    //   SPI_SETMODE(spi2, SPIDEV_MODE0);
-    printf("got here in config_sensoors_mpu6200");
+    printf("got here in config_sensoors_mpu6500");
     mpu_config = kmm_zalloc(sizeof(struct mpu_config_s));
     printf("the size of mpu_config is %d", sizeof(mpu_config));
     if (mpu_config == NULL)
@@ -270,39 +220,84 @@ int stm32_bringup(void)
       }
       else
       {
-        printf("[bringup ] successfully initialized driver of mpu 6200");
+        printf("[bringup ] successfully initialized driver of mpu 6500");
       }
     }
 #endif // mpu configuration
-    // SPI_SETFREQUENCY(spi2, 1000000);
-    // SPI_SETBITS(spi2, 8);
-    // SPI_SETMODE(spi2, SPIDEV_MODE0);
+    // SPI_SETFREQUENCY(spi5, 1000000);
+    // SPI_SETBITS(spi5, 8);
+    // SPI_SETMODE(spi5, SPIDEV_MODE0);
   }
 #ifdef CONFIG_SENSORS_LIS3MDL
-#ifdef CONFIG_UORB
-  ret = lis3mdl_register(0, spi2, &mag0.dev); // since we're using uORB
-#else
-  ret = lis3mdl_register("dev/mag0", spi2, &mag0.dev);
-#endif  //CONFIG_UORB
-  if (ret < 0)
-  {
-    syslog(LOG_INFO, "[BRING_UP] Error: Failed to register LIS3MDL driver.\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "[BRING_UP] LIS3MDL registered on SPI 2.\n");
-  }
-#endif // CONFIG_SENSORS_LIS3MDL
-#endif // CONFIG_STM32_SPI2
+  #ifdef CONFIG_UORB
+    ret = lis3mdl_register(0, spi2, &mag0.dev); // since we're using uORB
+  #else
+    ret = lis3mdl_register("dev/mag0", spi2, &mag0.dev);
+  #endif // CONFIG_UORB
+    if (ret < 0)
+    {
+      syslog(LOG_INFO, "[BRING_UP] Error: Failed to register LIS3MDL driver in spi2.ret:%d\n", ret);
+    }
+    else
+    {
+      syslog(LOG_INFO, "[BRING_UP] LIS3MDL registered on SPI 2.\n");
+    }
+  #endif // CONFIG_SENSORS_LIS3MDL
+  #endif // CONFIG_STM32_SPI2
 
-#ifdef CONFIG_ADC
-  /* Initialize ADC and register the ADC device. */
+  #ifdef CONFIG_STM32_SPI3
+    /* Get the SPI port */
 
-  ret = stm32_adc_setup();
-  if (ret < 0)
-  {
-    syslog(LOG_ERR, "ERROR: stm32_adc_setup() failed: %d\n", ret);
-  }
+    syslog(LOG_INFO, "Initializing SPI port 3\n");
+    spi3 = stm32_spibus_initialize(3);
+    if (!spi3)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize SPI port 3\n");
+    }
+    else
+    {
+      syslog(LOG_INFO, "Successfully initialized SPI port 3\n");
+    }
+
+    cubus_mft_configure(board_get_manifest());
+
+  #endif /* CONFIG_STM32_SPI3 */
+
+  #ifdef CONFIG_ADC_ADS7953
+
+    /* Init SPI Bus again */
+
+    spi5 = stm32_spibus_initialize(5);
+    if (!spi5)
+    {
+      syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 5.\n");
+    }
+    else
+    {
+      syslog(LOG_INFO, "[BRINGUP] Successfully Initalized SPI Port 5.\n");
+      adc0.dev.spi = spi5;
+      SPI_SETFREQUENCY(spi5, 1000000);
+      SPI_SETBITS(spi5, 8);
+      SPI_SETMODE(spi5, SPIDEV_MODE0);
+    }
+    ret = ads7953_register(EXT_ADC_PATH, adc0.dev.spi, adc0.dev.spi_devid);
+    if (ret < 0)
+    {
+      syslog(LOG_ERR, "[BRINGUP] ads7953 register failed.\n");
+    }
+    else
+    {
+      syslog(LOG_INFO, "[BRINGUP] Registered ads7953.\n");
+    }
+  #endif // CONFIG_ADC_ADS7953
+  #ifdef CONFIG_ADC
+    /* Initialize ADC and register the ADC device. */
+
+    ret = stm32_adc_setup();
+    if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_adc_setup() failed: %d\n", ret);
+    }
 #endif
 
 #ifdef CONFIG_STM32_OWN_LED
@@ -345,97 +340,97 @@ int stm32_bringup(void)
   }
 #endif
 
-// #ifdef CONFIG_STM32_TIM6
+#ifdef CONFIG_STM32_TIM6
 
-//   ret = stm32_timer_initialize("/dev/timer6", 6);
-//   if (ret < 0)
-//   {
-//     printf("failed to initialize /dev/timer6 : %d\n", ret);
-//   }
-//   else
-//   {
-//     printf("Timer 6 has been initialized successfully\n");
-//   }
-// #endif
+  ret = stm32_timer_initialize("/dev/timer6", 6);
+  if (ret < 0)
+  {
+    printf("failed to initialize /dev/timer6 : %d\n", ret);
+  }
+  else
+  {
+    printf("Timer 6 has been initialized successfully\n");
+  }
+#endif
 
-// #ifdef CONFIG_STM32_TIM7
-//   ret = stm32_timer_initialize("/dev/timer7", 7);
-//   if (ret < 0)
-//   {
-//     printf("failed to initialize /dev/timer7 : %d\n", ret);
-//   }
-//   else
-//   {
-//     printf("Timer 77 has been initialized successfully\n");
-//   }
+#ifdef CONFIG_STM32_TIM7
+  ret = stm32_timer_initialize("/dev/timer7", 7);
+  if (ret < 0)
+  {
+    printf("failed to initialize /dev/timer7 : %d\n", ret);
+  }
+  else
+  {
+    printf("Timer 77 has been initialized successfully\n");
+  }
 
-// #endif
+#endif
 
-// #ifdef CONFIG_STM32_TIM8
-//   ret = stm32_timer_initialize("/dev/timer8", 8);
-//   if (ret < 0)
-//   {
-//     printf("failed to initialize /dev/timer8 : %d\n", ret);
-//   }
-//   else
-//   {
-//     printf("Timer 87 has been initialized successfully\n");
-//   }
+#ifdef CONFIG_STM32_TIM8
+  ret = stm32_timer_initialize("/dev/timer8", 8);
+  if (ret < 0)
+  {
+    printf("failed to initialize /dev/timer8 : %d\n", ret);
+  }
+  else
+  {
+    printf("Timer 87 has been initialized successfully\n");
+  }
 
-// #endif
+#endif
 
-// #ifdef CONFIG_STM32_TIM9
+#ifdef CONFIG_STM32_TIM9
 
-//   ret = stm32_timer_initialize("/dev/timer9", 9);
-//   if (ret < 0)
-//   {
-//     printf("failed to initialize /dev/timer9 : %d\n", ret);
-//   }
-//   else
-//   {
-//     printf("Timer 9 has been initialized successfully\n");
-//   }
+  ret = stm32_timer_initialize("/dev/timer9", 9);
+  if (ret < 0)
+  {
+    printf("failed to initialize /dev/timer9 : %d\n", ret);
+  }
+  else
+  {
+    printf("Timer 9 has been initialized successfully\n");
+  }
 
-// #endif
+#endif
 
-// #ifdef CONFIG_STM32_TIM10
-//   ret = stm32_timer_initialize("/dev/timer10", 10);
-//   if (ret < 0)
-//   {
-//     printf("failed to initialize /dev/timer10 : %d\n", ret);
-//   }
-//   else
-//   {
-//     printf("Timer 10 has been initialized successfully\n");
-//   }
+#ifdef CONFIG_STM32_TIM10
+  ret = stm32_timer_initialize("/dev/timer10", 10);
+  if (ret < 0)
+  {
+    printf("failed to initialize /dev/timer10 : %d\n", ret);
+  }
+  else
+  {
+    printf("Timer 10 has been initialized successfully\n");
+  }
 
-// #endif
+#endif
 
-// #ifdef CONFIG_STM32_TIM11
-//   ret = stm32_timer_initialize("/dev/timer11", 11);
-//   if (ret < 0)
-//   {
-//     printf("failed to initialize /dev/timer11 : %d\n", ret);
-//   }
-//   else
-//   {
-//     printf("Timer 11 has been initialized successfully\n");
-//   }
+#ifdef CONFIG_STM32_TIM11
+  ret = stm32_timer_initialize("/dev/timer11", 11);
+  if (ret < 0)
+  {
+    printf("failed to initialize /dev/timer11 : %d\n", ret);
+  }
+  else
+  {
+    printf("Timer 11 has been initialized successfully\n");
+  }
 
-// #endif
+#endif
 
-// #ifdef CONFIG_STM32_TIM12
-//   ret = stm32_timer_initialize("/dev/timer12", 12);
-//   if (ret < 0)
-//   {
-//     printf("failed to initialize /dev/timer12 : %d\n", ret);
-//   }
-//   else
-//   {
-//     printf("Timer 12 has been initialized successfully\n");
-//   }
+#ifdef CONFIG_STM32_TIM12
+  ret = stm32_timer_initialize("/dev/timer12", 12);
+  if (ret < 0)
+  {
+    printf("failed to initialize /dev/timer12 : %d\n", ret);
+  }
+  else
+  {
+    printf("Timer 12 has been initialized successfully\n");
+  }
 
-// #endif
+#endif
 
 #ifdef CONFIG_STM32_TIM13
   ret = stm32_timer_initialize("/dev/timer13", 13);

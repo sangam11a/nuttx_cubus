@@ -168,6 +168,7 @@ int read_int_adc1(){
                 {
                   printf("%d: channel: %d value: %" PRId32 "\n",
                          i, int_adc1_sample[i].am_channel, int_adc1_sample[i].am_data);
+                         sleep(0.1);
                 }
             }
         }

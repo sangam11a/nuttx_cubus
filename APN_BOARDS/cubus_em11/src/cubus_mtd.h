@@ -1,5 +1,5 @@
-#ifndef __APN_BOARDS_CUBUS_EM_SRC_MTD_H
-#define __APN_BOARDS_CUBUS_EM_SRC_MTD_H
+#ifndef __APN_BOARDS_CUBUS_BBM_SRC_MTD_H
+#define __APN_BOARDS_CUBUS_BBM_SRC_MTD_H
 #include <nuttx/config.h>
 
 #include <stdbool.h>
