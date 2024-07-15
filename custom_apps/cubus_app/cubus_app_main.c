@@ -89,20 +89,22 @@ int main(int argc, FAR char *argv[])
 {
 
   Setup();
-  if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
-    //TODO: add work queue to perform antenna deployment after 30 minutes
-    work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
-  }else{
-    printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
-  }
-  // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+   RUN_HK();
   printf("************************************************\n");
 
-#if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-  RUN_HK();
-  work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+   
+//   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
+//     //TODO: add work queue to perform antenna deployment after 30 minutes
+//     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
+//   }else{
+//     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
+//   }
+//   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+// #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
+//   RUN_HK();
+//   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 
-#endif
+// #endif
   printf("************************************************\n");
 
   // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
@@ -145,7 +147,6 @@ void Antenna_Deployment(){
 
 void RUN_HK()
 {
-  work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
   read_int_adc1();  //GET DATA FROM INTERNAL ADCs
   read_int_adc3();
   ext_adc_main();   
@@ -155,6 +156,8 @@ void RUN_HK()
   make_satellite_health();
   store_sat_health_data(&sat_health);
   print_satellite_health_data(&sat_health);
+  work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+
   usleep(10000);
 }
 
@@ -311,15 +314,15 @@ void collect_imu_mag()
   if (fd < 0)
   {
     printf("Failed to open mpu6500\n");
-    return;
+    return; // This might create an issue
   }
 
   fd_mag = open("/dev/mag0", O_RDONLY);
   if (fd_mag < 0)
   {
     printf("Failed to open magnetometer\n");
-    close(fd);
-    return;
+    close(fd_mag);
+    // return;// This might create an issue
   }
   printf("************************************************\n");
 
@@ -360,7 +363,7 @@ void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyr
   int16_t raw_data[7];
   memset(raw_imu, 0, sizeof(struct mpu6500_imu_msg));
   int ret = read(fd, raw_data, sizeof(raw_data));
-  if (ret != sizeof(raw_data))
+  if (ret <= 0) //!= sizeof(raw_data))
   {
     printf("Failed to read accelerometer data\n");
   }
@@ -381,6 +384,13 @@ void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyr
   gyro_data->x = raw_imu->gyro_x / MPU6050_FS_SEL;
   gyro_data->y = raw_imu->gyro_y / MPU6050_FS_SEL;
   gyro_data->z = raw_imu->gyro_z / MPU6050_FS_SEL;
+  printf("Timestamp: %f  Temperature: %f\n"
+         "Accelerometer X: %f | Y: %f | Z: %f\n"
+         "Gyroscope X: %f | Y: %f | Z: %f\n",
+         
+         imu_acc_data.timestamp, imu_acc_data.temperature,
+         acc_data->x, acc_data->y, acc_data->z,
+         gyro_data->x, gyro_data->y, gyro_data->z);
 }
 
 void read_lis3mdl(int fd_mag, struct mpu6500_imu_msg *raw_imu, int16_t mag_data[4])
