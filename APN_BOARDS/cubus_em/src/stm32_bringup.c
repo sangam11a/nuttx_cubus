@@ -181,6 +181,7 @@ static struct adc_priv_s adc0 =
 
 int stm32_bringup(void)
 {
+  
 
   int ret;
 
