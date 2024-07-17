@@ -65,6 +65,15 @@ ORB_DEFINE(orb_mag_scaled, struct orb_mag_scaled_s, print_orb_mag_scaled_msg);
 
 int  cushello_daemon(int argc, FAR char *argv[])
 {
+<<<<<<< HEAD
+=======
+  int buf_size = 100;  //size of data to read and write
+  uint8_t read_buf[100];
+  uint8_t write_buf[30];
+  for(int i=-0;i<30;i++){
+    write_buf[i] = i+1;
+  }
+>>>>>>> 78b9868 (added file execution functions.. fixed internal adc flags storage problem...)
   
   g_cushello_daemon_started = true;
   syslog(LOG_INFO, "Hello World application for writing data to flash.\n");
@@ -90,6 +99,7 @@ int  cushello_daemon(int argc, FAR char *argv[])
   {
     syslog(LOG_ERR, "Orb advertise failed.\n");
   }
+<<<<<<< HEAD
   
 
   fd = orb_subscribe_multi(ORB_ID(sensor_mag), 0);
@@ -134,13 +144,33 @@ int  cushello_daemon(int argc, FAR char *argv[])
   if (ret < 0)
   {
     syslog(LOG_ERR, "Orb Unadvertise failed.\n");
-  }
+=======
 
+  // up_progmem_eraseblock(22);    //erasing the sector of internal flash (block means sector here)
+
+  up_progmem_read(0x081C0000, read_buf, sizeof(read_buf));  //reading after erasing
+  
+  printf("Reading...\n");
+  /* reading after erasing */    
+  for(int i=0;i<buf_size;i++){
+    printf("%x ", read_buf[i]);
+>>>>>>> 78b9868 (added file execution functions.. fixed internal adc flags storage problem...)
+  }
+  printf("\n");
+  up_progmem_write(0x081C0000, write_buf, sizeof(write_buf));  //writing data into the internal flash
+
+<<<<<<< HEAD
   ret = orb_unsubscribe(fd);
 
   if (ret < 0)
   {
     syslog(LOG_ERR, "Orb unsubscribe Failed.\n");
+=======
+  up_progmem_read(0x081C0000, read_buf, sizeof(read_buf));   //reading data from internal flash
+  printf("reading after writing once..\n");
+  for(int i=0;i<buf_size;i++){
+    printf("%x ", read_buf[i]);
+>>>>>>> 78b9868 (added file execution functions.. fixed internal adc flags storage problem...)
   }
   
   return 0;
