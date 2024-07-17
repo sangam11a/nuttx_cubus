@@ -46,6 +46,7 @@
 
 #include <poll.h>
 #include <sensor/adc.h>
+// #include <adc.h>
 #include <uORB/uORB.h>
 #include <sched.h>
 #include <math.h>

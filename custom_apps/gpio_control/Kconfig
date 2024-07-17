@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_GPIO_CONTROL
+	tristate "GPIO pins control application"
+	default n
+	---help---
+		Enable or Disable gpio pins for Cubus as required
+
+if CUSTOM_APPS_GPIO_CONTROL
+
+config CUSTOM_APPS_GPIO_CONTROL_PROGNAME
+	string "Program name"
+	default "GPIO_CONTROL"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_GPIO_CONTROL_PRIORITY
+	int "GPIO control application priority"
+	default 100
+
+config CUSTOM_APPS_GPIO_CONTROL_STACKSIZE
+	int "GPIO control application stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+endif

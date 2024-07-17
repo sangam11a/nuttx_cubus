@@ -128,8 +128,8 @@ uint8_t stm32_spi1status(struct spi_dev_s *dev, uint32_t devid)
 }
 #endif
 
-#ifdef CONFIG_STM32_SPI2
-void stm32_spi2select(struct spi_dev_s *dev,
+#ifdef CONFIG_STM32_SPI5
+void stm32_spi5select(struct spi_dev_s *dev,
                       uint32_t devid,
                       bool selected)
 {
@@ -150,7 +150,7 @@ void stm32_spi2select(struct spi_dev_s *dev,
   }
 }
 
-uint8_t stm32_spi2status(struct spi_dev_s *dev, uint32_t devid)
+uint8_t stm32_spi5status(struct spi_dev_s *dev, uint32_t devid)
 {
   return 0;
 }
@@ -196,8 +196,8 @@ uint8_t stm32_spi4status(struct spi_dev_s *dev, uint32_t devid)
 }
 #endif
 
-#ifdef CONFIG_STM32_SPI5
-void stm32_spi5select(struct spi_dev_s *dev,
+#ifdef CONFIG_STM32_SPI2
+void stm32_spi2select(struct spi_dev_s *dev,
                       uint32_t devid, bool selected)
 {
   spiinfo("devid: %%d CS: %s\n",
@@ -210,7 +210,7 @@ void stm32_spi5select(struct spi_dev_s *dev,
   }
 }
 
-uint8_t stm32_spi5status(struct spi_dev_s *dev, uint32_t devid)
+uint8_t stm32_spi2status(struct spi_dev_s *dev, uint32_t devid)
 {
   return 0;
 }

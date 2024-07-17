@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_STORAGE_MANAGER
+	tristate "An app for managing all the data writing in a single storage point"
+	default n
+	---help---
+		Enable the An app for managing all the data writing in a single storage point
+
+if CUSTOM_APPS_STORAGE_MANAGER
+
+config CUSTOM_APPS_STORAGE_MANAGER_PROGNAME
+	string "Program name"
+	default "storage_manager"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_STORAGE_MANAGER_PRIORITY
+	int "Storage manager app priority"
+	default 100
+
+config CUSTOM_APPS_STORAGE_MANAGER_STACKSIZE
+	int "Storage manager app stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+endif
