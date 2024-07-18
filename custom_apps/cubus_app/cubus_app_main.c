@@ -33,7 +33,521 @@
 #include <nuttx/wqueue.h>
 #include <nuttx/clock.h>
 #include <time.h>
-// #include 
+
+#include "com_app_main.h"
+#include "gpio_definitions.h"
+
+static int COM_TASK(int argc, char *argv[]);
+
+uint8_t data[7] = {0x53, 0x01, 0x02, 0x03, 0x04, 0x7e};
+uint8_t Msn_Start_Cmd[7] = {0x53, 0xad, 0xba, 0xcd, 0x9e, 0x7e};
+uint8_t ACK[7] = {0x53, 0xaa, 0xcc, 0xaa, 0xcc, 0x7e};
+uint8_t NACK[7] = {0x53, 0xee, 0xff, 0xee, 0xff, 0x7e};
+
+uint8_t RX_DATA_EPDM[48] = {'\0'};
+int Execute_EPDM();
+
+#define BEACON_DELAY 90
+#define BEACON_DATA_SIZE 85
+#define ACK_DATA_SIZE 6 + 1
+#define COM_RX_CMD_SIZE 20
+#define COM_DG_MSG_SIZE 30
+uint8_t beacon_status = 0;
+
+uint8_t COM_BUSY = 0;
+static struct work_s work_beacon;
+uint8_t beacon_type = 0;
+
+int handshake_COM(uint8_t *ack);
+int handshake_MSN(uint8_t subsystem, uint8_t *ack);
+
+/****************************************************************************
+ * Send data from UART through any UART path
+ ****************************************************************************/
+int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
+{
+  double fd;
+  int i;
+  int count = 0, ret;
+  printf("Opening uart dev path : %s\n", dev_path);
+  fd = open(dev_path, O_WRONLY);
+
+  if (fd < 0)
+  {
+    printf("error opening %s\n", dev_path);
+    return fd;
+  }
+  int wr1 = write(fd, data, size);
+  if (wr1 < 0)
+  {
+    printf("Unable to write data\n");
+    return wr1;
+  }
+  printf("\n%d bytes written\n", wr1);
+  ioctl(fd, TCFLSH, 2);
+  printf("flused tx rx buffer\n");
+  ioctl(fd, TCDRN, NULL);
+  printf("drained tx rx buffer\n");
+  close(fd);
+  return wr1;
+}
+
+/****************************************************************************
+ * Receive data from UART
+ ****************************************************************************/
+int receive_data_uart(char *dev_path, uint8_t *data, uint16_t size)
+{
+  int fd, ret;
+  fd = open(dev_path, O_RDONLY);
+  // ioctl(fd, TCFLSH, 2);    //check if we can receive data without flushing initially
+  // ioctl(fd, TCDRN, NULL);
+  // printf("drained and flushed tx rx buffer\n");
+  if (fd < 0)
+  {
+    printf("Unable to open %s\n", dev_path);
+    return fd;
+  }
+
+  printf("size of data to receive: %d\n", size);
+  // ret = read(fd, data, sizeof(data)); //try receiving data without byte by byte method
+  for (int i = 0; i < size; i++)
+  {
+    ret = read(fd, &data[i], 1);
+  }
+  if (ret < 0)
+  {
+    printf("data Not received from %s\n", dev_path);
+    return ret;
+  }
+  printf("Data received from %s\n", dev_path);
+  for (int i = 0; i < size; i++)
+  {
+    printf("%x ", data[i]);
+  }
+  printf("\n");
+  ioctl(fd, TCFLSH, 2);
+  ioctl(fd, TCDRN, NULL);
+  printf("drained and flushed tx rx buffer\n");
+  close(fd);
+  return ret;
+}
+
+/****************************************************************************
+ * Send beacon data to COM
+ * To be done every 90 seconds
+ ****************************************************************************/
+int send_beacon_data()
+{
+  work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
+  beacon_type = !beacon_type;
+  if (COM_BUSY == 1)
+  {
+    return -1;
+  }
+  uint8_t beacon_data[BEACON_DATA_SIZE];
+  switch (beacon_type)
+  {
+  case 0:
+    beacon_data[0] = 0x53;
+    beacon_data[1] = 0x01;
+    beacon_data[2] = 0x51;
+    serialize_beacon_a(beacon_data);
+    beacon_data[83] = 0x7e;
+    break;
+  case 1:
+    beacon_data[0] = 0x53;
+    beacon_data[1] = 0x02;
+    beacon_data[2] = 0x51;
+    serialize_beacon_b(beacon_data);
+    beacon_data[83] = 0x73;
+    break;
+  default:
+    printf("wrong case selected\n");
+    return -1;
+    break;
+  }
+  beacon_data[84] = '0';
+  int fd = open(COM_UART, O_WRONLY);
+  if (fd < 0)
+  {
+    printf("unable to open: %s\n", COM_UART);
+    return -1;
+  }
+  printf("Turning on COM 4V line..\n");
+  gpio_write(GPIO_COM_4V_EN, 1);
+  int ret = write(fd, beacon_data, BEACON_DATA_SIZE);
+  usleep(10000);
+  if (ret < 0)
+  {
+    printf("unable to send data\n");
+    for (int i = 0; i < BEACON_DATA_SIZE; i++)
+    {
+      ret = write(fd, &beacon_data[i], 1);
+      usleep(1000);
+    }
+    if (ret < 0)
+    {
+      printf("Unable to send data through byte method..\n");
+      return -1;
+    }
+  }
+  usleep(1000 * 1000 * 3); // 3 seconds
+  gpio_write(GPIO_COM_4V_EN, 0);
+  ioctl(fd, TCFLSH, 2);
+  ioctl(fd, TCDRN, 2);
+  printf("TX RX buffer flused\n");
+  close(fd);
+  printf("Turned off COM 4V line..\n");
+  printf("Beacon Type %d sequence complete\n", beacon_type);
+  return 0;
+}
+
+/****************************************************************************
+ * COM RX telecommands
+ *
+ * COM works this way:
+ * telecommand receive
+ * ack send
+ * execute command
+ *
+ * Useful commands (12 bytes)
+ *  0:      MCU ID
+ *  1-3:    main command
+ *  4-5:    reservation table commands
+ *  6-9:    address data (if data is being downloaded)
+ *  10-11:  no of packets (if data is being downloaded)
+ ****************************************************************************/
+int receive_telecommand_rx(uint8_t *COM_RX_DATA)
+{
+  uint8_t useful_command[12];
+  uint8_t main_cmd[3] = {'\0'};
+  uint16_t rsv_table = 0;
+  uint32_t address = 0;
+  uint16_t pckt_no = 0;
+
+  printf("waiting for telecommands from COM\n");
+  int ret = receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
+  if (ret < 0)
+  {
+    printf("data not received from COM\n NACK sending\n");
+    send_data_uart(COM_UART, NACK, 7);
+    printf("data not received from COM\n NACK sent\n");
+    return ret;
+  }
+  printf("data received from COM\n sending ACK\n");
+  ret = send_data_uart(COM_UART, ACK, 7); // ack send
+  print_rx_telecommand(COM_RX_DATA);      // printing the received telecommand
+  for (int i = 0; i < 12; i++)
+  {
+    useful_command[i] = COM_RX_DATA[i + 8]; // extracting useful commands
+  }
+  if (useful_command[5] != 0xff || useful_command[5] != 0x00)
+  {
+    printf("Reservation command received\n"); // if reservation command is received then store the reservation command (do not execute)
+  }
+  else
+  {
+    switch (useful_command[0])
+    {
+    case 1:
+      printf("command received for OBC\n");
+      OBC_CMD_EXE(useful_command);
+      break;
+    case 2:
+      printf("command received for CAM\n");
+      break;
+    case 9:
+      printf("command received for epdm");
+      parse_telecommand(useful_command);/*TODO parsing of actuual command still not possible*/
+      // Execute_EPDM();  
+    default:
+      printf("unknown command\n");
+      break;
+    }
+  }
+  return ret;
+}
+
+int OBC_CMD_EXE(uint8_t *cmd)
+{
+  printf("inside obc command execution ...\n");
+}
+
+int print_rx_telecommand(uint8_t *data)
+{
+  printf("Command from COM: \n");
+  printf("Source call sign: ");
+  for (int i = 0; i < 7; i++)
+  {
+    printf("%x", data[i]);
+  }
+  printf("\nSATELLITE ID: %d \n", data[7]);
+  printf("Main command:");
+  for (int i = 8; i < 12; i++)
+  {
+    printf("%x", data[i]);
+  }
+  printf("\n");
+  printf("Reservation Table: %x\n", data[12] << 8 | data[13]);
+  printf("Address data: %x \n", data[14] << 24 | data[15] << 16 | data[16] << 8 | data[17]);
+  printf("No of packets: %x\n", data[18] << 8 | data[19]);
+}
+/****************************************************************************
+ * COM RX telecommands parse
+ ****************************************************************************/
+int parse_telecommand(uint8_t *rx_data)
+{
+  printf("Data redirected to EPDM\n");
+  // TODO: parse the command and execute
+  // for now only epdm is executed
+  if (Execute_EPDM() == 0)
+  {
+    printf("sending EPDM data to COM\n");
+    send_data_uart(COM_UART, RX_DATA_EPDM, sizeof(RX_DATA_EPDM));
+  }
+}
+
+/****************************************************************************
+ * COM TASK task
+ *
+ * COM will be in digipeater mode till a digipeating message is received and digipeated
+ ****************************************************************************/
+void digipeater_mode(uint8_t *data)
+{
+  receive_data_uart(COM_UART, data, 35);
+  for (int i = 35; i < 84; i++)
+  {
+    data[i] = 0xff;
+  }
+  send_data_uart(COM_UART, data, 84);
+}
+
+/****************************************************************************
+ * COM TASK task
+ ****************************************************************************/
+static int COM_TASK(int argc, char *argv[])
+{
+  int ret = -1;
+  uint8_t rx_data[COM_RX_CMD_SIZE] = {'\0'};
+  printf("Turning on COM MSN...\n");
+  gpio_write(GPIO_3V3_COM_EN, 1);
+  usleep(2000000);
+  ret = handshake_COM(data); // tx rx data is flushed before closing the file
+  usleep(PRINT_DELAY * 100);
+  if (ret == 0)
+  {
+    printf("Successful handshake with COM\n");
+  }
+  if (ret != 0)
+  {
+    printf("Unable to handshake with COM\n");
+  }
+  usleep(1000);
+
+  printf("Going to receiver mode...\n");
+  send_beacon_data();
+  for (;;)
+  {
+    receive_telecommand_rx(rx_data);
+    usleep(1000);
+  }
+}
+
+/****************************************************************************
+ * COM handshake function
+ ****************************************************************************/
+int handshake_COM(uint8_t *ack)
+{
+  double fd;
+  uint8_t data1[ACK_DATA_SIZE] = {'\0'};
+  int i;
+  int count = 0, ret;
+  printf("Opening uart dev path : %s ret : %d", COM_UART, fd);
+  usleep(PRINT_DELAY);
+  fd = open(COM_UART, O_RDWR);
+  if (fd < 0)
+  {
+    printf("error opening %s\n", COM_UART);
+    usleep(PRINT_DELAY);
+    return -1;
+  }
+
+  int wr1 = write(fd, data, ACK_DATA_SIZE); // writing handshake data
+  if (wr1 < 0)
+  {
+    printf("Unable to send data through %d UART", COM_UART);
+    usleep(PRINT_DELAY);
+    return -1;
+  }
+  printf("\n%d bytes written\n", wr1);
+  usleep(PRINT_DELAY);
+  // ret = read(fd, data1, 10);   //try reading data from UART at once as well
+  for (i = 0; i < ACK_DATA_SIZE; i++)
+  {
+    ret = read(fd, &data1[i], 1);
+  }
+  printf("data received from %s \n", COM_UART);
+  usleep(PRINT_DELAY);
+  for (int i = 0; i < ACK_DATA_SIZE; i++)
+  {
+    printf(" %x ", data1[i]);
+  }
+  printf("\n");
+  usleep(PRINT_DELAY);
+  if (data[0] == data1[0] && data[ACK_DATA_SIZE - 2] == data1[ACK_DATA_SIZE - 2])
+  {
+    printf("\n******Acknowledgement received******\n");
+    usleep(PRINT_DELAY);
+  }
+  printf("handshake complete\n");
+  printf("\n");
+  ioctl(fd, TCFLSH, 2);
+  ioctl(fd, TCDRN, NULL);
+  printf("flused tx rx buffer\n");
+  close(fd);
+  return 0;
+}
+
+/****************************************************************************
+ * MSN handshake function
+ ****************************************************************************/
+int handshake_MSN(uint8_t subsystem, uint8_t *ack)
+{
+  int fd;
+  char devpath[15];
+  uint8_t data1[7] = {'\0'};
+  int i;
+  int count = 0, ret;
+
+  switch (subsystem)
+  {
+  case 1:
+    strcpy(devpath, ADCS_UART);
+    gpio_write(GPIO_MSN1_EN, 1);
+    printf("Turned on power line for ADCS\n");
+    break;
+  case 2:
+    strcpy(devpath, CAM_UART);
+    gpio_write(GPIO_MSN2_EN, 1);
+    printf("Turned on power line for CAM\n");
+    break;
+  case 3:
+    strcpy(devpath, EPDM_UART);
+    gpio_write(GPIO_BURNER_EN, 1);
+    printf("Turned on power line for EPDM\n");
+    break;
+  default:
+    printf("Unknown MSN subsystem selected\n");
+    return -1;
+    break;
+  }
+
+  printf("Opening uart dev path : %s \n", devpath);
+  usleep(PRINT_DELAY);
+  fd = open(devpath, O_RDWR);
+  if (fd < 0)
+  {
+    printf("error opening %s\n", devpath);
+    usleep(PRINT_DELAY);
+    return -1;
+  }
+
+  int wr1 = write(fd, data, 6); // writing handshake data
+  if (wr1 < 0)
+  {
+    printf("Unable to send data through %d UART", devpath);
+    // usleep(PRINT_DELAY);
+    return -1;
+  }
+  printf("\n%d bytes written\n", wr1);
+  usleep(1000 * 3000);
+  // ret = read(fd, data1, 7);
+  for (i = 0; i < 6; i++)
+  {
+    ret = read(fd, &data1[i], 1);
+  }
+  printf("data received from %s \n", devpath);
+  usleep(PRINT_DELAY);
+  for (int i = 0; i < 7; i++)
+  {
+    printf(" %x ", data1[i]);
+  }
+  printf("\n");
+  usleep(PRINT_DELAY);
+  if (data[0] == data1[0] && data[5] == data1[5])
+  {
+    printf("\n******Acknowledgement received******\n");
+    usleep(PRINT_DELAY);
+  }
+  printf("handshake complete\n");
+  usleep(PRINT_DELAY);
+  printf("\n");
+  ioctl(fd, TCFLSH, 2);
+  ioctl(fd, TCDRN, NULL);
+  printf("flused tx rx buffer\n");
+  close(fd);
+  return 0;
+}
+
+/****************************************************************************
+ * execute EPDM mission function
+ ****************************************************************************/
+int Execute_EPDM()
+{
+  int handshake_success = -1;
+  for (int i = 0; i < 3; i++)
+  {
+    handshake_success = handshake_MSN(3, data);
+    if (handshake_success == 0)
+    {
+      break;
+    }
+    gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
+    usleep(1000 * 1000);
+  }
+  if (handshake_success != 0)
+  {
+    printf("Handshake failure 3 times\n aborting EPDM mission execution\n");
+    return -1;
+  }
+  printf("handshake success...\n");
+  if (send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) < 0)
+  {
+    printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
+    return -1;
+  }
+  if (receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) >= 0)
+  {
+    printf("Data received from EPDM mission\n");
+    send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
+  }
+  gpio_write(GPIO_MSN3_EN, 0);
+  printf("EPDM Mission complete\n");
+  return 0;
+}
+
+int turn_msn_on_off(uint8_t subsystem, uint8_t state)
+{
+  switch (subsystem)
+  {
+  case 1:
+    printf("turning ADCS mission state: %d\n", state);
+    gpio_write(GPIO_MSN1_EN, state);
+    break;
+  case 2:
+    printf("Turning CAM mission state: %d\n", state);
+    gpio_write(GPIO_MSN2_EN, state);
+    break;
+  case 3:
+    printf("Turning EPDM mission state: %d\n", state);
+    gpio_write(GPIO_MSN3_EN, state);
+    break;
+  default:
+    printf("Wrong subsystem selected\n");
+    break;
+  }
+}
+// #include
 
 /****************************************************************************
  * Public Functions
@@ -67,8 +581,8 @@ S2S_BEACON_TYPE_B s2s_beacon_type_b;
 
 // #define DELAY_ADC 4000
 // #define ADC_DELAY 6000
-#define HK_DELAY 90   
-#define ANT_DEP_DELAY 30*60  
+#define HK_DELAY 90
+#define ANT_DEP_DELAY 30 * 60
 #define BEACON_DELAY 180
 
 /*
@@ -90,22 +604,21 @@ int main(int argc, FAR char *argv[])
 {
 
   Setup();
-   RUN_HK();
+  RUN_HK();
   printf("************************************************\n");
 
-   
-//   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
-//     //TODO: add work queue to perform antenna deployment after 30 minutes
-//     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
-//   }else{
-//     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
-//   }
-//   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
-// #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-//   RUN_HK();
-//   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+  //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
+  //     //TODO: add work queue to perform antenna deployment after 30 minutes
+  //     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
+  //   }else{
+  //     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
+  //   }
+  //   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+  // #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
+  //   RUN_HK();
+  //   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 
-// #endif
+  // #endif
   printf("************************************************\n");
 
   // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
@@ -113,25 +626,28 @@ int main(int argc, FAR char *argv[])
   return 0;
 }
 
-//TODO: add work queue to antenna deployment
-void Antenna_Deployment(){
+// TODO: add work queue to antenna deployment
+void Antenna_Deployment()
+{
   printf("Entering antenna deployment sequence\n");
   int retval, retval1 = 0;
   CRITICAL_FLAGS ant_check;
   ant_check.ANT_DEP_STAT = critic_flags.ANT_DEP_STAT;
   printf("Antenna Deployment Flag: %d\n", critic_flags.ANT_DEP_STAT);
-  //TODO: add redundancy (check UL status along with antenna deployment status)
-  if(critic_flags.ANT_DEP_STAT == UNDEPLOYED){
-    for(int i=0;i<3;i++){
-      printf("Turning on burner circut\nAttempt: %d\n", i+1);
+  // TODO: add redundancy (check UL status along with antenna deployment status)
+  if (critic_flags.ANT_DEP_STAT == UNDEPLOYED)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      printf("Turning on burner circut\nAttempt: %d\n", i + 1);
       retval = gpio_write1(GPIO_BURNER_EN, true);
       retval1 = gpio_write1(GPIO_UNREG_EN, true);
       RUN_ADC();
-      usleep(1000 * 1000 * 6);  //6 seconds
+      usleep(1000 * 1000 * 6); // 6 seconds
       printf("Turning off burner circuit\n");
       gpio_write1(GPIO_UNREG_EN, false);
       gpio_write1(GPIO_BURNER_EN, false);
-      usleep(1000 * 1000 * 2);  //2 seconds
+      usleep(1000 * 1000 * 2); // 2 seconds
     }
   }
   printf("Antenna deployment sequence complete\n");
@@ -148,9 +664,9 @@ void Antenna_Deployment(){
 
 void RUN_HK()
 {
-  read_int_adc1();  //GET DATA FROM INTERNAL ADCs
+  read_int_adc1(); // GET DATA FROM INTERNAL ADCs
   read_int_adc3();
-  ext_adc_main();   
+  ext_adc_main();
 
   collect_imu_mag();
 
@@ -163,9 +679,10 @@ void RUN_HK()
 }
 
 /*
-* this is to be used between any processes only...
-*/
-void RUN_ADC(){
+ * this is to be used between any processes only...
+ */
+void RUN_ADC()
+{
   // read_int_adc1();
   // read_int_adc3();
   ext_adc_main();
@@ -174,6 +691,144 @@ void RUN_ADC(){
   print_satellite_health_data(&sat_health);
 }
 
+void serialize_beacon_a(uint8_t beacon_data[BEACON_DATA_SIZE])
+{
+  for (int i = 0; i <= BEACON_DATA_SIZE; i++)
+  {
+    beacon_data[83] = 0x00;
+    // }
+    // beacon_data[84] = s2s_beacon_type_a.;
+    // beacon_data[85] = s2s_beacon_type_a.;
+  }
+  // uint8_t beacon_data[BEACON_DATA_SIZE];
+  beacon_data[0] = s2s_beacon_type_a.HEAD;
+  beacon_data[1] = s2s_beacon_type_a.TYPE;
+  beacon_data[2] = s2s_beacon_type_a.TIM_DAY;
+  beacon_data[3] = s2s_beacon_type_a.TIM_HOUR;
+  beacon_data[4] = (s2s_beacon_type_a.BAT_V >> 8) & 0Xff;
+  beacon_data[5] = s2s_beacon_type_a.BAT_V & 0xff;
+  beacon_data[6] = (s2s_beacon_type_a.BAT_C >> 8) & 0Xff;
+  beacon_data[7] = (s2s_beacon_type_a.BAT_V) & 0Xff;
+  beacon_data[8] = (s2s_beacon_type_a.BAT_T >> 8) & 0Xff;
+  beacon_data[9] = (s2s_beacon_type_a.BAT_T) & 0Xff;
+  beacon_data[10] = s2s_beacon_type_a.RAW_C;
+  beacon_data[11] = (s2s_beacon_type_a.SOL_TOT_V >> 8) & 0Xff;
+  beacon_data[12] = (s2s_beacon_type_a.SOL_TOT_V) & 0Xff;
+  beacon_data[13] = (s2s_beacon_type_a.SOL_TOT_C >> 8) & 0Xff;
+  beacon_data[14] = (s2s_beacon_type_a.SOL_TOT_C >> 8) & 0Xff;
+  beacon_data[15] = s2s_beacon_type_a.ANT_P_T;
+  beacon_data[16] = s2s_beacon_type_a.BPB_T;
+  beacon_data[17] = s2s_beacon_type_a.OBC_T;
+  beacon_data[18] = s2s_beacon_type_a.SOL_P1_T;
+  beacon_data[19] = s2s_beacon_type_a.SOL_P2_T;
+  beacon_data[20] = s2s_beacon_type_a.SOL_P3_T;
+  beacon_data[21] = s2s_beacon_type_a.SOL_P4_T;
+  // beacon_data[] = s2s_beacon_type_a.SOL_P5_T;
+  beacon_data[22] = s2s_beacon_type_a.SOL_P1_STAT << 7 & s2s_beacon_type_a.SOL_P2_STAT << 6 & s2s_beacon_type_a.SOL_P3_STAT << 5 & s2s_beacon_type_a.SOL_P4_STAT << 4 & s2s_beacon_type_a.MSN1_STAT << 3 & s2s_beacon_type_a.MSN2_STAT << 2 & s2s_beacon_type_a.MSN3_STAT << 1 & 0xff;
+  beacon_data[23] = s2s_beacon_type_a.ANT_STAT << 4 & s2s_beacon_type_a.UL_STAT << 4;
+  beacon_data[24] = s2s_beacon_type_a.OPER_MODE;
+  beacon_data[25] = (s2s_beacon_type_a.OBC_RESET_COUNT >> 8) & 0xff;
+  beacon_data[26] = s2s_beacon_type_a.OBC_RESET_COUNT & 0xff;
+  beacon_data[27] = s2s_beacon_type_a.RST_RST_COUNT >> 8 & 0xff;
+  beacon_data[28] = s2s_beacon_type_a.RST_RST_COUNT & 0xff;
+  beacon_data[29] = s2s_beacon_type_a.LAST_RST;
+  beacon_data[30] = s2s_beacon_type_a.CHK_CRC;
+  // beacon_data[31] = s2s_beacon_type_a.;
+  // beacon_data[32] = s2s_beacon_type_a.;
+  // beacon_data[34] = s2s_beacon_type_a.;
+  // beacon_data[35] = s2s_beacon_type_a.;
+  // beacon_data[36] = s2s_beacon_type_a.;
+  // beacon_data[37] = s2s_beacon_type_a.;
+  // beacon_data[38] = s2s_beacon_type_a.;
+  // beacon_data[39] = s2s_beacon_type_a.;
+  // beacon_data[40] = s2s_beacon_type_a.;
+  // beacon_data[41] = s2s_beacon_type_a.;
+  // beacon_data[42] = s2s_beacon_type_a.;
+  // beacon_data[43] = s2s_beacon_type_a.;
+  // beacon_data[44] = s2s_beacon_type_a.;
+  // beacon_data[45] = s2s_beacon_type_a.;
+  // beacon_data[46] = s2s_beacon_type_a.;
+  // beacon_data[47] = s2s_beacon_type_a.;
+  // beacon_data[48] = s2s_beacon_type_a.;
+  // beacon_data[49] = s2s_beacon_type_a.;
+  // beacon_data[50] = s2s_beacon_type_a.;
+  // beacon_data[51] = s2s_beacon_type_a.;
+  // beacon_data[52] = s2s_beacon_type_a.;
+  // beacon_data[53] = s2s_beacon_type_a.;
+  // beacon_data[54] = s2s_beacon_type_a.;
+  // beacon_data[55] = s2s_beacon_type_a.;
+  // beacon_data[56] = s2s_beacon_type_a.;
+  // beacon_data[57] = s2s_beacon_type_a.;
+  // beacon_data[58] = s2s_beacon_type_a.;
+  // beacon_data[59] = s2s_beacon_type_a.;
+  // beacon_data[60] = s2s_beacon_type_a.;
+  // beacon_data[61] = s2s_beacon_type_a.;
+  // beacon_data[62] = s2s_beacon_type_a.;
+  // beacon_data[63] = s2s_beacon_type_a.;
+  // beacon_data[64] = s2s_beacon_type_a.;
+  // beacon_data[65] = s2s_beacon_type_a.;
+  // beacon_data[66] = s2s_beacon_type_a.;
+  // beacon_data[67] = s2s_beacon_type_a.;
+  // beacon_data[68] = s2s_beacon_type_a.;
+  // beacon_data[69] = s2s_beacon_type_a.;
+  // beacon_data[70] = s2s_beacon_type_a.;
+  // beacon_data[71] = s2s_beacon_type_a.;
+  // beacon_data[72] = s2s_beacon_type_a.;
+  // beacon_data[73] = s2s_beacon_type_a.;
+  // beacon_data[74] = s2s_beacon_type_a.;
+  // beacon_data[75] = s2s_beacon_type_a.;
+  // beacon_data[76] = s2s_beacon_type_a.;
+  // beacon_data[77] = s2s_beacon_type_a.;
+  // beacon_data[78] = s2s_beacon_type_a.;
+  // beacon_data[79] = s2s_beacon_type_a.;
+  // beacon_data[80] = s2s_beacon_type_a.;
+  // beacon_data[81] = s2s_beacon_type_a.;
+  // beacon_data[82] = s2s_beacon_type_a.;
+  // beacon_data[83] = s2s_beacon_type_a.;
+}
+void serialize_beacon_b(uint8_t beacon_data[BEACON_DATA_SIZE])
+{
+  for (int i = 0; i <= BEACON_DATA_SIZE; i++)
+  {
+    beacon_data[83] = 0x00;
+  }
+  // uint8_t beacon_data[BEACON_DATA_SIZE];
+  beacon_data[0] = s2s_beacon_type_b.HEAD;
+  beacon_data[1] = s2s_beacon_type_b.TYPE;
+  beacon_data[2] = s2s_beacon_type_b.TIM_DAY;
+  beacon_data[3] = s2s_beacon_type_b.TIM_HOUR;
+
+  beacon_data[4] = s2s_beacon_type_b.SOL_P1_V;
+  beacon_data[5] = s2s_beacon_type_b.SOL_P2_V;
+  beacon_data[6] = s2s_beacon_type_b.SOL_P3_V;
+  beacon_data[7] = s2s_beacon_type_b.SOL_P4_V;
+
+  beacon_data[8] = s2s_beacon_type_b.SOL_P1_C;
+  beacon_data[9] = s2s_beacon_type_b.SOL_P2_C;
+  beacon_data[10] = s2s_beacon_type_b.SOL_P3_C;
+  beacon_data[11] = s2s_beacon_type_b.SOL_P4_C;
+  beacon_data[12] = (s2s_beacon_type_b.GYRO_X >> 8) & 0xff;
+  beacon_data[13] = (s2s_beacon_type_b.GYRO_X) & 0xff;
+  beacon_data[14] = (s2s_beacon_type_b.GYRO_Y >> 8) & 0xff;
+  beacon_data[15] = (s2s_beacon_type_b.GYRO_Y) & 0xff;
+  beacon_data[16] = s2s_beacon_type_b.GYRO_Z >> 8 & 0xff;
+  beacon_data[17] = s2s_beacon_type_b.GYRO_Z & 0xff;
+
+  beacon_data[18] = (s2s_beacon_type_b.ACCL_X >> 8) & 0xff;
+  beacon_data[19] = (s2s_beacon_type_b.ACCL_X) & 0xff;
+  beacon_data[20] = (s2s_beacon_type_b.ACCL_Y >> 8) & 0xff;
+  beacon_data[21] = (s2s_beacon_type_b.ACCL_Y) & 0xff;
+  beacon_data[22] = s2s_beacon_type_b.ACCL_Z >> 8 & 0xff;
+  beacon_data[23] = s2s_beacon_type_b.ACCL_Z & 0xff;
+
+  beacon_data[24] = (s2s_beacon_type_b.MAG_X >> 8) & 0xff;
+  beacon_data[25] = (s2s_beacon_type_b.MAG_X) & 0xff;
+  beacon_data[26] = (s2s_beacon_type_b.MAG_Y >> 8) & 0xff;
+  beacon_data[27] = (s2s_beacon_type_b.MAG_Y) & 0xff;
+  beacon_data[28] = s2s_beacon_type_b.MAG_Z >> 8 & 0xff;
+  beacon_data[29] = s2s_beacon_type_b.MAG_Z & 0xff;
+  beacon_data[30] = s2s_beacon_type_b.CHK_CRC;
+}
 
 void Make_Beacon_Data(uint8_t type)
 {
@@ -201,10 +856,10 @@ void Make_Beacon_Data(uint8_t type)
     s2s_beacon_type_a.X1_T = sat_health.temp_x1;
     s2s_beacon_type_a.X_T = sat_health.temp_x;
 
-    s2s_beacon_type_a.SOL_P1_STAT = sat_health.sol_p1_v>=2?1:0; //check from power, max power draw is 0.6 watt
-    s2s_beacon_type_a.SOL_P2_STAT = sat_health.sol_p2_v>=2?1:0;
-    s2s_beacon_type_a.SOL_P3_STAT = sat_health.sol_p3_v>=2?1:0;
-    s2s_beacon_type_a.SOL_P4_STAT = sat_health.sol_p4_v>=2?1:0;
+    s2s_beacon_type_a.SOL_P1_STAT = sat_health.sol_p1_v >= 2 ? 1 : 0; // check from power, max power draw is 0.6 watt
+    s2s_beacon_type_a.SOL_P2_STAT = sat_health.sol_p2_v >= 2 ? 1 : 0;
+    s2s_beacon_type_a.SOL_P3_STAT = sat_health.sol_p3_v >= 2 ? 1 : 0;
+    s2s_beacon_type_a.SOL_P4_STAT = sat_health.sol_p4_v >= 2 ? 1 : 0;
 
     s2s_beacon_type_a.ANT_STAT = critic_flags.ANT_DEP_STAT;
     s2s_beacon_type_a.KILL1_STAT = critic_flags.KILL_SWITCH_STAT;
@@ -233,11 +888,11 @@ void Make_Beacon_Data(uint8_t type)
     s2s_beacon_type_b.MAG_X = (int16_t)sat_health.mag_x;
     s2s_beacon_type_b.MAG_Y = (int16_t)sat_health.mag_y;
     s2s_beacon_type_b.MAG_Z = (int16_t)sat_health.mag_z;
-    
+
     s2s_beacon_type_b.GYRO_X = (int16_t)sat_health.gyro_x;
     s2s_beacon_type_b.GYRO_Y = (int16_t)sat_health.gyro_y;
     s2s_beacon_type_b.GYRO_Z = (int16_t)sat_health.gyro_z;
-    
+
     s2s_beacon_type_b.ACCL_X = (int16_t)sat_health.accl_x;
     s2s_beacon_type_b.ACCL_Y = (int16_t)sat_health.accl_y;
     s2s_beacon_type_b.ACCL_Z = (int16_t)sat_health.accl_z;
@@ -388,7 +1043,7 @@ void read_mpu6050(int fd, struct sensor_accel *acc_data, struct sensor_gyro *gyr
   printf("Timestamp: %f  Temperature: %f\n"
          "Accelerometer X: %f | Y: %f | Z: %f\n"
          "Gyroscope X: %f | Y: %f | Z: %f\n",
-         
+
          imu_acc_data.timestamp, imu_acc_data.temperature,
          acc_data->x, acc_data->y, acc_data->z,
          gyro_data->x, gyro_data->y, gyro_data->z);
