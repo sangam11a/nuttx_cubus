@@ -45,7 +45,7 @@ uint8_t beacon_status = 0;
 uint8_t COM_BUSY = 0;
 static struct work_s work_beacon;
 uint8_t beacon_type = 0;
-
+int turn_msn_on_off(uint8_t subsystem, uint8_t state);
 int handshake_COM(uint8_t *ack);
 int handshake_MSN(uint8_t subsystem, uint8_t *ack);
 
@@ -321,7 +321,7 @@ int main(int argc, FAR char *argv[])
     if (argc > 1)
     {
         printf("\n");
-        // if (strcmp(argv[1], "com") == 0x00)
+        if (strcmp(argv[1], "com") == 0x00)
         {
             int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
             if (retval < 0)
@@ -330,7 +330,7 @@ int main(int argc, FAR char *argv[])
                 return -1;
             }
         }
-        /*else*/ if (strcmp(argv[1], "adcs") == 0x00)
+        /*else*/ else if (strcmp(argv[1], "adcs") == 0x00)
         {
             handshake_MSN(1, data);
         }
@@ -339,9 +339,13 @@ int main(int argc, FAR char *argv[])
             handshake_MSN(2, data);
         }
         else if (strcmp(argv[1], "epdm") == 0x00)
-        {
+        {printf("hey epdm is on now!");
+            turn_msn_on_off(3, 1);
             // handshake_MSN(3, data);
             Execute_EPDM();
+            sleep(3);
+            turn_msn_on_off(3, 0);
+
         }
         else
         {
@@ -526,38 +530,91 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 /****************************************************************************
  * execute EPDM mission function
  ****************************************************************************/
+// int Execute_EPDM()
+// {
+//     int handshake_success = -1;
+//     for (int i = 0; i < 3; i++)
+//     {
+//         handshake_success = handshake_MSN(3, data);
+//         if (handshake_success == 0)
+//         {
+//             break;
+//         }
+//         gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
+//         usleep(1000 * 1000);
+//     }
+//     if (handshake_success != 0)
+//     {
+//         printf("Handshake failure 3 times\n aborting EPDM mission execution\n");
+//         return -1;
+//     }
+//     printf("handshake success...\n");
+//     if (send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) < 0)
+//     {
+//         printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
+//         return -1;
+//     }
+//     if (receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) >= 0)
+//     {
+//         printf("Data received from EPDM mission\n");
+//         send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
+//     }
+//     gpio_write(GPIO_MSN3_EN, 0);
+//     printf("EPDM Mission complete\n");
+//     return 0;
+// }
+
+
 int Execute_EPDM()
 {
-    int handshake_success = -1;
-    for (int i = 0; i < 3; i++)
+  int handshake_success = -1;
+  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,1);
+  printf("MSNN 3v3 dc dc enabled \n");
+    usleep(1000 * 1000);
+
+  gpio_write(GPIO_MSN_3V3_EN,1);
+    usleep(1000 * 1000);
+  printf("MSNN 3v3 dc dc enabled \n");
+  for (int i = 0; i < 3; i++)
+  {
+    gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
+    usleep(1000 * 1000);
+    handshake_success = handshake_MSN(3, data);
+    if (handshake_success == 0)
     {
-        handshake_success = handshake_MSN(3, data);
-        if (handshake_success == 0)
-        {
-            break;
-        }
-        gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
-        usleep(1000 * 1000);
+      break;
     }
-    if (handshake_success != 0)
-    {
-        printf("Handshake failure 3 times\n aborting EPDM mission execution\n");
-        return -1;
-    }
-    printf("handshake success...\n");
-    if (send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) < 0)
-    {
-        printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
-        return -1;
-    }
-    if (receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) >= 0)
-    {
-        printf("Data received from EPDM mission\n");
-        send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
-    }
-    gpio_write(GPIO_MSN3_EN, 0);
-    printf("EPDM Mission complete\n");
-    return 0;
+    
+  }
+  if (handshake_success != 0)
+  {
+    printf("Handshake failure 3 times\n aborting EPDM mission execution\n");
+    return -1;
+  }
+  printf("handshake success...\n");
+  if (send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) < 0)
+  {
+    printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
+    return -1;
+  }
+  /*To ddelete later*/
+  int ret;
+  while(1){
+    ret = receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48);
+  }
+  /*TO delete later*/
+  if (receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) >= 0)
+  {
+    printf("Data received from EPDM mission\n");
+    send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
+  }
+  gpio_write(GPIO_MSN3_EN, 0);
+  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,0);
+  gpio_write(GPIO_MSN_3V3_EN,0);
+
+
+  printf("EPDM Mission complete\n");
+  return 0;
 }
 
 int turn_msn_on_off(uint8_t subsystem, uint8_t state)
@@ -574,6 +631,11 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
         break;
     case 3:
         printf("Turning EPDM mission state: %d\n", state);
+        gpio_write(GPIO_DCDC_MSN_3V3_2_EN,state);
+        usleep(1000 * 1000);
+         
+        gpio_write(GPIO_MSN_3V3_EN, state);
+
         gpio_write(GPIO_MSN3_EN, state);
         break;
     default:

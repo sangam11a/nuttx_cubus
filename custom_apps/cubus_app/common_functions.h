@@ -113,6 +113,7 @@ int16_t SOL_TOT_C;//in mA 2 byte
 
 int8_t BPB_T;//backplane board temp 1byte
 int8_t OBC_T;//1 byte
+/*TOdo make consist var*/
 int8_t Y1_T;//1 byte
 int8_t Y_T;//1 byte
 int8_t Z1_T;//1 byte
@@ -120,11 +121,15 @@ int8_t Z_T;//1 byte
 int8_t X1_T;//1 byte
 int8_t X_T;//1 byte
 
+
 uint8_t SOL_P1_STAT;//1 byte
 uint8_t SOL_P2_STAT;//1 byte
 uint8_t SOL_P3_STAT;//1 byte
 uint8_t SOL_P4_STAT;//1 byte
-uint8_t MSN_STAT;	//1 byte ()
+uint8_t MSN1_STAT;	//1 byte ()
+uint8_t MSN2_STAT;	//1 byte ()
+uint8_t MSN3_STAT;	//1 byte ()
+
 
 uint8_t ANT_STAT;//1 byte
 uint8_t KILL1_STAT;//1 byte
@@ -132,10 +137,14 @@ uint8_t KILL2_STAT;//1 byte
 uint8_t UL_STAT;//1 byte
 
 uint8_t OPER_MODE;//1 byte
-
+uint16_t RST_RESET_COUNT;
 uint16_t OBC_RESET_COUNT;//2 byte
 uint16_t LAST_RESET;//2 byte
-uint16_t CHK_CRC//2 byte
+uint16_t CHK_CRC;//2 byte
+
+uint8_t ANT_P_T;
+
+// uint16_t 
 } S2S_BEACON_A;
 
 typedef struct __attribute__ ((__packed__)) _S2S_BEACON_TYPE_B {

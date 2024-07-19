@@ -495,15 +495,26 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 int Execute_EPDM()
 {
   int handshake_success = -1;
+  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,1);
+  printf("MSNN 3v3 dc dc enabled \n");
+    usleep(1000 * 1000);
+
+  gpio_write(GPIO_MSN_3V3_EN,1);
+    usleep(1000 * 1000);
+  printf("MSNN 3v3 dc dc enabled \n");
+
+
+
   for (int i = 0; i < 3; i++)
   {
+    gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
+    usleep(1000 * 1000);
     handshake_success = handshake_MSN(3, data);
     if (handshake_success == 0)
     {
       break;
     }
-    gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
-    usleep(1000 * 1000);
+    
   }
   if (handshake_success != 0)
   {
@@ -522,6 +533,10 @@ int Execute_EPDM()
     send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
   }
   gpio_write(GPIO_MSN3_EN, 0);
+  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,0);
+  gpio_write(GPIO_MSN_3V3_EN,0);
+
+
   printf("EPDM Mission complete\n");
   return 0;
 }
@@ -719,19 +734,19 @@ void serialize_beacon_a(uint8_t beacon_data[BEACON_DATA_SIZE])
   beacon_data[15] = s2s_beacon_type_a.ANT_P_T;
   beacon_data[16] = s2s_beacon_type_a.BPB_T;
   beacon_data[17] = s2s_beacon_type_a.OBC_T;
-  beacon_data[18] = s2s_beacon_type_a.SOL_P1_T;
-  beacon_data[19] = s2s_beacon_type_a.SOL_P2_T;
-  beacon_data[20] = s2s_beacon_type_a.SOL_P3_T;
-  beacon_data[21] = s2s_beacon_type_a.SOL_P4_T;
+  beacon_data[18] = s2s_beacon_type_a.X_T;
+  beacon_data[19] = s2s_beacon_type_a.X1_T;
+  beacon_data[20] = s2s_beacon_type_a.Y_T;
+  beacon_data[21] = s2s_beacon_type_a.Y1_T;
   // beacon_data[] = s2s_beacon_type_a.SOL_P5_T;
   beacon_data[22] = s2s_beacon_type_a.SOL_P1_STAT << 7 & s2s_beacon_type_a.SOL_P2_STAT << 6 & s2s_beacon_type_a.SOL_P3_STAT << 5 & s2s_beacon_type_a.SOL_P4_STAT << 4 & s2s_beacon_type_a.MSN1_STAT << 3 & s2s_beacon_type_a.MSN2_STAT << 2 & s2s_beacon_type_a.MSN3_STAT << 1 & 0xff;
   beacon_data[23] = s2s_beacon_type_a.ANT_STAT << 4 & s2s_beacon_type_a.UL_STAT << 4;
   beacon_data[24] = s2s_beacon_type_a.OPER_MODE;
   beacon_data[25] = (s2s_beacon_type_a.OBC_RESET_COUNT >> 8) & 0xff;
   beacon_data[26] = s2s_beacon_type_a.OBC_RESET_COUNT & 0xff;
-  beacon_data[27] = s2s_beacon_type_a.RST_RST_COUNT >> 8 & 0xff;
-  beacon_data[28] = s2s_beacon_type_a.RST_RST_COUNT & 0xff;
-  beacon_data[29] = s2s_beacon_type_a.LAST_RST;
+  beacon_data[27] = s2s_beacon_type_a.RST_RESET_COUNT >> 8 & 0xff;
+  beacon_data[28] = s2s_beacon_type_a.RST_RESET_COUNT & 0xff;
+  beacon_data[29] = s2s_beacon_type_a.LAST_RESET;
   beacon_data[30] = s2s_beacon_type_a.CHK_CRC;
   // beacon_data[31] = s2s_beacon_type_a.;
   // beacon_data[32] = s2s_beacon_type_a.;
@@ -796,7 +811,7 @@ void serialize_beacon_b(uint8_t beacon_data[BEACON_DATA_SIZE])
   beacon_data[0] = s2s_beacon_type_b.HEAD;
   beacon_data[1] = s2s_beacon_type_b.TYPE;
   beacon_data[2] = s2s_beacon_type_b.TIM_DAY;
-  beacon_data[3] = s2s_beacon_type_b.TIM_HOUR;
+  beacon_data[3] = s2s_beacon_type_b.TIM_DAY;
 
   beacon_data[4] = s2s_beacon_type_b.SOL_P1_V;
   beacon_data[5] = s2s_beacon_type_b.SOL_P2_V;
