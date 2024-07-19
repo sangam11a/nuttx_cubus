@@ -55,16 +55,19 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack);
 int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
 {
     double fd;
+    
     int i;
     int count = 0, ret;
     printf("Opening uart dev path : %s\n", dev_path);
     fd = open(dev_path, O_WRONLY);
+    
 
     if (fd < 0)
     {
         printf("error opening %s\n", dev_path);
         return fd;
     }
+   
     int wr1 = write(fd, data, size);
     if (wr1 < 0)
     {
@@ -72,10 +75,11 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
         return wr1;
     }
     printf("\n%d bytes written\n", wr1);
-    ioctl(fd, TCFLSH, 2);
+     ioctl(fd, TCFLSH, 2);
     printf("flused tx rx buffer\n");
     ioctl(fd, TCDRN, NULL);
     printf("drained tx rx buffer\n");
+    sleep(2);
     close(fd);
     return wr1;
 }
@@ -309,7 +313,9 @@ void digipeater_mode(uint8_t *data)
     {
         data[i] = 0xff;
     }
-    send_data_uart(COM_UART, data, 84);
+    if(send_data_uart(COM_UART, data, 84) > 0){
+        printf("digipeating successful\n Msg is : %02x\n ",data);
+    }
 }
 
 /****************************************************************************
@@ -568,6 +574,10 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 int Execute_EPDM()
 {
   int handshake_success = -1;
+  /*to delete*/
+    int ret=-1;
+  /*to delete*/
+
   gpio_write(GPIO_DCDC_MSN_3V3_2_EN,1);
   printf("MSNN 3v3 dc dc enabled \n");
     usleep(1000 * 1000);
@@ -582,6 +592,7 @@ int Execute_EPDM()
     handshake_success = handshake_MSN(3, data);
     if (handshake_success == 0)
     {
+        printf("Handshake successful in %d attempt\n",i);
       break;
     }
     
@@ -592,17 +603,14 @@ int Execute_EPDM()
     return -1;
   }
   printf("handshake success...\n");
-  if (send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) < 0)
+  sleep(2);
+  ret =send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) ;
+  if (ret < 0)
   {
     printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
     return -1;
   }
-  /*To ddelete later*/
-  int ret;
-  while(1){
-    ret = receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48);
-  }
-  /*TO delete later*/
+  printf("got the ret value as %d\n",ret);
   if (receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) >= 0)
   {
     printf("Data received from EPDM mission\n");

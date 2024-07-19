@@ -191,6 +191,16 @@ int send_beacon_data()
       return -1;
     }
   }
+  /*To delete*/
+  for (int i = 0; i < 83; i++)
+  {
+    {
+      printf("%d ", beacon_data[i]);
+    }
+  }
+  printf("\n");
+  /*To delete*/
+
   usleep(1000 * 1000 * 3); // 3 seconds
   gpio_write(GPIO_COM_4V_EN, 0);
   ioctl(fd, TCFLSH, 2);
@@ -254,12 +264,23 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
       OBC_CMD_EXE(useful_command);
       break;
     case 2:
-      printf("command received for CAM\n");
+      printf("command received for digipeating\n");
+      sleep(2);
       break;
-    case 9:
+    case 3:
+      printf("command received for adcs\n");
+      sleep(2);
+      break;
+    case 4:
+      printf("command received for camera\n");
+      sleep(2);
+      break;
+    case 5:
       printf("command received for epdm");
-      parse_telecommand(useful_command);/*TODO parsing of actuual command still not possible*/
-      // Execute_EPDM();  
+      sleep(2);
+      parse_telecommand(useful_command); /*TODO parsing of actuual command still not possible*/
+      Execute_EPDM();
+      break;
     default:
       printf("unknown command\n");
       break;
@@ -319,7 +340,13 @@ void digipeater_mode(uint8_t *data)
   {
     data[i] = 0xff;
   }
-  send_data_uart(COM_UART, data, 84);
+  // send_data_uart(COM_UART, data, 84);
+  /*To delete*/
+  if (send_data_uart(COM_UART, data, 84) > 0)
+  {
+    printf("digipeating successful\n Msg is : %02x\n ", data);
+  }
+  /*To delete*/
 }
 
 /****************************************************************************
@@ -344,8 +371,15 @@ static int COM_TASK(int argc, char *argv[])
   }
   usleep(1000);
 
-  printf("Going to receiver mode...\n");
   send_beacon_data();
+  printf("Beacon 1 sent...\n");
+  printf("Going to receiver mode...\n");
+  receive_telecommand_rx(rx_data);
+  sleep(10);
+  send_beacon_data();
+  printf("Beacon 2 sent...\n");
+  receive_telecommand_rx(rx_data);
+  digipeater_mode(rx_data);
   for (;;)
   {
     receive_telecommand_rx(rx_data);
@@ -495,15 +529,13 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 int Execute_EPDM()
 {
   int handshake_success = -1;
-  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,1);
+  gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 1);
   printf("MSNN 3v3 dc dc enabled \n");
-    usleep(1000 * 1000);
+  usleep(1000 * 1000);
 
-  gpio_write(GPIO_MSN_3V3_EN,1);
-    usleep(1000 * 1000);
+  gpio_write(GPIO_MSN_3V3_EN, 1);
+  usleep(1000 * 1000);
   printf("MSNN 3v3 dc dc enabled \n");
-
-
 
   for (int i = 0; i < 3; i++)
   {
@@ -514,7 +546,6 @@ int Execute_EPDM()
     {
       break;
     }
-    
   }
   if (handshake_success != 0)
   {
@@ -533,9 +564,8 @@ int Execute_EPDM()
     send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
   }
   gpio_write(GPIO_MSN3_EN, 0);
-  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,0);
-  gpio_write(GPIO_MSN_3V3_EN,0);
-
+  gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 0);
+  gpio_write(GPIO_MSN_3V3_EN, 0);
 
   printf("EPDM Mission complete\n");
   return 0;
@@ -620,6 +650,15 @@ int main(int argc, FAR char *argv[])
 
   Setup();
   RUN_HK();
+  if (strcmp(argv[1], "com") == 0x00)
+  {
+    int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
+    if (retval < 0)
+    {
+      printf("unable to create COM task\n");
+      return -1;
+    }
+  }
   printf("************************************************\n");
 
   //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
