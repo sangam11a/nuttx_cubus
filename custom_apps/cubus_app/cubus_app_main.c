@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #include "cubus_app_main.h"
-
+// #include<sys/ddi.h>
 #include <nuttx/mtd/mtd.h>
 #include <nuttx/progmem.h>
 #include <fcntl.h>
@@ -50,7 +50,7 @@ int Execute_EPDM();
 #define BEACON_DELAY 90
 #define BEACON_DATA_SIZE 85
 #define ACK_DATA_SIZE 6 + 1
-#define COM_RX_CMD_SIZE 20
+#define COM_RX_CMD_SIZE 29
 #define COM_DG_MSG_SIZE 30
 uint8_t beacon_status = 0;
 
@@ -139,7 +139,6 @@ int receive_data_uart(char *dev_path, uint8_t *data, uint16_t size)
 int send_beacon_data()
 {
   work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
-  beacon_type = !beacon_type;
   if (COM_BUSY == 1)
   {
     return -1;
@@ -148,24 +147,27 @@ int send_beacon_data()
   switch (beacon_type)
   {
   case 0:
-    beacon_data[0] = 0x53;
-    beacon_data[1] = 0x01;
-    beacon_data[2] = 0x51;
+    
     serialize_beacon_a(beacon_data);
+
+    beacon_data[1] = 0xb1;
+    beacon_data[2] = 0x51;
     beacon_data[83] = 0x7e;
     break;
   case 1:
-    beacon_data[0] = 0x53;
-    beacon_data[1] = 0x02;
-    beacon_data[2] = 0x51;
     serialize_beacon_b(beacon_data);
-    beacon_data[83] = 0x73;
+    beacon_data[1] = 0xb2;
+    beacon_data[2] = 0x51;
     break;
   default:
     printf("wrong case selected\n");
     return -1;
     break;
   }
+    beacon_data[0] = 0x53;
+    beacon_data[83] = 0x7e;
+
+
   beacon_data[84] = '0';
   int fd = open(COM_UART, O_WRONLY);
   if (fd < 0)
@@ -192,6 +194,15 @@ int send_beacon_data()
     }
   }
   /*To delete*/
+  if(beacon_status == 0){
+    printf("\nbeacon 1:\n");
+  }
+  else{
+    printf("\nbeacon 2:\n");
+
+  }
+  beacon_type = !beacon_type;
+
   for (int i = 0; i < 83; i++)
   {
     {
@@ -229,65 +240,105 @@ int send_beacon_data()
  ****************************************************************************/
 int receive_telecommand_rx(uint8_t *COM_RX_DATA)
 {
-  uint8_t useful_command[12];
-  uint8_t main_cmd[3] = {'\0'};
-  uint16_t rsv_table = 0;
-  uint32_t address = 0;
-  uint16_t pckt_no = 0;
-
-  printf("waiting for telecommands from COM\n");
-  int ret = receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
-  if (ret < 0)
-  {
-    printf("data not received from COM\n NACK sending\n");
-    send_data_uart(COM_UART, NACK, 7);
-    printf("data not received from COM\n NACK sent\n");
-    return ret;
-  }
-  printf("data received from COM\n sending ACK\n");
-  ret = send_data_uart(COM_UART, ACK, 7); // ack send
-  print_rx_telecommand(COM_RX_DATA);      // printing the received telecommand
-  for (int i = 0; i < 12; i++)
-  {
-    useful_command[i] = COM_RX_DATA[i + 8]; // extracting useful commands
-  }
-  if (useful_command[5] != 0xff || useful_command[5] != 0x00)
-  {
-    printf("Reservation command received\n"); // if reservation command is received then store the reservation command (do not execute)
-  }
-  else
-  {
-    switch (useful_command[0])
+    uint8_t useful_command[12];
+    uint8_t main_cmd[3] = {'\0'};
+    uint16_t rsv_table = 0;
+    uint32_t address = 0;
+    uint16_t pckt_no = 0;
+    uint8_t ack[85] = {0x53, 0xac, 0x04, 0x01, 0x62, 0x63, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x70, 0x71, 0x72, 0x7e, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x80, 0x7e};
+    printf("waiting for telecommands from COM\n");
+    int ret = receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
+    if (ret < 0)
     {
-    case 1:
-      printf("command received for OBC\n");
-      OBC_CMD_EXE(useful_command);
-      break;
-    case 2:
-      printf("command received for digipeating\n");
-      sleep(2);
-      break;
-    case 3:
-      printf("command received for adcs\n");
-      sleep(2);
-      break;
-    case 4:
-      printf("command received for camera\n");
-      sleep(2);
-      break;
-    case 5:
-      printf("command received for epdm");
-      sleep(2);
-      parse_telecommand(useful_command); /*TODO parsing of actuual command still not possible*/
-      Execute_EPDM();
-      break;
-    default:
-      printf("unknown command\n");
-      break;
+        printf("data not received from COM\n NACK sending\n");
+        send_data_uart(COM_UART, NACK, 7);
+        printf("data not received from COM\n NACK 1s55 ent\n");
+        return ret;
     }
-  }
-  return ret;
+    else
+    { if (COM_RX_DATA[16] == 0x02 |COM_RX_DATA[17] == 0x02 ){
+      digipeater_mode(COM_RX_DATA);
+      return 29;
+    }
+        // for (int i = 0; i < BEACON_DATA_SIZE; i++)
+        // {
+        //     send_data_uart(COM_UART, ack[i], 1);
+        //     printf("%02x ",ack[i]);
+        // }
+    }
+    printf("value of ret is %d\ndata received from COM\n sending ACK\n", ret);
+    sleep(3);
+
+    // ret = send_data_uart(COM_UART, ack, BEACON_DATA_SIZE);
+
+    // ret = send_data_uart(COM_UART, ACK, 7); // ack send
+
+    // print_rx_telecommand(COM_RX_DATA); // printing the received telecommand
+    for (int i = 0; i < 12; i++)
+    {
+        useful_command[i] = COM_RX_DATA[i + 8]; // extracting useful commands
+    }
+    if (useful_command[6] != 0xff || useful_command[6] != 0x00 | useful_command[7] != 0xff || useful_command[7] != 0x00)
+    {
+        printf("Reservation command received\n"); // if reservation command is received then store the reservation command (do not execute)
+        // send_data_uart(COM_UART, ack, BEACON_DATA_SIZE);
+        int fd = open(COM_UART, O_WRONLY);
+        if (fd < 0)
+        {
+            printf("unable to open: %s\n", COM_UART);
+            return -1;
+        }
+        int ret = write(fd, ack, BEACON_DATA_SIZE);
+        for(int i=0;i<85;i++){
+            printf("%02x ", ack[i]);
+        }
+        close(fd);
+
+        printf("\nACK sent success\n******Sleeping*******\n");
+        sleep(2);
+        ack[0] = 0x53;
+        ack[1] = 0x0e;
+        ack[2] = 0x51;
+        for (int i = 3; i < 83; i++)
+        {
+            ack[i] = i;
+        }
+        ack[83] = 0x7e;
+        fd = open(COM_UART, O_WRONLY);
+        if (fd < 0)
+        {
+            printf("unable to open: %s\n", COM_UART);
+            return -1;
+        }
+        ret = write(fd, ack, BEACON_DATA_SIZE);
+        for(int i=0;i<85;i++){
+                printf("%02x ", ack[i]);
+            }
+        close(fd);
+        // send_data_uart(COM_UART, ack, BEACON_DATA_SIZE);
+        // send_beacon_data();
+        printf("\n EPDM data sent success\n ******Sleeping *******\n ");
+        sleep(3);
+    }
+    else
+    {
+        switch (useful_command[0])
+        {
+        case 1:
+            printf("command received for OBC\n");
+            OBC_CMD_EXE(useful_command);
+            break;
+        case 2:
+            printf("command received for CAM\n");
+            break;
+        default:
+            printf("unknown command\n");
+            break;
+        }
+    }
+    return ret;
 }
+
 
 int OBC_CMD_EXE(uint8_t *cmd)
 {
@@ -335,8 +386,8 @@ int parse_telecommand(uint8_t *rx_data)
  ****************************************************************************/
 void digipeater_mode(uint8_t *data)
 {
-  receive_data_uart(COM_UART, data, 35);
-  for (int i = 35; i < 84; i++)
+  receive_data_uart(COM_UART, data, 29);
+  for (int i = 29; i < 84; i++)
   {
     data[i] = 0xff;
   }
@@ -344,7 +395,10 @@ void digipeater_mode(uint8_t *data)
   /*To delete*/
   if (send_data_uart(COM_UART, data, 84) > 0)
   {
-    printf("digipeating successful\n Msg is : %02x\n ", data);
+    printf("digipeating data is \n ");
+    for(int i =0 ;i<85;i++)
+    printf("%02x ", data);
+    printf("digipeating successful\n :"); 
   }
   /*To delete*/
 }
@@ -379,7 +433,9 @@ static int COM_TASK(int argc, char *argv[])
   send_beacon_data();
   printf("Beacon 2 sent...\n");
   receive_telecommand_rx(rx_data);
-  digipeater_mode(rx_data);
+  sleep(2);
+  printf("Startign digipeating mode:\n");
+  // digipeater_mode(rx_data);
   for (;;)
   {
     receive_telecommand_rx(rx_data);
@@ -457,17 +513,17 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
   {
   case 1:
     strcpy(devpath, ADCS_UART);
-    gpio_write(GPIO_MSN1_EN, 1);
+    // gpio_write(GPIO_MSN1_EN, 1);// TODO uncomment later
     printf("Turned on power line for ADCS\n");
     break;
   case 2:
     strcpy(devpath, CAM_UART);
-    gpio_write(GPIO_MSN2_EN, 1);
+    // gpio_write(GPIO_MSN2_EN, 1);
     printf("Turned on power line for CAM\n");
     break;
   case 3:
     strcpy(devpath, EPDM_UART);
-    gpio_write(GPIO_BURNER_EN, 1);
+    // gpio_write(GPIO_BURNER_EN, 1);
     printf("Turned on power line for EPDM\n");
     break;
   default:
@@ -529,14 +585,15 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 int Execute_EPDM()
 {
   int handshake_success = -1;
-  gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 1);
-  printf("MSNN 3v3 dc dc enabled \n");
-  usleep(1000 * 1000);
+  // TODO uncomment later
+  // gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 1);
+  // printf("MSNN 3v3 dc dc enabled \n");
+  // usleep(1000 * 1000);
 
-  gpio_write(GPIO_MSN_3V3_EN, 1);
-  usleep(1000 * 1000);
-  printf("MSNN 3v3 dc dc enabled \n");
-
+  // gpio_write(GPIO_MSN_3V3_EN, 1);
+  // usleep(1000 * 1000);
+  // printf("MSNN 3v3 dc dc enabled \n");
+// TODO uncomment later
   for (int i = 0; i < 3; i++)
   {
     gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
@@ -563,9 +620,12 @@ int Execute_EPDM()
     printf("Data received from EPDM mission\n");
     send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
   }
-  gpio_write(GPIO_MSN3_EN, 0);
-  gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 0);
-  gpio_write(GPIO_MSN_3V3_EN, 0);
+  // TODO uncomment later
+  // gpio_write(GPIO_MSN3_EN, 0);
+  // gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 0);
+  // gpio_write(GPIO_MSN_3V3_EN, 0);
+
+// TODO uncomment later
 
   printf("EPDM Mission complete\n");
   return 0;
@@ -577,15 +637,15 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
   {
   case 1:
     printf("turning ADCS mission state: %d\n", state);
-    gpio_write(GPIO_MSN1_EN, state);
+    // gpio_write(GPIO_MSN1_EN, state);
     break;
   case 2:
     printf("Turning CAM mission state: %d\n", state);
-    gpio_write(GPIO_MSN2_EN, state);
+    // gpio_write(GPIO_MSN2_EN, state);
     break;
   case 3:
     printf("Turning EPDM mission state: %d\n", state);
-    gpio_write(GPIO_MSN3_EN, state);
+    // gpio_write(GPIO_MSN3_EN, state);
     break;
   default:
     printf("Wrong subsystem selected\n");

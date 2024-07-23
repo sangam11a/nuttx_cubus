@@ -38,13 +38,13 @@ int Execute_EPDM();
 #define BEACON_DELAY 90
 #define BEACON_DATA_SIZE 85
 #define ACK_DATA_SIZE 6 + 1
-#define COM_RX_CMD_SIZE 20
+#define COM_RX_CMD_SIZE 29
 #define COM_DG_MSG_SIZE 30
 uint8_t beacon_status = 0;
 
 uint8_t COM_BUSY = 0;
 static struct work_s work_beacon;
-uint8_t beacon_type = 0;
+uint8_t beacon_type = 1;
 int turn_msn_on_off(uint8_t subsystem, uint8_t state);
 int handshake_COM(uint8_t *ack);
 int handshake_MSN(uint8_t subsystem, uint8_t *ack);
@@ -55,31 +55,30 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack);
 int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
 {
     double fd;
-    
+
     int i;
     int count = 0, ret;
-    printf("Opening uart dev path : %s\n", dev_path);
+    // printf("Opening uart dev path : %s\n", dev_path);
     fd = open(dev_path, O_WRONLY);
-    
 
     if (fd < 0)
     {
         printf("error opening %s\n", dev_path);
         return fd;
     }
-   
+
     int wr1 = write(fd, data, size);
     if (wr1 < 0)
     {
         printf("Unable to write data\n");
         return wr1;
     }
-    printf("\n%d bytes written\n", wr1);
-     ioctl(fd, TCFLSH, 2);
-    printf("flused tx rx buffer\n");
+    // printf("\n%d bytes written\n", wr1);
+    ioctl(fd, TCFLSH, 2);
+    // printf("flused tx rx buffer\n");
     ioctl(fd, TCDRN, NULL);
-    printf("drained tx rx buffer\n");
-    sleep(2);
+    // printf("drained tx rx buffer\n");
+    // sleep(2);
     close(fd);
     return wr1;
 }
@@ -141,7 +140,7 @@ int send_beacon_data()
     {
     case 0:
         beacon_data[0] = 0x53;
-        beacon_data[1] = 0x01;
+        beacon_data[1] = 0xb1;
         beacon_data[2] = 0x54;
         for (int i = 3; i < 83; i++)
         {
@@ -151,13 +150,13 @@ int send_beacon_data()
         break;
     case 1:
         beacon_data[0] = 0x53;
-        beacon_data[1] = 0x02;
+        beacon_data[1] = 0xb2;
         beacon_data[2] = 0x54;
         for (int i = 3; i < 83; i++)
         {
             beacon_data[i] = i;
         }
-        beacon_data[83] = 0x73;
+        beacon_data[83] = 0x7e;
         break;
     default:
         printf("wrong case selected\n");
@@ -197,6 +196,7 @@ int send_beacon_data()
     close(fd);
     printf("Turned off COM 4V line..\n");
     printf("Beacon Type %d sequence complete\n", beacon_type);
+    sleep(2);
     return 0;
 }
 
@@ -222,7 +222,7 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
     uint16_t rsv_table = 0;
     uint32_t address = 0;
     uint16_t pckt_no = 0;
-
+    uint8_t ack[85] = {0x53, 0xac, 0x04, 0xe1, 0xe2, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x70, 0x71, 0x72, 0x7e, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x80, 0x7e};
     printf("waiting for telecommands from COM\n");
     int ret = receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
     if (ret < 0)
@@ -232,16 +232,67 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
         printf("data not received from COM\n NACK sent\n");
         return ret;
     }
-    printf("data received from COM\n sending ACK\n");
-    ret = send_data_uart(COM_UART, ACK, 7); // ack send
-    print_rx_telecommand(COM_RX_DATA);      // printing the received telecommand
+    else
+    {
+        // for (int i = 0; i < BEACON_DATA_SIZE; i++)
+        // {
+        //     send_data_uart(COM_UART, ack[i], 1);
+        //     printf("%02x ",ack[i]);
+        // }
+    }
+    printf("value of ret is %d\ndata received from COM\n sending ACK\n", ret);
+    sleep(3);
+
+    // ret = send_data_uart(COM_UART, ack, BEACON_DATA_SIZE);
+
+    // ret = send_data_uart(COM_UART, ACK, 7); // ack send
+
+    // print_rx_telecommand(COM_RX_DATA); // printing the received telecommand
     for (int i = 0; i < 12; i++)
     {
         useful_command[i] = COM_RX_DATA[i + 8]; // extracting useful commands
     }
-    if (useful_command[5] != 0xff || useful_command[5] != 0x00)
+    if (useful_command[6] != 0xff || useful_command[6] != 0x00 | useful_command[7] != 0xff || useful_command[7] != 0x00)
     {
         printf("Reservation command received\n"); // if reservation command is received then store the reservation command (do not execute)
+        // send_data_uart(COM_UART, ack, BEACON_DATA_SIZE);
+        int fd = open(COM_UART, O_WRONLY);
+        if (fd < 0)
+        {
+            printf("unable to open: %s\n", COM_UART);
+            return -1;
+        }
+        int ret = write(fd, ack, BEACON_DATA_SIZE);
+        for(int i=0;i<85;i++){
+            printf("%02x ", ack[i]);
+        }
+        close(fd);
+
+        printf("\nACK sent success\n******Sleeping*******\n");
+        sleep(3);
+        ack[0] = 0x53;
+        ack[1] = 0x05;
+        ack[2] = 0x51;
+        for (int i = 3; i < 83; i++)
+        {
+            ack[i] = i;
+        }
+        ack[83] = 0x7e;
+        fd = open(COM_UART, O_WRONLY);
+        if (fd < 0)
+        {
+            printf("unable to open: %s\n", COM_UART);
+            return -1;
+        }
+        ret = write(fd, ack, BEACON_DATA_SIZE);
+        for(int i=0;i<85;i++){
+                printf("%02x ", ack[i]);
+            }
+        close(fd);
+        // send_data_uart(COM_UART, ack, BEACON_DATA_SIZE);
+        // send_beacon_data();
+        printf("\n EPDM data sent success\n ******Sleeping *******\n ");
+        sleep(3);
     }
     else
     {
@@ -313,8 +364,9 @@ void digipeater_mode(uint8_t *data)
     {
         data[i] = 0xff;
     }
-    if(send_data_uart(COM_UART, data, 84) > 0){
-        printf("digipeating successful\n Msg is : %02x\n ",data);
+    if (send_data_uart(COM_UART, data, 84) > 0)
+    {
+        printf("digipeating successful\n Msg is : %02x\n ", data);
     }
 }
 
@@ -345,13 +397,13 @@ int main(int argc, FAR char *argv[])
             handshake_MSN(2, data);
         }
         else if (strcmp(argv[1], "epdm") == 0x00)
-        {printf("hey epdm is on now!");
+        {
+            printf("hey epdm is on now!");
             turn_msn_on_off(3, 1);
             // handshake_MSN(3, data);
             Execute_EPDM();
             sleep(3);
             turn_msn_on_off(3, 0);
-
         }
         else
         {
@@ -388,8 +440,19 @@ static int COM_TASK(int argc, char *argv[])
     }
     usleep(1000);
 
-    printf("Going to receiver mode...\n");
+    printf("GBeacon 1 ...\n");
     send_beacon_data();
+    printf("Going to receiver mode...\n");
+
+    receive_telecommand_rx(rx_data);
+    printf("Beacon 2..\n");
+
+    send_beacon_data();
+    printf("Going to receiver mode...\n");
+    
+    receive_telecommand_rx(rx_data);
+
+
     for (;;)
     {
         receive_telecommand_rx(rx_data);
@@ -570,59 +633,56 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
 //     return 0;
 // }
 
-
 int Execute_EPDM()
 {
-  int handshake_success = -1;
-  /*to delete*/
-    int ret=-1;
-  /*to delete*/
+    int handshake_success = -1;
+    /*to delete*/
+    int ret = -1;
+    /*to delete*/
 
-  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,1);
-  printf("MSNN 3v3 dc dc enabled \n");
+    gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 1);
+    printf("MSNN 3v3 dc dc enabled \n");
     usleep(1000 * 1000);
 
-  gpio_write(GPIO_MSN_3V3_EN,1);
+    gpio_write(GPIO_MSN_3V3_EN, 1);
     usleep(1000 * 1000);
-  printf("MSNN 3v3 dc dc enabled \n");
-  for (int i = 0; i < 3; i++)
-  {
-    gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
-    usleep(1000 * 1000);
-    handshake_success = handshake_MSN(3, data);
-    if (handshake_success == 0)
+    printf("MSNN 3v3 dc dc enabled \n");
+    for (int i = 0; i < 3; i++)
     {
-        printf("Handshake successful in %d attempt\n",i);
-      break;
+        gpio_write(GPIO_BURNER_EN, 0); // Antenna deployment here
+        usleep(1000 * 1000);
+        handshake_success = handshake_MSN(3, data);
+        if (handshake_success == 0)
+        {
+            printf("Handshake successful in %d attempt\n", i);
+            break;
+        }
     }
-    
-  }
-  if (handshake_success != 0)
-  {
-    printf("Handshake failure 3 times\n aborting EPDM mission execution\n");
-    return -1;
-  }
-  printf("handshake success...\n");
-  sleep(2);
-  ret =send_data_uart(EPDM_UART, Msn_Start_Cmd, 7) ;
-  if (ret < 0)
-  {
-    printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
-    return -1;
-  }
-  printf("got the ret value as %d\n",ret);
-  if (receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) >= 0)
-  {
-    printf("Data received from EPDM mission\n");
-    send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
-  }
-  gpio_write(GPIO_MSN3_EN, 0);
-  gpio_write(GPIO_DCDC_MSN_3V3_2_EN,0);
-  gpio_write(GPIO_MSN_3V3_EN,0);
+    if (handshake_success != 0)
+    {
+        printf("Handshake failure 3 times\n aborting EPDM mission execution\n");
+        return -1;
+    }
+    printf("handshake success...\n");
+    sleep(2);
+    ret = send_data_uart(EPDM_UART, Msn_Start_Cmd, 7);
+    if (ret < 0)
+    {
+        printf("Unable to send Msn start command to EPDM\n Aborting mission..\n");
+        return -1;
+    }
+    printf("got the ret value as %d\n", ret);
+    if (receive_data_uart(EPDM_UART, RX_DATA_EPDM, 48) >= 0)
+    {
+        printf("Data received from EPDM mission\n");
+        send_data_uart(EPDM_UART, RX_DATA_EPDM, BEACON_DATA_SIZE);
+    }
+    gpio_write(GPIO_MSN3_EN, 0);
+    gpio_write(GPIO_DCDC_MSN_3V3_2_EN, 0);
+    gpio_write(GPIO_MSN_3V3_EN, 0);
 
-
-  printf("EPDM Mission complete\n");
-  return 0;
+    printf("EPDM Mission complete\n");
+    return 0;
 }
 
 int turn_msn_on_off(uint8_t subsystem, uint8_t state)
@@ -639,9 +699,9 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
         break;
     case 3:
         printf("Turning EPDM mission state: %d\n", state);
-        gpio_write(GPIO_DCDC_MSN_3V3_2_EN,state);
+        gpio_write(GPIO_DCDC_MSN_3V3_2_EN, state);
         usleep(1000 * 1000);
-         
+
         gpio_write(GPIO_MSN_3V3_EN, state);
 
         gpio_write(GPIO_MSN3_EN, state);

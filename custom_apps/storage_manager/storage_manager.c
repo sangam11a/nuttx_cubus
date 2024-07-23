@@ -34,14 +34,18 @@ void writer_mq(char *arg1) {
 
     printf("Writing messages to the POSIX message queue\n\n");
     printf("Number of strings: %d\n", str_count);
-
-    for (int i = 0; i < str_count; i++) {
+    printf("MSG is %s\n",arg1);
+    // for (int i = 0; i < str_count; i++) 
+    {
         // Write to the POSIX message queue
-        if (mq_send(mqd, str[i], strlen(str[i]) + 1, 0) == -1) {  // +1 to include the null terminator
+        if (mq_send(mqd, str, str_count+1, 0) == -1)   // +1 to include the null terminator
+        // if (mq_send(mqd, str[i], strlen(str[i]) + 1, 0) == -1) 
+        {  // +1 to include the null terminator
+          
             perror("mq_send");
             exit(1);
         }
-        printf("Data sent: %s\n", str[i]);
+        // printf("Data sent: %s\n", str[i]);
     }
 
     if (mq_close(mqd) == -1) {
@@ -108,7 +112,7 @@ int main(int argc, FAR char *argv[]) {
     // writer_mq();
     if (argc > 1){
         if (strcmp(argv[1], "write") == 0x00){
-            writer_mq(argv[1]);
+            writer_mq(argv);
         }
         else if(strcmp(argv[1], "read") == 0x00){
             reader_mq();
