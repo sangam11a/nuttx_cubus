@@ -30,6 +30,7 @@ void writer_mq(char *arg1) {
     // char *str[] = {"A", "posix", "message", "queue", "example", "kjsalkfjsdaf","exit"};
     char *str ;
     str = arg1;
+    printf("size of %d/ %d is %f",strlen(str),sizeof(str),sizeof(str[0]));
     int str_count = sizeof(str) / sizeof(str[0]);
 
     printf("Writing messages to the POSIX message queue\n\n");
@@ -38,7 +39,7 @@ void writer_mq(char *arg1) {
     // for (int i = 0; i < str_count; i++) 
     {
         // Write to the POSIX message queue
-        if (mq_send(mqd, str, str_count+1, 0) == -1)   // +1 to include the null terminator
+        if (mq_send(mqd, str, strlen(str)+1, 0) == -1)   // +1 to include the null terminator
         // if (mq_send(mqd, str[i], strlen(str[i]) + 1, 0) == -1) 
         {  // +1 to include the null terminator
           
@@ -88,7 +89,7 @@ void reader_mq() {
 
         buffer[bytes_read] = '\0';  // Null-terminate the string
 
-        printf("Received: %s\n", buffer);
+        printf("Size %d , Received: %s\n", bytes_read, buffer);
 
         // Exit if the received message is "exit"
         
@@ -112,7 +113,7 @@ int main(int argc, FAR char *argv[]) {
     // writer_mq();
     if (argc > 1){
         if (strcmp(argv[1], "write") == 0x00){
-            writer_mq(argv);
+            writer_mq(argv[2]);
         }
         else if(strcmp(argv[1], "read") == 0x00){
             reader_mq();

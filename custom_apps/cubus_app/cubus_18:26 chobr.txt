@@ -37,9 +37,6 @@
 #include "com_app_main.h"
 #include "gpio_definitions.h"
 
-#include <nuttx/sensors/sensor.h>
-#include <nuttx/sensors/lis3mdl.h>
-
 // static int COM_TASK(int argc, char *argv[]);
 
 uint8_t data[7] = {0x53, 0x01, 0x02, 0x03, 0x04, 0x7e};
@@ -56,9 +53,6 @@ uint8_t digipeating = 1;
 #define ACK_DATA_SIZE 6 + 1
 #define COM_RX_CMD_SIZE 29
 #define COM_DG_MSG_SIZE 30
-
-#define NB_LOWERHALFS 1
-
 uint8_t beacon_status = 0;
 
 uint8_t COM_BUSY = 0;
@@ -297,9 +291,9 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
 
   uint8_t ack[85] = {0x53, 0xac, 0x04, 0x01, 0x62, 0x63, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x70, 0x71, 0x72, 0x7e, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x80, 0x7e};
   printf("waiting for telecommands from COM\n");
-  int ret;
-  // ret=1;
-  ret = receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
+  int ret ;
+  // ret= receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
+  ret =1 ;
   if (ret < 0)
   {
     printf("data not received from COM\n NACK sending\n");
@@ -353,11 +347,11 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
   // ret = send_data_uart(COM_UART, ACK, 7); // ack send
 
   // print_rx_telecommand(COM_RX_DATA); // printing the received telecommand
-  for (int i = 0; i < 12; i++)
-  {
-    useful_command[i] = COM_RX_DATA[i + 8]; // extracting useful commands
-  }
-  if (useful_command[6] != 0xff || useful_command[6] != 0x00 | useful_command[7] != 0xff || useful_command[7] != 0x00)
+  // for (int i = 0; i < 12; i++)
+  // {
+  //   useful_command[i] = COM_RX_DATA[i + 8]; // extracting useful commands
+  // }
+  // if (useful_command[6] != 0xff || useful_command[6] != 0x00 | useful_command[7] != 0xff || useful_command[7] != 0x00)
   {
     int x;
     printf("Reservation command received\n"); // if reservation command is received then store the reservation command (do not execute)
@@ -458,22 +452,28 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
     }
     sleep(3);
   }
-  else
-  {
-    switch (useful_command[0])
-    {
-    case 1:
-      printf("command received for OBC\n");
-      OBC_CMD_EXE(useful_command);
-      break;
-    case 2:
-      printf("command received for CAM\n");
-      break;
-    default:
-      printf("unknown command\n");
-      break;
-    }
-  }
+  int  x=0;
+  while (x < 9000000)
+      {
+        x += 100;
+        usleep(100);
+      }
+  // else
+  // {
+  //   switch (useful_command[0])
+  //   {
+  //   case 1:
+  //     printf("command received for OBC\n");
+  //     OBC_CMD_EXE(useful_command);
+  //     break;
+  //   case 2:
+  //     printf("command received for CAM\n");
+  //     break;
+  //   default:
+  //     printf("unknown command\n");
+  //     break;
+  //   }
+  // }
   return ret;
 }
 
@@ -781,71 +781,6 @@ int Execute_EPDM()
   return 0;
 }
 
-void read_magnetometer(satellite_health_s *sat_health)
-{
-
-  int mag_fd;
-  uint16_t seconds;
-  int ret;
-
-  struct sensor_mag mag;
-  struct sensor_mag mag_sub;
-  int mag_afd, mag_sfd;
-
-  printf("SPI device LIS3MDL uorb test, World!\n");
-
-  /* Open SPI device driver */
-  mag_fd = open("/dev/uorb/sensor_mag0", O_RDONLY | O_NONBLOCK);
-  if (mag_fd < 0)
-  {
-    printf("Failed to open mag sensor\n");
-    return -1;
-  }
-
-  struct pollfd pfds[] = {
-      {.fd = mag_fd, .events = POLLIN}};
-
-  struct data sensor_data[] = {
-      {.data_struct = &mag, .data_size = sizeof(struct sensor_mag)}};
-
-  {
-    ret = poll(pfds, NB_LOWERHALFS, -1);
-    if (ret < 0)
-    {
-      perror("Could not poll sensor\n");
-      return ret;
-    }
-
-    for (int i = 0; i < NB_LOWERHALFS; i++)
-    {
-      if (pfds[i].revents & POLLIN)
-      {
-        ret = read(pfds[i].fd, sensor_data[i].data_struct,
-                   sensor_data[i].data_size);
-
-        if (ret != sensor_data[i].data_size)
-        {
-          perror("Could not read from sub-sensor.");
-          return ret;
-        }
-      }
-    }
-    seconds -= 3;
-  }
-
-  printf("Timestamp = %lli\n"
-         "Temperature [c] = %f\n"
-         "mag x axis = %f\n"
-         "mag y axis = %f\n"
-         "mag z axis = %f\n",
-         mag.timestamp, mag.temperature, mag.x, mag.y, mag.z);
-  sat_health->temp_obc = mag.temperature;
-  sat_health->mag_x = mag.x;
-  sat_health->mag_y = mag.y;
-  sat_health->mag_z = mag.z;
-  close(mag_fd);
-}
-
 int turn_msn_on_off(uint8_t subsystem, uint8_t state)
 {
   switch (subsystem)
@@ -910,7 +845,7 @@ Defing work structures for work_queue thread
 */
 static struct work_s work_hk;
 static struct work_s work_ant_dep;
-// mpu6500_imu_msg
+
 void Antenna_Deployment();
 
 /*
@@ -999,7 +934,6 @@ void RUN_HK()
   ext_adc_main();
 
   collect_imu_mag();
-  // read_magnetometer(sat_health);
 
   make_satellite_health();
   store_sat_health_data(&sat_health);
@@ -1036,14 +970,12 @@ void serialize_beacon_a(uint8_t beacon_data[BEACON_DATA_SIZE])
   beacon_data[1] = s2s_beacon_type_a.TYPE;
   beacon_data[2] = s2s_beacon_type_a.TIM_DAY;
   beacon_data[3] = s2s_beacon_type_a.TIM_HOUR;
-
   beacon_data[4] = (s2s_beacon_type_a.BAT_V >> 8) & 0Xff;
   beacon_data[5] = s2s_beacon_type_a.BAT_V & 0xff;
   beacon_data[6] = (s2s_beacon_type_a.BAT_C >> 8) & 0Xff;
-  beacon_data[7] = (s2s_beacon_type_a.BAT_C) & 0Xff;
+  beacon_data[7] = (s2s_beacon_type_a.BAT_V) & 0Xff;
   beacon_data[8] = (s2s_beacon_type_a.BAT_T >> 8) & 0Xff;
   beacon_data[9] = (s2s_beacon_type_a.BAT_T) & 0Xff;
-
   beacon_data[10] = s2s_beacon_type_a.RAW_C;
   beacon_data[11] = (s2s_beacon_type_a.SOL_TOT_V >> 8) & 0Xff;
   beacon_data[12] = (s2s_beacon_type_a.SOL_TOT_V) & 0Xff;
@@ -1056,17 +988,68 @@ void serialize_beacon_a(uint8_t beacon_data[BEACON_DATA_SIZE])
   beacon_data[19] = s2s_beacon_type_a.X1_T;
   beacon_data[20] = s2s_beacon_type_a.Y_T;
   beacon_data[21] = s2s_beacon_type_a.Y1_T;
-  beacon_data[22] = 0; // s2s_beacon_type_a.SOL_P5_T;
-
-  beacon_data[23] = s2s_beacon_type_a.SOL_P1_STAT << 7 & s2s_beacon_type_a.SOL_P2_STAT << 6 & s2s_beacon_type_a.SOL_P3_STAT << 5 & s2s_beacon_type_a.SOL_P4_STAT << 4 & s2s_beacon_type_a.MSN1_STAT << 3 & s2s_beacon_type_a.MSN2_STAT << 2 & s2s_beacon_type_a.MSN3_STAT << 1 & 0xff;
-  beacon_data[24] = s2s_beacon_type_a.ANT_STAT << 4 & s2s_beacon_type_a.UL_STAT << 4;
-  beacon_data[25] = s2s_beacon_type_a.OPER_MODE;
-  beacon_data[26] = (s2s_beacon_type_a.OBC_RESET_COUNT >> 8) & 0xff;
-  beacon_data[27] = s2s_beacon_type_a.OBC_RESET_COUNT & 0xff;
-  beacon_data[28] = s2s_beacon_type_a.RST_RESET_COUNT >> 8 & 0xff; // TODO no reset mcu so no count needed
-  beacon_data[29] = s2s_beacon_type_a.RST_RESET_COUNT & 0xff;
-  // beacon_data[30] = s2s_beacon_type_a.LAST_RESET;
+  // beacon_data[] = s2s_beacon_type_a.SOL_P5_T;
+  beacon_data[22] = s2s_beacon_type_a.SOL_P1_STAT << 7 & s2s_beacon_type_a.SOL_P2_STAT << 6 & s2s_beacon_type_a.SOL_P3_STAT << 5 & s2s_beacon_type_a.SOL_P4_STAT << 4 & s2s_beacon_type_a.MSN1_STAT << 3 & s2s_beacon_type_a.MSN2_STAT << 2 & s2s_beacon_type_a.MSN3_STAT << 1 & 0xff;
+  beacon_data[23] = s2s_beacon_type_a.ANT_STAT << 4 & s2s_beacon_type_a.UL_STAT << 4;
+  beacon_data[24] = s2s_beacon_type_a.OPER_MODE;
+  beacon_data[25] = (s2s_beacon_type_a.OBC_RESET_COUNT >> 8) & 0xff;
+  beacon_data[26] = s2s_beacon_type_a.OBC_RESET_COUNT & 0xff;
+  beacon_data[27] = s2s_beacon_type_a.RST_RESET_COUNT >> 8 & 0xff;
+  beacon_data[28] = s2s_beacon_type_a.RST_RESET_COUNT & 0xff;
+  beacon_data[29] = s2s_beacon_type_a.LAST_RESET;
   beacon_data[30] = s2s_beacon_type_a.CHK_CRC;
+  // beacon_data[31] = s2s_beacon_type_a.;
+  // beacon_data[32] = s2s_beacon_type_a.;
+  // beacon_data[34] = s2s_beacon_type_a.;
+  // beacon_data[35] = s2s_beacon_type_a.;
+  // beacon_data[36] = s2s_beacon_type_a.;
+  // beacon_data[37] = s2s_beacon_type_a.;
+  // beacon_data[38] = s2s_beacon_type_a.;
+  // beacon_data[39] = s2s_beacon_type_a.;
+  // beacon_data[40] = s2s_beacon_type_a.;
+  // beacon_data[41] = s2s_beacon_type_a.;
+  // beacon_data[42] = s2s_beacon_type_a.;
+  // beacon_data[43] = s2s_beacon_type_a.;
+  // beacon_data[44] = s2s_beacon_type_a.;
+  // beacon_data[45] = s2s_beacon_type_a.;
+  // beacon_data[46] = s2s_beacon_type_a.;
+  // beacon_data[47] = s2s_beacon_type_a.;
+  // beacon_data[48] = s2s_beacon_type_a.;
+  // beacon_data[49] = s2s_beacon_type_a.;
+  // beacon_data[50] = s2s_beacon_type_a.;
+  // beacon_data[51] = s2s_beacon_type_a.;
+  // beacon_data[52] = s2s_beacon_type_a.;
+  // beacon_data[53] = s2s_beacon_type_a.;
+  // beacon_data[54] = s2s_beacon_type_a.;
+  // beacon_data[55] = s2s_beacon_type_a.;
+  // beacon_data[56] = s2s_beacon_type_a.;
+  // beacon_data[57] = s2s_beacon_type_a.;
+  // beacon_data[58] = s2s_beacon_type_a.;
+  // beacon_data[59] = s2s_beacon_type_a.;
+  // beacon_data[60] = s2s_beacon_type_a.;
+  // beacon_data[61] = s2s_beacon_type_a.;
+  // beacon_data[62] = s2s_beacon_type_a.;
+  // beacon_data[63] = s2s_beacon_type_a.;
+  // beacon_data[64] = s2s_beacon_type_a.;
+  // beacon_data[65] = s2s_beacon_type_a.;
+  // beacon_data[66] = s2s_beacon_type_a.;
+  // beacon_data[67] = s2s_beacon_type_a.;
+  // beacon_data[68] = s2s_beacon_type_a.;
+  // beacon_data[69] = s2s_beacon_type_a.;
+  // beacon_data[70] = s2s_beacon_type_a.;
+  // beacon_data[71] = s2s_beacon_type_a.;
+  // beacon_data[72] = s2s_beacon_type_a.;
+  // beacon_data[73] = s2s_beacon_type_a.;
+  // beacon_data[74] = s2s_beacon_type_a.;
+  // beacon_data[75] = s2s_beacon_type_a.;
+  // beacon_data[76] = s2s_beacon_type_a.;
+  // beacon_data[77] = s2s_beacon_type_a.;
+  // beacon_data[78] = s2s_beacon_type_a.;
+  // beacon_data[79] = s2s_beacon_type_a.;
+  // beacon_data[80] = s2s_beacon_type_a.;
+  // beacon_data[81] = s2s_beacon_type_a.;
+  // beacon_data[82] = s2s_beacon_type_a.;
+  // beacon_data[83] = s2s_beacon_type_a.;
 }
 void serialize_beacon_b(uint8_t beacon_data[BEACON_DATA_SIZE])
 {
@@ -1078,40 +1061,38 @@ void serialize_beacon_b(uint8_t beacon_data[BEACON_DATA_SIZE])
   beacon_data[0] = s2s_beacon_type_b.HEAD;
   beacon_data[1] = s2s_beacon_type_b.TYPE;
   beacon_data[2] = s2s_beacon_type_b.TIM_DAY;
+  beacon_data[3] = s2s_beacon_type_b.TIM_DAY;
 
-  beacon_data[3] = s2s_beacon_type_b.SOL_P1_V;
-  beacon_data[4] = s2s_beacon_type_b.SOL_P2_V;
-  beacon_data[5] = s2s_beacon_type_b.SOL_P3_V;
-  beacon_data[6] = s2s_beacon_type_b.SOL_P4_V;
-  beacon_data[7] = 0x00; // panel 5
+  beacon_data[4] = s2s_beacon_type_b.SOL_P1_V;
+  beacon_data[5] = s2s_beacon_type_b.SOL_P2_V;
+  beacon_data[6] = s2s_beacon_type_b.SOL_P3_V;
+  beacon_data[7] = s2s_beacon_type_b.SOL_P4_V;
 
   beacon_data[8] = s2s_beacon_type_b.SOL_P1_C;
   beacon_data[9] = s2s_beacon_type_b.SOL_P2_C;
   beacon_data[10] = s2s_beacon_type_b.SOL_P3_C;
   beacon_data[11] = s2s_beacon_type_b.SOL_P4_C;
-  beacon_data[12] = 0x00;
+  beacon_data[12] = (s2s_beacon_type_b.GYRO_X >> 8) & 0xff;
+  beacon_data[13] = (s2s_beacon_type_b.GYRO_X) & 0xff;
+  beacon_data[14] = (s2s_beacon_type_b.GYRO_Y >> 8) & 0xff;
+  beacon_data[15] = (s2s_beacon_type_b.GYRO_Y) & 0xff;
+  beacon_data[16] = s2s_beacon_type_b.GYRO_Z >> 8 & 0xff;
+  beacon_data[17] = s2s_beacon_type_b.GYRO_Z & 0xff;
 
-  beacon_data[13] = (s2s_beacon_type_b.GYRO_X >> 8) & 0xff;
-  beacon_data[14] = (s2s_beacon_type_b.GYRO_X) & 0xff;
-  beacon_data[15] = (s2s_beacon_type_b.GYRO_Y >> 8) & 0xff;
-  beacon_data[16] = (s2s_beacon_type_b.GYRO_Y) & 0xff;
-  beacon_data[17] = s2s_beacon_type_b.GYRO_Z >> 8 & 0xff;
-  beacon_data[18] = s2s_beacon_type_b.GYRO_Z & 0xff;
+  beacon_data[18] = (s2s_beacon_type_b.ACCL_X >> 8) & 0xff;
+  beacon_data[19] = (s2s_beacon_type_b.ACCL_X) & 0xff;
+  beacon_data[20] = (s2s_beacon_type_b.ACCL_Y >> 8) & 0xff;
+  beacon_data[21] = (s2s_beacon_type_b.ACCL_Y) & 0xff;
+  beacon_data[22] = s2s_beacon_type_b.ACCL_Z >> 8 & 0xff;
+  beacon_data[23] = s2s_beacon_type_b.ACCL_Z & 0xff;
 
-  beacon_data[19] = (s2s_beacon_type_b.ACCL_X >> 8) & 0xff;
-  beacon_data[20] = (s2s_beacon_type_b.ACCL_X) & 0xff;
-  beacon_data[21] = (s2s_beacon_type_b.ACCL_Y >> 8) & 0xff;
-  beacon_data[22] = (s2s_beacon_type_b.ACCL_Y) & 0xff;
-  beacon_data[23] = s2s_beacon_type_b.ACCL_Z >> 8 & 0xff;
-  beacon_data[24] = s2s_beacon_type_b.ACCL_Z & 0xff;
-
-  beacon_data[25] = (s2s_beacon_type_b.MAG_X >> 8) & 0xff;
-  beacon_data[26] = (s2s_beacon_type_b.MAG_X) & 0xff;
-  beacon_data[27] = (s2s_beacon_type_b.MAG_Y >> 8) & 0xff;
-  beacon_data[28] = (s2s_beacon_type_b.MAG_Y) & 0xff;
-  beacon_data[29] = s2s_beacon_type_b.MAG_Z >> 8 & 0xff;
-  beacon_data[30] = s2s_beacon_type_b.MAG_Z & 0xff;
-  beacon_data[31] = s2s_beacon_type_b.CHK_CRC; // TODO::  last rst
+  beacon_data[24] = (s2s_beacon_type_b.MAG_X >> 8) & 0xff;
+  beacon_data[25] = (s2s_beacon_type_b.MAG_X) & 0xff;
+  beacon_data[26] = (s2s_beacon_type_b.MAG_Y >> 8) & 0xff;
+  beacon_data[27] = (s2s_beacon_type_b.MAG_Y) & 0xff;
+  beacon_data[28] = s2s_beacon_type_b.MAG_Z >> 8 & 0xff;
+  beacon_data[29] = s2s_beacon_type_b.MAG_Z & 0xff;
+  beacon_data[30] = s2s_beacon_type_b.CHK_CRC;
 }
 
 void Make_Beacon_Data(uint8_t type)
@@ -1267,8 +1248,7 @@ void collect_imu_mag()
   printf("************************************************\n");
 
   read_mpu6050(fd, &imu_acc_data, &imu_gyro_data, &raw_imu);
-  // read_lis3mdl(fd_mag, &raw_imu, mag_data);
-  read_magnetometer(&sat_health);
+  read_lis3mdl(fd_mag, &raw_imu, mag_data);
 
   printf("Timestamp: %f  Temperature: %f\n"
          "Accelerometer X: %f | Y: %f | Z: %f\n"
@@ -1277,7 +1257,7 @@ void collect_imu_mag()
          imu_acc_data.timestamp, imu_acc_data.temperature,
          imu_acc_data.x, imu_acc_data.y, imu_acc_data.z,
          imu_gyro_data.x, imu_gyro_data.y, imu_gyro_data.z,
-         sat_health.mag_x, sat_health.mag_y, sat_health.mag_z);
+         raw_imu.mag_x, raw_imu.mag_y, raw_imu.mag_z);
   printf("************************************************\n");
 
   close(fd);
@@ -1291,9 +1271,9 @@ void collect_imu_mag()
   sat_health.gyro_y = ((imu_gyro_data.y));
   sat_health.gyro_z = ((imu_gyro_data.z));
 
-  sat_health.mag_x = (sat_health.mag_x);
-  sat_health.mag_y = (sat_health.mag_y);
-  sat_health.mag_z = (sat_health.mag_z);
+  sat_health.mag_x = (raw_imu.mag_x);
+  sat_health.mag_y = (raw_imu.mag_y);
+  sat_health.mag_z = (raw_imu.mag_z);
 
   printf("Accelerometer X: %d | Y: %d | Z: %d\n  Magnetometer X: %d | Y: %d | Z: %d\n", sat_health.accl_x, sat_health.accl_y,
          sat_health.accl_z, sat_health.mag_x, sat_health.mag_y, sat_health.mag_z);

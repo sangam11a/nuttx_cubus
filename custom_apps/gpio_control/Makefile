@@ -29,4 +29,5 @@ MODULE    = $(CONFIG_CUSTOM_APPS_GPIO_CONTROL)
 
 
 MAINSRC = gpio_control.c
+
 include $(APPDIR)/Application.mk

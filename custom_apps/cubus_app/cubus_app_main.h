@@ -39,6 +39,39 @@
 #include "gpio_definitions.h"
 #include "mission_operations.h"
 
+#include <uORB/uORB.h>
+#include <sensor/mag.h>
+
+struct orb_mag_s
+{
+  uint64_t timestamp;
+  float x;
+  float y;
+  float z;
+  float temperature;
+};
+
+
+struct data
+{
+    void *data_struct;
+    uint16_t data_size;
+};
+// struct mpu6500_imu_msg
+// {
+//   int16_t acc_x;
+//   int16_t acc_y;
+//   int16_t acc_z;
+//   int16_t temp;
+//   int16_t gyro_x;
+//   int16_t gyro_y;
+//   int16_t gyro_z;
+//   int16_t mag_x;
+//   int16_t mag_y;
+//   int16_t mag_z;
+// };
+
+
 void make_satellite_health();
 void RUN_HK();
 
