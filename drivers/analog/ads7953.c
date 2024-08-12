@@ -185,10 +185,10 @@ static void ads7953_read16(FAR struct ads7953_dev_s *priv, uint8_t *cmd, uint8_t
 
 static int ads7953_open(FAR struct file *filep)
 {
-  printf("Opening the ads7953 file");
+  ainfo("Opening the ads7953 file");
   FAR struct inode *inode = filep->f_inode;
   FAR struct ads7953_dev_s *priv = inode->i_private;
-  printf("Opened the ADS7953 file \n");
+  ainfo("Opened the ADS7953 file \n");
   return OK;
 }
 
@@ -220,7 +220,7 @@ static ssize_t ads7953_read(FAR struct file *filep, FAR char *buffer,
   // for(int i=0;i<8;i++){
   ads7953_read16(priv, temp, buf);
   // }
-  printf("Buffer data: %d size: %d \n",*buf, sizeof(*buf));
+  ainfo("Buffer data: %d size: %d \n",*buf, sizeof(*buf));
   itoa(*buf,buffer,2);
   return sizeof(*buf);
 }
@@ -285,7 +285,7 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0]  = MANUAL_MODE_1;
           temp[1] = MANUAL_MODE_2;
           ads7953_write16(priv, temp);
-          printf("Manual Mode set: %x \n", temp[0] << 8 | temp[1]);
+          ainfo("Manual Mode set: %x \n", temp[0] << 8 | temp[1]);
         }
         break;
 
@@ -295,7 +295,7 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0] = AUTO_2_MODE_1; 
           temp[1] = AUTO_2_MODE_2;
           ads7953_write16(priv, temp);
-          printf("Auto 2 Mode set: %x \n", temp[0] << 8 | temp[1]);
+          ainfo("Auto 2 Mode set: %x \n", temp[0] << 8 | temp[1]);
         }
         break;
       
@@ -305,7 +305,7 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0]  = ADC_AUTO_2_PROGRAM2_1;
           temp[1] = ADC_AUTO_2_PROGRAM2_2;
           ads7953_write16(priv, temp);
-          printf("Auto 2 Program mode set: %x \n", temp[0] << 8 | temp[1]);
+          ainfo("Auto 2 Program mode set: %x \n", temp[0] << 8 | temp[1]);
         }
         break;
 
@@ -318,14 +318,14 @@ static int ads7953_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
           temp[0]  = AUTO_2_MODE2_1;
           temp[1] = AUTO_2_MODE2_2;
           ads7953_read16(priv, temp, ptr);
-          printf("Auto 2 Read Mode: %x \n", temp[0] << 8 | temp[1]);
-          printf("Data from read function: %d \n", *ptr);
+          ainfo("Auto 2 Read Mode: %x \n", temp[0] << 8 | temp[1]);
+          ainfo("Data from read function: %d \n", *ptr);
         }
         break;
 
       /* wrong ioctl command */
       default:
-        sninfo("Unrecognized cmd: %d\n", cmd);
+        ainfo("Unrecognized cmd: %d\n", cmd);
         ret = -ENOTTY;
         break;
     }
@@ -366,7 +366,7 @@ int ads7953_register(FAR const char *devpath,
   priv = kmm_malloc(sizeof(struct ads7953_dev_s));
   if (priv == NULL)
     {
-      snerr("ERROR: Failed to allocate instance\n");
+      aerr("ERROR: Failed to allocate instance\n");
       return -ENOMEM;
     }
 
@@ -378,7 +378,7 @@ int ads7953_register(FAR const char *devpath,
 
   if (ret < 0)
     {
-      snerr("ERROR: Failed to register driver: %d\n", ret);
+      aerr("ERROR: Failed to register driver: %d\n", ret);
       nxmutex_destroy(&priv->lock);
       kmm_free(priv);
     }
