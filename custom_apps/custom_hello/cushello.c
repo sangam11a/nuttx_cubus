@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include "cushello.h"
 
+// #include "test2.h"
 uint8_t write_buf = {23, 24, 25, 26};
 static bool g_cushello_daemon_started;
 /****************************************************************************
@@ -67,6 +68,8 @@ ORB_DEFINE(orb_mag_scaled, struct orb_mag_scaled_s, print_orb_mag_scaled_msg);
 int cushello_daemon(int argc, FAR char *argv[])
 {
 
+  increment();
+  increment2();
   g_cushello_daemon_started = true;
   syslog(LOG_INFO, "Hello World application for writing data to flash.\n");
 

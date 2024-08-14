@@ -18,6 +18,10 @@ config CUSTOM_APPS_CUBUS_APP_PROGNAME
 		This is the name of the program that will be used when the NSH ELF
 		program is installed.
 
+config CUSTOM_APPS_CUBUS_APP_SAMPLE_RATE
+	int "Number of samples to acquire for IMU sensors"
+	default 100
+
 config CUSTOM_APPS_CUBUS_USE_EXT_ADC
 	bool "Use external ADC"
 	default n

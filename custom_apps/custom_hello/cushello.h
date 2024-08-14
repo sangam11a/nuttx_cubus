@@ -10,7 +10,8 @@
 #include <poll.h>
 #include <sensor/mag.h>
 #include <nuttx/sensors/sensor.h>
-
+// #include "test2.h"
+// #include "test.h"
 struct orb_mag_scaled_s
 {
   uint64_t timestamp;

@@ -582,7 +582,7 @@ static int COM_TASK(int argc, char *argv[])
   sleep(2);
   if (digipeating)
   {
-    printf("Startign digipeating mode:\n");
+    printf("Starting digipeating mode:\n");
 
     digipeater_mode(rx_data);
   }
@@ -1242,7 +1242,7 @@ void make_satellite_health()
 
 void collect_imu_mag()
 {
-  float acq_period = CONFIG_EXAMPLES_SENSOR_FUSION_SAMPLE_RATE / 1000.0f;
+  float acq_period = CONFIG_CUSTOM_APPS_CUBUS_APP_SAMPLE_RATE / 1000.0f;
   printf("Sensor Fusion example\n");
   printf("Sample Rate: %.2f Hz\n", 1.0 / acq_period);
   printf("got inside sensor_work");

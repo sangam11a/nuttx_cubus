@@ -38,6 +38,7 @@
 #include "imu_mag.h"
 #include "gpio_definitions.h"
 #include "mission_operations.h"
+#include "com_app_main.h"
 
 #include <uORB/uORB.h>
 #include <sensor/mag.h>

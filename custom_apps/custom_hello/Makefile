@@ -30,4 +30,7 @@ MODULE    = $(CONFIG_CUSTOM_APPS_CUSTOM_HELLO)
 # Custom Hello
 
 MAINSRC = cushello.c
+
+CSRCS += test.c
+CSRCS += test2.c
 include $(APPDIR)/Application.mk
