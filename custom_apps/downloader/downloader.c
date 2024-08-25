@@ -80,22 +80,27 @@ int open_file_flash(struct file *file_pointer, char *flash_strpath, char *filena
  ****************************************************************************/
 int main(int argc, FAR char *argv[])
 {
-  int data = 0x0a;
+  int data = 0x02a;
   int ret;
+  SEEK_POINTER seek_pointer = {'NULL'}, seek_pointer1 = {'NULL'};
+    // seek_pointer.SATELLITE_HEALTH_1 = data + 1;
+    // seek_pointer.SATELLITE_HEALTH_2 = data + 2;
+    // seek_pointer.MSN1_DATA_1 = data + 3;
+    // seek_pointer.MSN1_DATA_2 = data + 4;
+    // seek_pointer.MSN2_DATA_1 = data + 5;
+    // seek_pointer.MSN2_DATA_2 = data + 6;
+  uint8_t data_retrieved[9100];
   if (argc > 1)
   {
     //  int fd = open()
-    printf("number of argument received is %d\n", argc);
+    printf("[Cushello] print original pointer\n");
+    print_seek_pointer(&seek_pointer);
+    retrieve_data_from_flash(MFM_MAIN_STRPATH, "/seek_pointer.txt", &seek_pointer, atoi(argv[1]));
+    printf("number of argument received is %s %d \n", argv[1], atoi(argv[1]));
   }
   else
   {
-    SEEK_POINTER seek_pointer = {'NULL'}, seek_pointer1 = {'NULL'};
-    seek_pointer.SATELLITE_HEALTH_1 = data + 1;
-    seek_pointer.SATELLITE_HEALTH_2 = data + 2;
-    seek_pointer.MSN1_DATA_1 = data + 3;
-    seek_pointer.MSN1_DATA_2 = data + 4;
-    seek_pointer.MSN2_DATA_1 = data + 5;
-    seek_pointer.MSN2_DATA_2 = data + 6;
+  
     printf("[Cushello] print original pointer\n");
     print_seek_pointer(&seek_pointer);
     printf("[Cushello] store seek pointer\n");
@@ -108,36 +113,56 @@ int main(int argc, FAR char *argv[])
     printf("[Cushello] print original pointer\n");
     print_seek_pointer(&seek_pointer);
     printf("[Cushello] print data from ext flash\n");
-    uint8_t data_retrieved[9];
-    retrieve_data_from_flash(MFM_MAIN_STRPATH, "/seek_pointer.txt", data_retrieved, 1);
+    {
+      retrieve_data_from_flash(MFM_MAIN_STRPATH, "/seek_pointer.txt", &seek_pointer, 1);
+    }
   }
   return EXIT_SUCCESS;
 }
 
 void print_retrieved_data(uint8_t *data_retrieved, ssize_t size)
 {
+  printf("the sizeof received data is %d\n", size);
   for (int i = 0; i < size; i++)
   {
-    printf("%d ", data_retrieved[i]);
+    printf("%d : %c|| ", data_retrieved[i], data_retrieved[i]);
   }
 }
 
-void retrieve_data_from_flash(char *partition_name, char *filename, uint8_t *data_retrieved, int times)
+void retrieve_data_from_flash(char *partition_name, char *filename, SEEK_POINTER *seek_pointer, int times)
 {
-  // struct stat st;
   struct file fptr;
   int fd = 0;
-  fd = open("/mnt/fs/mfm/mtd_mainstorage/seek_pointer.txt", O_CREAT | O_RDONLY);
+  uint8_t data_retrieved1[200];
+  char path[200];
+  sprintf(path,"%s%s\0",partition_name,filename);
+  fd = file_open(&fptr, path, O_RDONLY);
   // fd = open_file_flash(&fptr, partition_name, filename, O_RDONLY | O_CREAT);
   if (fd >= 0)
   {
-    ssize_t bytes_read = read(fd, data_retrieved, sizeof(data_retrieved));
+    int size_file = file_seek(&fptr, 0, SEEK_END);
+    int off = file_seek(&fptr, (off_t) times, SEEK_SET);
+  
+    ssize_t bytes_read = file_read(&fptr, seek_pointer, sizeof(seek_pointer));
+    
+    printf("The seek pointer starts from : %d %d %d\n", off, bytes_read, size_file);
+
     if (bytes_read > 0)
     {
-      print_retrieved_data(data_retrieved, bytes_read);
+
+      printf("Before value is %d\n", seek_pointer->MSN1_DATA_1);
+      print_seek_pointer(seek_pointer);
+      seek_pointer->MSN1_DATA_1 += 2;
+      printf("Updated value is %d\n", seek_pointer->MSN1_DATA_1);
+      print_seek_pointer(seek_pointer);
+
+      // print_retrieved_data(seek_pointer, bytes_read);
+      print_seek_pointer(seek_pointer);
+      write_seek_pointer(path, seek_pointer);
     }
-    // file_syncfs(&fptr);
-    // file_close(&fptr);
+    // write_to_flash();
+    file_syncfs(&fptr);
+    file_close(&fptr);
     close(fd);
   }
   else
@@ -147,6 +172,20 @@ void retrieve_data_from_flash(char *partition_name, char *filename, uint8_t *dat
     syslog(LOG_ERR, "Error opening file to read satellite health data..\n");
   }
   file_close(&fptr);
+}
+
+void write_seek_pointer(char *path, SEEK_POINTER *seek_pointer){
+ printf("GOt sth as arg\n");
+ print_seek_pointer(seek_pointer);
+  struct file wptr;
+  int fd = 0;
+  fd = file_open(&wptr, path, O_WRONLY);
+  ssize_t wrBytes = file_write(&wptr, seek_pointer, sizeof(seek_pointer));
+  if(wrBytes > 0 ){
+    printf(" The seek pointe has been updated.\n");
+  }
+  file_close(&wptr);
+  close(fd);
 }
 
 void read_seek_pointer(SEEK_POINTER *seek_pointer)
