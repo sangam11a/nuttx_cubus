@@ -36,7 +36,7 @@
 #define SFM_MSN_STRPATH		    "/mnt/fs/sfm/mtd_mission"
 
 #define file_name_flag             "/flags.txt"
-#define file_name_sat_health       "/sat_health.txt"
+#define file_name_sat_health       "/satHealth.txt"
 
 #define file_name_epdm_msn          "/epdm.txt"
 #define file_name_cam_msn           "/cam.txt"

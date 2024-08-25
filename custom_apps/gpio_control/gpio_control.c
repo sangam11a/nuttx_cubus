@@ -19,83 +19,82 @@ uint8_t pin_mode_1;
 static struct work_s work_sec1;
 uint8_t data[7] = {0x53, 0x01, 0x02, 0x03, 0x04, 0x7e};
 
-typedef struct __attribute__ ((__packed__))  _BEACON_A{
-uint8_t HEAD;//1 byte head -0x53
-uint8_t TYPE:4; //4bit
-int TIM_DAY:12; //12bit
-uint8_t TIM_HOUR; //1byte
+typedef struct __attribute__((__packed__)) _BEACON_A
+{
+  uint8_t HEAD;     // 1 byte head -0x53
+  uint8_t TYPE : 4; // 4bit
+  int TIM_DAY : 12; // 12bit
+  uint8_t TIM_HOUR; // 1byte
 
-uint16_t BAT_V;//voltage 2 byte
-uint16_t BAT_C;//current 2 byte
-int16_t BAT_T;// battery temperatuerein Degree centigrade 2byte
-int8_t RAW_C;// 1byte
-uint16_t SOL_TOT_V;// in mV  2 byte
-int16_t SOL_TOT_C;//in mA 2 byte
+  uint16_t BAT_V;     // voltage 2 byte
+  uint16_t BAT_C;     // current 2 byte
+  int16_t BAT_T;      // battery temperatuerein Degree centigrade 2byte
+  int8_t RAW_C;       // 1byte
+  uint16_t SOL_TOT_V; // in mV  2 byte
+  int16_t SOL_TOT_C;  // in mA 2 byte
 
-int8_t BPB_T;//backplane board temp 1byte
-int8_t OBC_T;//1 byte
-/*TOdo make consist var*/
-int8_t Y1_T;//1 byte
-int8_t Y_T;//1 byte
-int8_t Z1_T;//1 byte
-int8_t Z_T;//1 byte
-int8_t X1_T;//1 byte
-int8_t X_T;//1 byte
+  int8_t BPB_T; // backplane board temp 1byte
+  int8_t OBC_T; // 1 byte
+  /*TOdo make consist var*/
+  int8_t Y1_T; // 1 byte
+  int8_t Y_T;  // 1 byte
+  int8_t Z1_T; // 1 byte
+  int8_t Z_T;  // 1 byte
+  int8_t X1_T; // 1 byte
+  int8_t X_T;  // 1 byte
 
+  uint8_t SOL_P1_STAT; // 1 byte
+  uint8_t SOL_P2_STAT; // 1 byte
+  uint8_t SOL_P3_STAT; // 1 byte
+  uint8_t SOL_P4_STAT; // 1 byte
+  uint8_t MSN1_STAT;   // 1 byte ()
+  uint8_t MSN2_STAT;   // 1 byte ()
+  uint8_t MSN3_STAT;   // 1 byte ()
 
-uint8_t SOL_P1_STAT;//1 byte
-uint8_t SOL_P2_STAT;//1 byte
-uint8_t SOL_P3_STAT;//1 byte
-uint8_t SOL_P4_STAT;//1 byte
-uint8_t MSN1_STAT;	//1 byte ()
-uint8_t MSN2_STAT;	//1 byte ()
-uint8_t MSN3_STAT;	//1 byte ()
+  uint8_t ANT_STAT;   // 1 byte
+  uint8_t KILL1_STAT; // 1 byte
+  uint8_t KILL2_STAT; // 1 byte
+  uint8_t UL_STAT;    // 1 byte
 
+  uint8_t OPER_MODE; // 1 byte
+  uint16_t RST_RESET_COUNT;
+  uint16_t OBC_RESET_COUNT; // 2 byte
+  uint16_t LAST_RESET;      // 2 byte
+  uint16_t CHK_CRC;         // 2 byte
 
-uint8_t ANT_STAT;//1 byte
-uint8_t KILL1_STAT;//1 byte
-uint8_t KILL2_STAT;//1 byte
-uint8_t UL_STAT;//1 byte
+  uint8_t ANT_P_T;
 
-uint8_t OPER_MODE;//1 byte
-uint16_t RST_RESET_COUNT;
-uint16_t OBC_RESET_COUNT;//2 byte
-uint16_t LAST_RESET;//2 byte
-uint16_t CHK_CRC;//2 byte
-
-uint8_t ANT_P_T;
-
-// uint16_t 
+  // uint16_t
 } S2S_BEACON_A;
 
-typedef struct __attribute__ ((__packed__)) _S2S_BEACON_TYPE_B {
-    /*1-byte*/uint8_t HEAD;
-    /*4-bit*/uint8_t TYPE :4;
-    /*12-bit*/unsigned int TIM_DAY :12;
+typedef struct __attribute__((__packed__)) _S2S_BEACON_TYPE_B
+{
+  /*1-byte*/ uint8_t HEAD;
+  /*4-bit*/ uint8_t TYPE : 4;
+  /*12-bit*/ unsigned int TIM_DAY : 12;
 
-    /*1-byte*/uint8_t SOL_P1_V; // voltage upto 1dp, without decimal
-    /*1-byte*/uint8_t SOL_P2_V;
-    /*1-byte*/uint8_t SOL_P3_V;
-    /*1-byte*/uint8_t SOL_P4_V;
+  /*1-byte*/ uint8_t SOL_P1_V; // voltage upto 1dp, without decimal
+  /*1-byte*/ uint8_t SOL_P2_V;
+  /*1-byte*/ uint8_t SOL_P3_V;
+  /*1-byte*/ uint8_t SOL_P4_V;
 
-    /*1-byte*/int8_t SOL_P1_C;
-    /*1-byte*/int8_t SOL_P2_C;
-    /*1-byte*/int8_t SOL_P3_C;
-    /*1-byte*/int8_t SOL_P4_C;
+  /*1-byte*/ int8_t SOL_P1_C;
+  /*1-byte*/ int8_t SOL_P2_C;
+  /*1-byte*/ int8_t SOL_P3_C;
+  /*1-byte*/ int8_t SOL_P4_C;
 
-    /*2-byte*/int16_t GYRO_X;
-    /*2-byte*/int16_t GYRO_Y;
-    /*2-byte*/int16_t GYRO_Z;
-    /*2-byte*/int16_t ACCL_X;
-    /*2-byte*/int16_t ACCL_Y;
-    /*2-byte*/int16_t ACCL_Z;
+  /*2-byte*/ int16_t GYRO_X;
+  /*2-byte*/ int16_t GYRO_Y;
+  /*2-byte*/ int16_t GYRO_Z;
+  /*2-byte*/ int16_t ACCL_X;
+  /*2-byte*/ int16_t ACCL_Y;
+  /*2-byte*/ int16_t ACCL_Z;
 
-    /*2-byte*/int16_t MAG_X;
-    /*2-byte*/int16_t MAG_Y;
-    /*2-byte*/int16_t MAG_Z;
-    /*1-byte*/uint8_t CHK_CRC;
-} S2S_BEACON_TYPE_B;  // Use typedef for ease of use
-
+  /*2-byte*/ int16_t MAG_X;
+  /*2-byte*/ int16_t MAG_Y;
+  /*2-byte*/ int16_t MAG_Z;
+  /*1-byte*/ uint8_t CHK_CRC;
+} S2S_BEACON_TYPE_B; // Use typedef for ease of use
 
 S2S_BEACON_A s2s_beacon_type_a;
 S2S_BEACON_TYPE_B s2s_beacon_type_b;
@@ -105,7 +104,7 @@ uint8_t NACK[7] = {0x53, 0xee, 0xff, 0xee, 0xff, 0x7e};
 
 // uint8_t RX_DATA_EPDM[48] = {'\0'};
 
-uint8_t digipeating =1;
+uint8_t digipeating = 1;
 
 #define PRINT_DELAY 500
 
@@ -121,6 +120,92 @@ uint8_t beacon_status = 0;
 uint8_t COM_BUSY = 0;
 static struct work_s work_beacon;
 uint8_t beacon_type = 0;
+
+// TODO checking the seek pointer
+void retrieve_data_from_flash_edited(char *partition_name, char *filename, uint8_t *data_retrieved, int offset_value)
+{
+  // struct stat st;
+  struct file fptr;
+  struct file fp;
+  int fd = 0;
+  char path[80];
+  sprintf(path, "%s%s", partition_name, filename); // save_data_to_flash("/mnt/fs/mfm/mtd_mission", "/cam.txt", &data1)
+  fd = file_open(&fp, path, O_CREAT | O_RDONLY);
+  if (fd >= 0)
+  {
+    // int offset_value = file_seek(&fptr, 0, SEEK_END);
+    int off = file_seek(&fptr, offset_value, SEEK_SET);
+    ssize_t bytes_read = file_read(&fp, data_retrieved, sizeof(data_retrieved));
+    if (bytes_read > 0)
+    {
+      print_retrieved_data(data_retrieved, bytes_read);
+    }
+    file_syncfs(&fp);
+    if (file_close(&fp))
+    {
+      // fd = file_open(&fp, path, O_WRONLY);
+      // {
+      //   if(fd > 0){
+      //     ssize_t bytes_write = file_write(&fp, );
+      //   }
+      // }
+    }
+    close(fd);
+  }
+  else
+  {
+    close(fd);
+
+    syslog(LOG_ERR, "Error opening file to read satellite health data..\n");
+  }
+  file_close(&fptr);
+}
+
+// int open_file_flash(struct file *file_pointer, char *flash_strpath, char *filename, int open_mode){
+
+//   const char file_name[] = {'\0'};
+//   // memcpy(file_name, filename, sizeof(filename));
+//   char path[65];
+//   sprintf(path, "%s%s", flash_strpath, filename);
+//   int fd = file_open(file_pointer, path, open_mode);
+//   if(fd < 0){
+//      syslog(LOG_ERR, "Error opening file: %s\n",path);
+//      return fd;
+//   }else{
+//     syslog(LOG_INFO, "Opened file: %s ...\n",path);
+//   }
+//   return fd;
+// }
+
+void save_data_to_flash(char *partition_name, char *filename, uint8_t *data_retrieved)
+{
+  struct file file_p;
+
+  int fd = 0;
+  fd = file_open(&file_p, "/mnt/fs/mfm/mtd_mission/cam.txt", O_CREAT | O_WRONLY | O_APPEND);
+  printf("value of fd is %d\n", fd);
+  // fd = open_file_flash(&fptr, partition_name, filename, O_RDONLY | O_CREAT);
+  if (fd >= 0)
+  {
+    ssize_t bytes_written = file_write(&file_p, data_retrieved, sizeof(data_retrieved));
+    if (bytes_written > 0)
+    {
+      syslog(LOG_INFO, "Camera data write Successful.\nData Len: %d.\n", bytes_written);
+      file_close(&file_p);
+    }
+    else
+    {
+      syslog(LOG_INFO, "Write Failure.\n");
+    }
+    file_syncfs(&file_p);
+    file_close(&file_p);
+  }
+  else
+  {
+    syslog(LOG_ERR, "Error opening file to camera.txt..\n");
+  }
+  file_close(&file_p);
+}
 
 /****************************************************************************
  * Receive data from UART
@@ -418,8 +503,8 @@ void reader_mq_2(char *gpio_name_1)
 void CHECK_GPIO_1()
 {
   reader_mq_2(gpio_name_1);
-  uint8_t pin_mode[5]={0,0,0,0,0};
-  printf("GPIO name is %s\n",gpio_name_1);
+  uint8_t pin_mode[5] = {0, 0, 0, 0, 0};
+  printf("GPIO name is %s\n", gpio_name_1);
   if (!strcmp(gpio_name_1, "COM"))
   {
     gpio_write(GPIO_3V3_COM_EN, !pin_mode[0]);
@@ -449,11 +534,8 @@ void CHECK_GPIO_1()
     printf("Starting antenna deployment sequence..\n Turning Burner EN line: %d\n Turning Unreg line: %d\n", pin_mode[5], pin_mode[5]);
     gpio_write(GPIO_BURNER_EN, !pin_mode[5]);
     gpio_write(GPIO_UNREG_EN, pin_mode[5]);
-  
   }
   work_queue(HPWORK, &work_gpio12, CHECK_GPIO_1, NULL, SEC2TICK(2));
-
-
 }
 
 void first()
@@ -481,7 +563,7 @@ int send_beacon_data()
   switch (beacon_type)
   {
   case 0:
-    
+
     serialize_beacon_a(beacon_data);
 
     beacon_data[1] = 0xb1;
@@ -498,9 +580,8 @@ int send_beacon_data()
     return -1;
     break;
   }
-    beacon_data[0] = 0x53;
-    beacon_data[83] = 0x7e;
-
+  beacon_data[0] = 0x53;
+  beacon_data[83] = 0x7e;
 
   beacon_data[84] = '0';
   int fd = open(COM_UART, O_WRONLY);
@@ -514,7 +595,7 @@ int send_beacon_data()
   gpio_write(GPIO_DCDC_4V_EN, 1);
   printf("Turning on COM 4V line..\n");
   gpio_write(GPIO_COM_4V_EN, 1);
-  
+
   int ret = write(fd, beacon_data, BEACON_DATA_SIZE);
   usleep(10000);
   if (ret < 0)
@@ -532,12 +613,13 @@ int send_beacon_data()
     }
   }
   /*To delete*/
-  if(beacon_status == 0){
+  if (beacon_status == 0)
+  {
     printf("\nbeacon 1:\n");
   }
-  else{
+  else
+  {
     printf("\nbeacon 2:\n");
-
   }
   beacon_type = !beacon_type;
 
@@ -550,16 +632,16 @@ int send_beacon_data()
   printf("\n");
   /*To delete*/
   int x = 0;
-    while (x < 200000)
-    {
-      x += 80;
-      usleep(80);
-    }
+  while (x < 200000)
+  {
+    x += 80;
+    usleep(80);
+  }
 
   // printf("Turning off  4v DCDC line..\n");
   gpio_write(GPIO_DCDC_4V_EN, 0);
   // printf("Turning off COM 4V line..\n");
-  gpio_write(GPIO_COM_4V_EN,0);
+  gpio_write(GPIO_COM_4V_EN, 0);
   ioctl(fd, TCFLSH, 2);
   ioctl(fd, TCDRN, 2);
   printf("TX RX buffer flused\n");
@@ -567,7 +649,7 @@ int send_beacon_data()
   printf("Turned off COM 4V line..\n");
   printf("Beacon Type %d sequence complete\n", beacon_type);
   work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
-  
+
   return 0;
 }
 int receive_telecommand_rx(uint8_t *COM_RX_DATA)
@@ -682,7 +764,7 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
     }
     ack[83] = 0x7e;
     int j;
-    for ( j = 0; j < 10; j++)
+    for (j = 0; j < 10; j++)
     {
       printf("\n EPDM data packet no %d\n", j + 1);
 
@@ -692,11 +774,11 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
         printf("unable to open: %s\n", COM_UART);
         return -1;
       }
-    printf("Turning on 4v  dcdc  line..\n");
-    gpio_write(GPIO_DCDC_4V_EN, 1);
-    printf("Turning on 4v RF line..\n");
+      printf("Turning on 4v  dcdc  line..\n");
+      gpio_write(GPIO_DCDC_4V_EN, 1);
+      printf("Turning on 4v RF line..\n");
 
-    gpio_write(GPIO_COM_4V_EN, 1);
+      gpio_write(GPIO_COM_4V_EN, 1);
       ret = write(fd, ack, BEACON_DATA_SIZE);
       x = 0;
       while (x < 500000)
@@ -704,10 +786,10 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
         x += 100;
         usleep(100);
       }
-    printf("Turning of 4v RF line..\n");
+      printf("Turning of 4v RF line..\n");
 
       gpio_write(GPIO_COM_4V_EN, 0);
-    printf("Turning off 4v dcdc EN line..\n");
+      printf("Turning off 4v dcdc EN line..\n");
 
       gpio_write(GPIO_DCDC_4V_EN, 0);
 
@@ -749,7 +831,6 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
   return ret;
 }
 
-
 /****************************************************************************
  * COM TASK task
  *
@@ -767,9 +848,9 @@ void digipeater_mode(uint8_t *data)
   if (send_data_uart(COM_UART, data, 84) > 0)
   {
     printf("digipeating data is \n ");
-    for(int i =0 ;i<85;i++)
-    printf("%02x ", data);
-    printf("digipeating successful\n :"); 
+    for (int i = 0; i < 85; i++)
+      printf("%02x ", data);
+    printf("digipeating successful\n :");
   }
   /*To delete*/
 }
@@ -865,66 +946,309 @@ int handshake_COM(uint8_t *ack)
   return 0;
 }
 
+/****************************************************************************
+ * MSN handshake function
+ ****************************************************************************/
+int handshake_MSN(char *uart_msn, uint8_t *ack)
+{
+  double fd;
+  uint8_t data1[ACK_DATA_SIZE] = {'\0'};
+  int i;
+  int count = 0, ret;
+  printf("Opening uart dev path : %s ret : %d", uart_msn, fd);
+  usleep(PRINT_DELAY);
+  fd = open(uart_msn, O_RDWR);
+  if (fd < 0)
+  {
+    printf("error opening %s\n", uart_msn);
+    usleep(PRINT_DELAY);
+    return -1;
+  }
+
+  int wr1 = write(fd, data, ACK_DATA_SIZE); // writing handshake data
+  if (wr1 < 0)
+  {
+    printf("Unable to send data through %d UART", uart_msn);
+    usleep(PRINT_DELAY);
+    return -1;
+  }
+  printf("\n%d bytes written\n", wr1);
+  usleep(PRINT_DELAY);
+  // ret = read(fd, data1, 10);   //try reading data from UART at once as well
+
+  for (i = 0; i < ACK_DATA_SIZE; i++)
+  {
+    ret = read(fd, &data1[i], 1);
+  }
+  printf("data received from %s \n", uart_msn);
+  usleep(PRINT_DELAY);
+  for (int i = 0; i < ACK_DATA_SIZE; i++)
+  {
+    printf(" %x ", data1[i]);
+  }
+  printf("\n");
+  usleep(PRINT_DELAY);
+  if (data[0] == data1[0] && data[ACK_DATA_SIZE - 2] == data1[ACK_DATA_SIZE - 2])
+  {
+    printf("\n******Acknowledgement received******\n");
+    usleep(PRINT_DELAY);
+  }
+  printf("handshake complete\n");
+  printf("\n");
+  ioctl(fd, TCFLSH, 2);
+  ioctl(fd, TCDRN, NULL);
+  printf("flused tx rx buffer\n");
+  close(fd);
+  return 0;
+}
 
 int main(int argc, FAR char *argv[])
 {
   // first();
   // CHECK_GPIO_1();
-  if (argc < 3)
+  if (argc <= 2)
   {
+    uint8_t data_retrieved[100];
+    retrieve_data_from_flash_edited("/mnt/fs/mfm/mtd_mainstorage", "/satHealth.txt", &data_retrieved, argv[2]);
+    for (int i = 0; i < 100; i++)
+    {
+      printf("%d : %02x      ", i, data_retrieved[i]);
+    }
+  }
+  if (argc < 3)
+  { 
     printf("Enter both subsystem name and gpio mode\n Enter: Application Name, Subsystem name (CAM, MSN1, MSN2, MSN3 etc.),GPIO Pin Mode (1 or 0)\n ");
     printf("In case of MUX: 1 for OBC controls FLASH \t 0 to let MSN access FLASH\n");
     return -1;
   }
-  uint8_t pin_mode = atoi(argv[2]);
-  if (!strcmp(argv[1], "COM"))
+  // else
   {
-    // gpio_write(GPIO_3V3_COM_EN, pin_mode);
-    // gpio_write(GPIO_DCDC_4V_EN, pin_mode);
-    // COM_TASK(argc,argv);
-    if(pin_mode == 0){
-      gpio_write(GPIO_3V3_COM_EN, 0);
-      gpio_write(GPIO_DCDC_4V_EN, 0); 
-      // return 0;
-    }
-    else{}
-    int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
-    if (retval < 0)
+    printf("some else called");
+
+    uint8_t pin_mode = atoi(argv[2]);
+    printf("Pin mode is %d", pin_mode);
+    if (!strcmp(argv[1], "COM"))
     {
-      printf("unable to create COM task\n");
-      return -1;
+      // gpio_write(GPIO_3V3_COM_EN, pin_mode);
+      // gpio_write(GPIO_DCDC_4V_EN, pin_mode);
+      // COM_TASK(argc,argv);
+      if (pin_mode == 0)
+      {
+        gpio_write(GPIO_3V3_COM_EN, 0);
+        gpio_write(GPIO_DCDC_4V_EN, 0);
+        // return 0;
+      }
+      else
+      {
+      }
+      int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
+      if (retval < 0)
+      {
+        printf("unable to create COM task\n");
+        return -1;
+      }
     }
-    
+    else if (!strcmp(argv[1], "MSN1"))
+    { // ADCS
+      gpio_write(GPIO_MSN_3V3_EN, pin_mode);
+      gpio_write(GPIO_MSN1_EN, pin_mode);
+      // save_data_to_flash();
+      uint8_t data1[] = {'T', 'E', 'S', 'T'};
+      save_data_to_flash("/mnt/fs/mfm/mtd_mission", "/cam.txt", &data1);
+    }
+    else if (!strcmp(argv[1], "MSN2") | !strcmp(argv[1], "CAM"))
+    {
+      uint8_t rec1;
+      uint8_t rec[1000] = {0}; // Initialize to 0 instead of 'NULL'
+      uint8_t cam[7] = {0x53, 'O', 'B', 'C', 0x01, 0x7e};
+      int fd, ret1, i1 = 0;
+      int j1 = 1;
+
+      fd = open(EPDM_UART, O_RDWR);
+      if (fd < 0)
+      {
+        perror("Failed to open UART");
+        return -1;
+      }
+
+      ret1 = write(fd, cam, sizeof(cam));
+      if (ret1 < 0)
+      {
+        perror("Failed to write to UART");
+        close(fd);
+        return -1;
+      }
+      else
+      {
+        printf("cmd %s sent successfully\n", cam);
+      }
+
+      while (rec[i1] != 0xd9 && rec[i1 - 1] != 0xff)
+      {
+        ret1 = read(fd, &rec1, 1);
+        if (ret1 < 0)
+        {
+          perror("Failed to read from UART");
+          close(fd);
+          return -1;
+        }
+        else
+        {
+          // printf("received data %d\n", i1);
+        }
+        rec[i1++] = rec1;
+
+        if (i1 % 1001 > 999 || i1 > 1000)
+        {
+          printf("%d  ", i1);
+        }
+
+        if (i1 % 1001 > 999 || i1 > 1000)
+        {
+
+          i1 = 0;
+          j1++;
+          cam[4] = j1;
+          for (int p = 0; p < 10; p++)
+          {
+            printf("%02x ", p);
+          }
+          save_data_to_flash("/mnt/fs/mfm/mtd_mission", "/cam.txt", &rec);
+
+          // save_data_to_flash("/mnt/fs/mfm/mtd_mission", "/cam.txt", rec);
+          sleep(1);
+          memset(rec, 0, sizeof(rec)); // Clear the buffer
+          ret1 = write(fd, cam, sizeof(cam));
+          if (ret1 < 0)
+          {
+            perror("Failed to write to UART");
+            close(fd);
+            return -1;
+          }
+
+          else
+            printf("J is %d \nCommand sent is %s\n", j1, cam);
+        }
+      }
+
+      printf("\nEnded data reading\n");
+      close(fd);
+      // fd=open(EPDM_UART, O_RDONLY);
+      // printf("Started data reading\n");
+      // while(1){
+      //   ret1 = read(fd, rec1, sizeof(rec1));
+      //   if(ret1 > 0){
+      //     printf("%02x ",rec1);
+      //   }
+      // }
+
+      // printf("\nENDed data reading\n");
+      // close(fd);
+      // // CAM
+      // // gpio_write(GPIO_MSN_3V3_EN, pin_mode);
+      // printf("Turning on 3v3 mission pin");
+      // // gpio_write(GPIO_MSN2_EN, pin_mode);
+      // printf("Turning on MSN2 ...CAM  enable pin\n");
+      // printf("Handshaking with CAM  starting \n");
+      // uint8_t command[] = {0x53, 'M', 'O', 'D', 'E', 0x7e};
+      // int data[200];
+      // int i = 0, ret;
+      // do
+      // {
+      //   // send_data_uart(EPDM_UART, command, sizeof(command));
+      //   fd = open(EPDM_UART, O_WRONLY);
+      //   int ret = write(fd, command, sizeof(command));
+      //   if (ret > 5)
+      //   {
+      //     printf("data of size %d has been sent\n");
+      //   }
+      //   close(fd);
+      //   usleep(50000);
+      //   fd = open(EPDM_UART, O_RDONLY);
+      //   if (fd < 0)
+      //   {
+      //     printf("%s opening failed in %d attempt.\n", EPDM_UART, i + 1);
+      //   }
+      //   else
+      //   {
+
+      //     // ret = read(fd, rec, sizeof(rec));
+      //     for (int i = 0; i < 6; i++)
+      //     {
+      //       ret = read(fd, &rec[i], 1);
+      //     }
+      //     printf("waiting data in uart %d\n", EPDM_UART);
+      //     if (ret > 0)
+      //     {
+      //       printf("Data received %s\n", rec);
+      //       close(fd);
+      //       break;
+      //     }
+      //   }
+      //   sleep(1);
+      // } while (1);
+      // sleep(4);
+      // if (send_data_uart(EPDM_UART, command, sizeof(command)))
+      // {
+      //   printf("%s command has been sent successfully\n", command);
+      //   usleep(10000);
+      //   fd = open(EPDM_UART, O_RDONLY);
+      //   if (fd < 0)
+      //   {
+      //     printf("%s opening failed in %d attempt.\n", EPDM_UART, i + 1);
+      //   }
+      //   else
+      //   {
+      //     int timeout = 0;
+      //     fd = open(EPDM_UART, O_WRONLY);
+      //     do
+      //     {
+      //       timeout++;
+      //       ret = read(fd, data, sizeof(data));
+      //       sleep(1);
+      //     } while (ret == -1);
+      //     while (ret == -1)
+      //     {
+      //       timeout++;
+      //       ret = read(fd, data, sizeof(data));
+      //       sleep(1);
+      //     }
+      //     if (ret > 000)
+      //     {
+      //       printf("Data of size %d has been received\n", ret);
+
+      //       close(fd);
+      //       for (fd = 0; fd < ret; fd++)
+      //       {
+      //         printf("%c", data[fd]);
+      //       }
+      //       printf("\n");
+      //     }
+      //     close(fd);
+      //   }
+      // }
+    }
+    else if (!strcmp(argv[1], "MSN3"))
+    { // EPDM
+      gpio_write(GPIO_MSN_3V3_EN, pin_mode);
+      gpio_write(GPIO_MSN3_EN, pin_mode);
+    }
+    else if (!strcmp(argv[1], "MUX"))
+    {
+      gpio_write(GPIO_MUX_EN, 1);
+      gpio_write(GPIO_SFM_MODE, pin_mode); // TODO: CHECK PULL UP PULL DOWN MODE FOR MSN and OBC access
+    }
+    else if (!strcmp(argv[1], "ANT"))
+    {
+      printf("Starting antenna deployment sequence..\n Turning Burner EN line: %d\n Turning Unreg line: %d\n", pin_mode, pin_mode);
+      gpio_write(GPIO_BURNER_EN, pin_mode);
+      gpio_write(GPIO_UNREG_EN, pin_mode);
+    }
+    else
+    { // keep on adding other gpio pins as you go
+      printf("Unknown command \n");
+      return -2;
+    }
   }
-  else if (!strcmp(argv[1], "MSN1"))
-  { // ADCS
-    gpio_write(GPIO_MSN_3V3_EN, pin_mode);
-    gpio_write(GPIO_MSN1_EN, pin_mode);
-  }
-  else if (!strcmp(argv[1], "MSN2"))
-  { // CAM
-    gpio_write(GPIO_MSN_3V3_EN, pin_mode);
-    gpio_write(GPIO_MSN2_EN, pin_mode);
-  }
-  else if (!strcmp(argv[1], "MSN3"))
-  { // EPDM
-    gpio_write(GPIO_MSN_3V3_EN, pin_mode);
-    gpio_write(GPIO_MSN3_EN, pin_mode);
-  }
-  else if (!strcmp(argv[1], "MUX"))
-  {
-    gpio_write(GPIO_MUX_EN, 1);
-    gpio_write(GPIO_SFM_MODE, pin_mode); // TODO: CHECK PULL UP PULL DOWN MODE FOR MSN and OBC access
-  }
-  else if (!strcmp(argv[1], "ANT"))
-  {
-    printf("Starting antenna deployment sequence..\n Turning Burner EN line: %d\n Turning Unreg line: %d\n", pin_mode, pin_mode);
-    gpio_write(GPIO_BURNER_EN, pin_mode);
-    gpio_write(GPIO_UNREG_EN, pin_mode);
-  }
-  else
-  { // keep on adding other gpio pins as you go
-    printf("Unknown command \n");
-    return -2;
-  }
+  return 0;
 }

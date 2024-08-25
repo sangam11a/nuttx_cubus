@@ -82,6 +82,7 @@
 	stm32_gpiowrite(GPIO_MSN3_EN, 0);	//Disable MSN 3 activation
 
 	// setting flash control pins
+	stm32_gpiowrite(GPIO_SFM_CS, 0);
 	stm32_gpiowrite(GPIO_SFM_MODE, 0);
 	stm32_gpiowrite(GPIO_MUX_EN, 0);
 

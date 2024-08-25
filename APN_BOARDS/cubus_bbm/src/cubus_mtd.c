@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "cubus_mtd.h"
 
 extern struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd,
@@ -48,12 +49,17 @@ static const cubus_mtd_entry_t cubus_mfm = {
 
 static const cubus_mtd_entry_t cubus_sfm = {
 	.device = &spi4_dev,
-	.npart = 1,
+	.npart = 2,
 	.partd = {
 		{
 			.type = MTD_MAINSTORAGE,			// Partition for storing MSN data
 			.path = "/fs/sfm/mtd_mainstorage",
 			.nblocks = 262144			// 128 MB in no of pages, each pages having 256 bytes
+		},
+		{					
+			.type = MTD_MISSION,			// storage space for missions
+			.path = "/fs/sfm/mtd_mission",	
+			.nblocks = 262144				// 64 MB in no of pages
 		}
 	},
 };
@@ -356,35 +362,35 @@ memoryout:
 					goto errout;
 					}
 				} else {
-					syslog(LOG_INFO, "Mount Successful\n");
+				syslog(LOG_INFO, "Mount Successful\n");
 					
-					// syslog(LOG_INFO, "Performing write testing.");
-					// struct file file_p;
-					// char file_path[65];
-					// sprintf(file_path, "%s/test.txt", mount_point);
-					// // int fd = open(file_path, O_CREAT | O_RDWR);
-					// int fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
-					// if(fd < 0) 
-					// {
-					// 	syslog(LOG_ERR, "Error opening file in mainstorage of MFM.\n");
-					// 	// close(fd);
-					// 	file_close(&file_p);
-					// } else {
-					// 	const char *write_data = "Write test for LittleFS mounted system.\n";
-					// 	// ssize_t bytes_written = write(fd, write_data, strlen(write_data));
-					// 	ssize_t bytes_written = file_write(&file_p, write_data, strlen(write_data));
-					// 	if(bytes_written > 0)
-					// 	{
-					// 		syslog(LOG_INFO, "Flash Write Successful.\n Data Len: %d\n", bytes_written);
-					// 		// close(fd);
-					// 		file_close(&file_p);
-					// 	} else {
-					// 		syslog(LOG_INFO, "Write Failure.\n");
-					// 	}
-					// 		// close(fd);
-					// 		file_syncfs(&file_p);
-					// 		file_close(&file_p);
-					// }
+					syslog(LOG_INFO, "Performing write testing.");
+					struct file file_p;
+					char file_path[65];
+					sprintf(file_path, "%s/test.txt", mount_point);
+					// int fd = open(file_path, O_CREAT | O_RDWR);
+					int fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
+					if(fd < 0) 
+					{
+						syslog(LOG_ERR, "Error opening file in mainstorage of MFM.\n");
+						// close(fd);
+						file_close(&file_p);
+					} else {
+						const char *write_data = "Write test for LittleFS mounted system.\n";
+						// ssize_t bytes_written = write(fd, write_data, strlen(write_data));
+						ssize_t bytes_written = file_write(&file_p, write_data, strlen(write_data));
+						if(bytes_written > 0)
+						{
+							syslog(LOG_INFO, "Flash Write Successful.\n Data Len: %d\n", bytes_written);
+							// close(fd);
+							file_close(&file_p);
+						} else {
+							syslog(LOG_INFO, "Write Failure.\n");
+						}
+							// close(fd);
+							file_syncfs(&file_p);
+							file_close(&file_p);
+					}
 					
 
 				}

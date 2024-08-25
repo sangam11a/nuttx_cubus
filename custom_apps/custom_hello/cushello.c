@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "cushello.h"
-
+#include "gpio_definitions.h"
 // #include "test2.h"
 uint8_t write_buf = {23, 24, 25, 26};
 static bool g_cushello_daemon_started;
@@ -159,23 +159,30 @@ int main(int argc, FAR char *argv[])
   int ret;
 
   printf("[Cushello] Starting task.\n");
-  if (g_cushello_daemon_started)
-  {
-    printf("[Cushello] Task already started.\n");
-  }
+  // if (g_cushello_daemon_started)
+  // {
+  //   printf("[Cushello] Task already started.\n");
+  // }
 
-  ret = task_create("cushello_daemon", SCHED_PRIORITY_DEFAULT,
-                    CONFIG_CUSTOM_APPS_CUSTOM_HELLO_STACKSIZE, cushello_daemon,
-                    NULL);
+  // ret = task_create("cushello_daemon", SCHED_PRIORITY_DEFAULT,
+  //                   CONFIG_CUSTOM_APPS_CUSTOM_HELLO_STACKSIZE, cushello_daemon,
+  //                   NULL);
 
-  if (ret < 0)
-  {
-    int errcode = errno;
-    printf("[cushello] ERROR: Failed to start cushello_dameon: %d\n",
-           errcode);
-    return EXIT_FAILURE;
-  }
+  // if (ret < 0)
+  // {
+  //   int errcode = errno;
+  //   printf("[cushello] ERROR: Failed to start cushello_dameon: %d\n",
+  //          errcode);
+  //   return EXIT_FAILURE;
+  // }
 
   printf("[cushello] cushello_daemon started\n");
+  gpio_write1(GPIO_MUX_EN_EM, false);
+  gpio_write1(GPIO_SFM_CS, false);
+  gpio_write1(GPIO_SFM_MODE, true);
+  
+  gpio_write(GPIO_MSN_3V3_EN_EM, true);
+    gpio_write(GPIO_MSN1_EN, true);
+    gpio_write(GPIO_DCDC_MSN_3V3_2_EN, true);
   return EXIT_SUCCESS;
 }

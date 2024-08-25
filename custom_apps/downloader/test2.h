@@ -17,21 +17,9 @@
  * under the License.
  *
  ****************************************************************************/
-#ifndef __APPS_CUSTOM_APPS_CUBUS_APP_FILE_OPERATIONS_H
-#define __APPS_CUSTOM_APPS_CUBUS_APP_FILE_OPERATIONS_H
 
-#include <nuttx/config.h>
-
-#include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/statfs.h>
-
-#include <stdio.h>
-#include <fcntl.h>
-#include <debug.h>
-
-int open_file_flash(struct file *file_pointer, char *flash_strpath, char *filename, int open_mode);
-int get_file_size(char *filepath, char *filename);
-int clear_file(char *fpath, char *fname);
-
+#ifndef __APPS_CUSTOM_APPS_CUSTOM_HELLO_TEST2_H
+#define __APPS_CUSTOM_APPS_CUSTOM_HELLO_TEST2_H
+int p23;
+void increment2();
 #endif

@@ -48,12 +48,17 @@ static const cubus_mtd_entry_t cubus_mfm = {
 
 static const cubus_mtd_entry_t cubus_sfm = {
 	.device = &spi4_dev,
-	.npart = 1,
+	.npart = 2,
 	.partd = {
 		{
 			.type = MTD_MAINSTORAGE,			// Partition for storing MSN data
 			.path = "/fs/sfm/mtd_mainstorage",
 			.nblocks = 262144			// 128 MB in no of pages, each pages having 256 bytes
+		},
+		{					
+			.type = MTD_MISSION,			// storage space for missions
+			.path = "/fs/sfm/mtd_mission",	
+			.nblocks = 262144				// 64 MB in no of pages
 		}
 	},
 };

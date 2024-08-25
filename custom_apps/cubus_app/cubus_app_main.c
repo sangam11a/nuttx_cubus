@@ -103,6 +103,10 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
   double fd;
   int i;
   int count = 0, ret;
+  printf("Turning on  4v dcdc line..\n");
+  gpio_write(GPIO_DCDC_4V_EN, 1);
+  printf("Turning on COM 4V line..\n");
+  gpio_write(GPIO_COM_4V_EN, 1);
   printf("Opening uart dev path : %s\n", dev_path);
   fd = open(dev_path, O_WRONLY);
 
@@ -118,6 +122,25 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
     return wr1;
   }
   printf("\n%d bytes written\n", wr1);
+  // printf("\ndata is %\n", wr1);
+  for (int i = 0; i < size; i++)
+  {
+    {
+      printf("%d ", data[i]);
+    }
+  }
+  sleep(2);
+  printf("Turning off  4v DCDC line..\n");
+  int x = 0;
+  while (x < 200000)
+  {
+    x += 200;
+    usleep(200);
+  }
+
+  gpio_write(GPIO_DCDC_4V_EN, 0);
+  // printf("Turning off COM 4V line..\n");
+  gpio_write(GPIO_COM_4V_EN, 0);
   ioctl(fd, TCFLSH, 2);
   printf("flused tx rx buffer\n");
   ioctl(fd, TCDRN, NULL);
@@ -201,35 +224,40 @@ int send_beacon_data()
   beacon_data[0] = 0x53;
   beacon_data[83] = 0x7e;
 
-  beacon_data[84] = '0';
-  int fd = open(COM_UART, O_WRONLY);
-  if (fd < 0)
-  {
-    printf("unable to open: %s\n", COM_UART);
-    return -1;
-  }
-  sleep(2);
-  printf("Turning on  4v dcdc line..\n");
-  gpio_write(GPIO_DCDC_4V_EN, 1);
-  printf("Turning on COM 4V line..\n");
-  gpio_write(GPIO_COM_4V_EN, 1);
+  beacon_data[84] = '\0';
+  int fd = send_data_uart(COM_UART, beacon_data, sizeof(beacon_data));
+  // fd = send_data_uart(COM_UART, test, sizeof(test));
 
-  int ret = write(fd, beacon_data, BEACON_DATA_SIZE);
-  usleep(10000);
-  if (ret < 0)
-  {
-    printf("unable to send data\n");
-    for (int i = 0; i < BEACON_DATA_SIZE; i++)
-    {
-      ret = write(fd, &beacon_data[i], 1);
-      usleep(1000);
-    }
-    if (ret < 0)
-    {
-      printf("Unable to send data through byte method..\n");
-      return -1;
-    }
-  }
+  printf("beacon data size %d\n", fd);
+  // int fd = open(COM_UART, O_WRONLY);
+  // if (fd < 0)
+  // {
+  //   printf("unable to open: %s\n", COM_UART);
+  //   return -1;
+  // }
+  // sleep(2);
+
+  // printf("Turning on  4v dcdc line..\n");
+  // gpio_write(GPIO_DCDC_4V_EN, 1);
+  // printf("Turning on COM 4V line..\n");
+  // gpio_write(GPIO_COM_4V_EN, 1);
+
+  // int ret = write(fd, beacon_data, BEACON_DATA_SIZE);
+  // usleep(10000);
+  // if (ret < 0)
+  // {
+  //   printf("unable to send data\n");
+  //   for (int i = 0; i < BEACON_DATA_SIZE; i++)
+  //   {
+  //     ret = write(fd, &beacon_data[i], 1);
+  //     usleep(1000);
+  //   }
+  //   if (ret < 0)
+  //   {
+  //     printf("Unable to send data through byte method..\n");
+  //     return -1;
+  //   }
+  // }
   /*To delete*/
   if (beacon_status == 0)
   {
@@ -241,30 +269,24 @@ int send_beacon_data()
   }
   beacon_type = !beacon_type;
 
-  for (int i = 0; i < 83; i++)
-  {
-    {
-      printf("%d ", beacon_data[i]);
-    }
-  }
-  printf("\n");
-  /*To delete*/
-  int x = 0;
-  while (x < 200000)
-  {
-    x += 200;
-    usleep(200);
-  }
+  // printf("\n");
+  // /*To delete*/
+  // int x = 0;
+  // while (x < 200000)
+  // {
+  //   x += 200;
+  //   usleep(200);
+  // }
 
   // printf("urning off  4v DCDC line..\n");
-  gpio_write(GPIO_DCDC_4V_EN, 0);
-  // printf("Turning off COM 4V line..\n");
-  gpio_write(GPIO_COM_4V_EN, 0);
-  ioctl(fd, TCFLSH, 2);
-  ioctl(fd, TCDRN, 2);
-  printf("TX RX buffer flused\n");
-  close(fd);
-  printf("Turned off COM 4V line..\n");
+  // gpio_write(GPIO_DCDC_4V_EN, 0);
+  // // printf("Turning off COM 4V line..\n");
+  // gpio_write(GPIO_COM_4V_EN, 0);
+  // ioctl(fd, TCFLSH, 2);
+  // ioctl(fd, TCDRN, 2);
+  // printf("TX RX buffer flused\n");
+  // close(fd);
+  // printf("Turned off COM 4V line..\n");
   printf("Beacon Type %d sequence complete\n", beacon_type);
   work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
 
@@ -287,7 +309,7 @@ int send_beacon_data()
  *  10-11:  no of packets (if data is being downloaded)
  ****************************************************************************/
 int receive_telecommand_rx(uint8_t *COM_RX_DATA)
-{
+{ // TODO sth to do with parsing
   uint8_t useful_command[12];
   uint8_t main_cmd[3] = {'\0'};
   uint16_t rsv_table = 0;
@@ -320,7 +342,7 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
       header = 17;
     }
     {
-      if (COM_RX_DATA[header + 1] == 0xdf & COM_RX_DATA[header + 2] == 0xab | COM_RX_DATA[header + 2] == 0xd1)
+      if (COM_RX_DATA[header + 1] == 0xfd & COM_RX_DATA[header + 2] == 0xab | COM_RX_DATA[header + 2] == 0xd1)
       {
         // gpio_write(GPIO_COM_4V_EN, 1);
         printf("\n ********************Digipeater mode turned on********************\n");
@@ -418,8 +440,9 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
         printf("unable to open: %s\n", COM_UART);
         return -1;
       }
+      // send_data_uart(COM_UART, ack, sizeof(ack));
       // gpio_write(GPIO_COM_4V_EN, 1);
-      printf("Turning on 4v  dcdc  line..\n");
+      /*printf("Turning on 4V dcdc  line..\n");
       gpio_write(GPIO_DCDC_4V_EN, 1);
       printf("Turning on 4v RF line..\n");
 
@@ -451,6 +474,7 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
         usleep(100);
       }
       // sleep(3);
+      */
 
       // send_data_uart(COM_UART, ack, BEACON_DATA_SIZE);
       // send_beacon_data();
@@ -923,34 +947,46 @@ Declaring structure necessary for collecting HK data
 int main(int argc, FAR char *argv[])
 {
 
-  Setup();
-  RUN_HK();
-  // COM_TASK(argc,argv);
-  //   if (strcmp(argv[1], "com") == 0x00)
-  {
-    int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
-    if (retval < 0)
+  // if (argc > 1)
+  // {
+  //   satellite_health_s sat_health_buf;
+  //   reader_mq_edited();
+  //   // retrieve_latest_sat_health_data(&sat_health_buf);
+  //   // printf("    accl_x:%f\n accl_y:%f\n accl_z:%f\n gyro_x:%f\n gyro_y:%f\n gyro_z:%f\n mag_x:%f\n mag_y:%f\n mag_z:%f",
+  //   //        sat_health_buf.accl_x, sat_health_buf.accl_y, sat_health_buf.accl_z,
+  //   //        sat_health_buf.gyro_x, sat_health_buf.gyro_y, sat_health_buf.gyro_z,
+  //   //        sat_health_buf.mag_x, sat_health_buf.mag_y);
+  // }
+  // else
+  // {
+    Setup();
+    RUN_HK();
+    // COM_TASK(argc,argv);
+    //   if (strcmp(argv[1], "com") == 0x00)
     {
-      printf("unable to create COM task\n");
-      return -1;
+      // int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
+      // if (retval < 0)
+      // {
+      //   printf("unable to create COM task\n");
+      //   return -1;
+      // }
     }
-  }
-  printf("************************************************\n");
+    printf("************************************************\n");
 
-  //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
-  //     //TODO: add work queue to perform antenna deployment after 30 minutes
-  //     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
-  //   }else{
-  //     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
-  //   }
-  //   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
-  // #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-  //   RUN_HK();
-  //   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+    //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
+    //     //TODO: add work queue to perform antenna deployment after 30 minutes
+    //     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
+    //   }else{
+    //     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
+    //   }
+    //   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+    // #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
+    //   RUN_HK();
+    //   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 
-  // #endif
-  printf("************************************************\n");
-
+    // #endif
+    printf("************************************************\n");
+  // }
   // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
 
   return 0;
@@ -973,11 +1009,12 @@ void Antenna_Deployment()
       retval = gpio_write1(GPIO_BURNER_EN, true);
       retval1 = gpio_write1(GPIO_UNREG_EN, true);
       RUN_ADC();
-      usleep(1000 * 1000 * 6); // 6 seconds
+      sleep(6); // 6 seconds
       printf("Turning off burner circuit\n");
       gpio_write1(GPIO_UNREG_EN, false);
       gpio_write1(GPIO_BURNER_EN, false);
-      usleep(1000 * 1000 * 2); // 2 seconds
+      // usleep(1000 * 1000 * 2); // 2 seconds
+      sleep(6);
     }
   }
   printf("Antenna deployment sequence complete\n");
@@ -999,11 +1036,24 @@ void RUN_HK()
   ext_adc_main();
 
   collect_imu_mag();
+  gpio_write1(GPIO_MUX_EN,false);
+
+  gpio_write1(GPIO_MUX_EN_EM,false);  
+  gpio_write1(GPIO_SFM_MODE,false);//OBC access
+  gpio_write1(GPIO_SFM_CS,false);
+  
   // read_magnetometer(sat_health);
 
   make_satellite_health();
   store_sat_health_data(&sat_health);
+
   print_satellite_health_data(&sat_health);
+
+  gpio_write1(GPIO_MUX_EN,true);
+  gpio_write1(GPIO_SFM_CS,true);
+
+  gpio_write1(GPIO_SFM_MODE,true);//OBC access
+
   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 
   usleep(10000);

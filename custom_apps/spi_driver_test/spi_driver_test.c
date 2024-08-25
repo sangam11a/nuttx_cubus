@@ -129,7 +129,7 @@ void CHECK_GPIO_1()
     //     // return;
     // }
     // usleep(1000000);
-    sleep(1);
+    sleep(2);
   }
   // work_queue(HPWORK, &work_gpio12, CHECK_GPIO_1, NULL, SEC2TICK(2));
 }
@@ -152,11 +152,12 @@ int main()
   // second();
   // printf("here in spi_driver_test\n");
   // first();
-  ret = task_create("data reader", 100, 1000, CHECK_GPIO_1, NULL);
+  ret = task_create("data reader", 100, 1500, CHECK_GPIO_1, NULL);
   if (ret < 0)
   {
     printf("Unable to create task data reader\n");
   }
+  printf("SPi daemon running\n");
   // CHECK_GPIO_1();
 }
 
