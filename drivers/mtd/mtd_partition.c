@@ -855,6 +855,7 @@ FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd,
 
   ret = mtd->ioctl(mtd, MTDIOC_GEOMETRY,
                    (unsigned long)((uintptr_t)&part->geo));
+
   if (ret < 0)
     {
       ferr("ERROR: mtd->ioctl failed: %d\n", ret);
