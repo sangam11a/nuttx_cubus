@@ -589,6 +589,7 @@ static int COM_TASK(int argc, char *argv[])
   usleep(1000);
 
   send_beacon_data();
+
   printf("Beacon 1 sent...\n");
   printf("Going to receiver mode...\n");
   if (receive_telecommand_rx(rx_data) == 33)
@@ -959,33 +960,49 @@ int main(int argc, FAR char *argv[])
   // }
   // else
   // {
-    Setup();
-    RUN_HK();
-    // COM_TASK(argc,argv);
-    //   if (strcmp(argv[1], "com") == 0x00)
+  // Setup();
+  // RUN_HK();
+  // COM_TASK(argc,argv);
+  struct file fptr;
+  int fd;
+  uint8_t data[112];
+  printf("\ndata reading as\n:");
+  fd = open("/mnt/fs/mfm/mtd_mainstorage/flags.txt", O_RDONLY);
+  int ret = read(fd, data, sizeof(data));
+  // ssize_t readBytes = file_read(&fptr, data, sizeof(data));
+  if (ret > 0)
+  {
+    for (int i = 0; i < ret; i++)
     {
-      // int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
-      // if (retval < 0)
-      // {
-      //   printf("unable to create COM task\n");
-      //   return -1;
-      // }
+      printf("%d|%c ", data[i], data[i]);
     }
-    printf("************************************************\n");
+  }
+  printf("\n data reading completed%d %d", fd, ret);
+  close(fd);
+  //   if (strcmp(argv[1], "com") == 0x00)
+  {
+    // int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
+    // if (retval < 0)
+    // {
+    //   printf("unable to create COM task\n");
+    //   return -1;
+    // }
+  }
+  printf("************************************************\n");
 
-    //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
-    //     //TODO: add work queue to perform antenna deployment after 30 minutes
-    //     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
-    //   }else{
-    //     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
-    //   }
-    //   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
-    // #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-    //   RUN_HK();
-    //   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+  //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
+  //     //TODO: add work queue to perform antenna deployment after 30 minutes
+  //     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
+  //   }else{
+  //     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
+  //   }
+  //   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+  // #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
+  //   RUN_HK();
+  //   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 
-    // #endif
-    printf("************************************************\n");
+  // #endif
+  printf("************************************************\n");
   // }
   // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
 
@@ -1036,12 +1053,12 @@ void RUN_HK()
   ext_adc_main();
 
   collect_imu_mag();
-  gpio_write1(GPIO_MUX_EN,false);
+  gpio_write1(GPIO_MUX_EN, false);
 
-  gpio_write1(GPIO_MUX_EN_EM,false);  
-  gpio_write1(GPIO_SFM_MODE,false);//OBC access
-  gpio_write1(GPIO_SFM_CS,false);
-  
+  gpio_write1(GPIO_MUX_EN_EM, false);
+  gpio_write1(GPIO_SFM_MODE, false); // OBC access
+  gpio_write1(GPIO_SFM_CS, false);
+
   // read_magnetometer(sat_health);
 
   make_satellite_health();
@@ -1049,10 +1066,10 @@ void RUN_HK()
 
   print_satellite_health_data(&sat_health);
 
-  gpio_write1(GPIO_MUX_EN,true);
-  gpio_write1(GPIO_SFM_CS,true);
+  gpio_write1(GPIO_MUX_EN, true);
+  gpio_write1(GPIO_SFM_CS, true);
 
-  gpio_write1(GPIO_SFM_MODE,true);//OBC access
+  gpio_write1(GPIO_SFM_MODE, true); // OBC access
 
   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 

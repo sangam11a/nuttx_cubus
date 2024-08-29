@@ -42,7 +42,7 @@ static const cubus_mtd_entry_t cubus_mfm = {
 		{					
 			.type = MTD_MISSION,			// storage space for missions
 			.path = "/fs/mfm/mtd_mission",	
-			.nblocks = 262144				// 64 MB in no of pages
+			.nblocks = 262144	//262144			// 64 MB in no of pages
 		}
 	},
 };
@@ -59,7 +59,7 @@ static const cubus_mtd_entry_t cubus_sfm = {
 		{					
 			.type = MTD_MISSION,			// storage space for missions
 			.path = "/fs/sfm/mtd_mission",	
-			.nblocks = 262144				// 64 MB in no of pages
+			.nblocks = 262144//262144				// 64 MB in no of pages
 		}
 	},
 };

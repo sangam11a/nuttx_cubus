@@ -140,7 +140,7 @@ void stm32_boardinitialize(void)
 
 	//configure MAG DRDY and MPU INT
 	stm32_configgpio(GPIO_LIS3MDL_DRDY);
-  stm32_configgpio(GPIO_LIS3MDL_CS);
+    stm32_configgpio(GPIO_LIS3MDL_CS);
 
   stm32_configgpio(GPIO_MPU_CS);
   stm32_configgpio(GPIO_LIS3MDL_INT);
