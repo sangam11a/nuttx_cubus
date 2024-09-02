@@ -39,6 +39,7 @@
 #endif
 
 #include "stm32.h"
+struct mtd_dev_s *mtd;
 
 #ifdef CONFIG_STM32_OTGFS
 #  include "stm32_usbhost.h"
@@ -137,12 +138,14 @@
 #ifdef CONFIG_USBADB
 #include <nuttx/usb/adb.h>
 #endif
-
-#ifdef CONFIG_I2C_DRIVER
-#include <nuttx/i2c/i2c_master.h>
-#include "stm32_i2c.h"
+#if defined(CONFIG_MTD_MT25QL) || defined(CONFIG_MTD_PROGMEM)
+#include <nuttx/mtd/mtd.h>
+#include "cubus_mtd.h"
 #endif
 
+#ifdef CONFIG_STM32_OWN_LED
+#include "stm32_own_led.h"
+#endif
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -177,37 +180,9 @@
 #  define MMCSD_MINOR 0
 #endif
 
-/****************************************************************************
- * Name: stm32_i2c_register
- *
- * Description:
- *   Register one I2C drivers for the I2C tool.
- *
- ****************************************************************************/
-#ifdef CONFIG_I2C_DRIVER
-static void stm32_i2c_register(int bus)
-{
-  FAR struct i2c_master_s *i2c;
-  int ret;
-
-  i2c = stm32_i2cbus_initialize(bus);
-  if (i2c == NULL)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to get I2C%d interface\n", bus);
-    }
-  else
-    {
-      ret = i2c_register(i2c, bus);
-      if (ret < 0)
-        {
-          syslog(LOG_ERR, "ERROR: Failed to register I2C%d driver: %d\n",
-                 bus, ret);
-          stm32_i2cbus_uninitialize(i2c);
-        }
-    }
-}
+#if defined(CONFIG_STM32_SPI2)
+struct spi_dev_s *spi2;
 #endif
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -236,10 +211,66 @@ static int g_sensor_devno;
 
 int stm32_bringup(void)
 {
+  int ret;
+  stm32_gpiowrite(GPIO_CS_MAG,  false);
+#ifdef CONFIG_STM32_SPI2
+  /* Get the SPI port */
+
+  syslog(LOG_INFO, "Initializing SPI port 3\n");
+  spi2 = stm32_spibus_initialize(2);
+  if (!spi2)
+  {
+    syslog(LOG_ERR, "ERROR: Failed to initialize SPI port 2\n");
+  }
+  else
+  {
+    syslog(LOG_INFO, "Successfully initialized SPI port 2\n");
+  }
+
+  cubus_mft_configure(board_get_manifest());
+
+#endif /* CONFIG_STM32_SPI3 */
+  #ifdef CONFIG_STM32_OWN_LED
+  printf("External gpio driver initializing...\n");
+  int retval = etx_gpio_driver_init();
+  if (retval == -1)
+  {
+    printf("error on initializing gpio driver..\n");
+  }
+  else
+  {
+    printf("Initialized gpio driver successfully");
+  }
+#endif
+  UNUSED(ret);
+#if defined(CONFIG_MTD) && defined(CONFIG_MTD_PROGMEM)
+  mtd = progmem_initialize();
+  if (mtd == NULL)
+  {
+    syslog(LOG_ERR, "ERROR: progmem_initialize\n");
+    printf("[BRINGUP: PROGMEM] error initializing progmem\n");
+  }
+  else
+  {
+    syslog(LOG_INFO, "INFO: Initialized progmem successfully: \n");
+    printf("[BRINGUP: PROGMEM] Initialized progmem sucessfully...\r\n");
+  }
+
+  ret = register_mtddriver("/dev/intflash", mtd, 0, mtd);
+  if (ret < 0)
+  {
+    syslog(LOG_ERR, "ERROR: register_mtddriver() failed: %d\n", ret);
+    printf("[BRINGUP: PROGMEM] Error registering mtd driver");
+  }
+  else
+  {
+    syslog(LOG_INFO, "INFO: registered mtd driver successfully \n");
+    printf("[BRINGUP: PROGMEM] Registerd internal flash mtd driver successfullyy.....\r\n");
+  }
+#endif
 #ifdef CONFIG_ONESHOT
   struct oneshot_lowerhalf_s *os = NULL;
 #endif
-  int ret = OK;
 
 #ifdef CONFIG_DEV_GPIO
   ret = stm32_gpio_initialize();
@@ -258,19 +289,6 @@ int stm32_bringup(void)
     {
       syslog(LOG_ERR, "ERROR: fb_register() failed: %d\n", ret);
     }
-#endif
-
-#ifdef CONFIG_I2C_DRIVER
-  /* Register I2C drivers on behalf of the I2C tool */
-  #ifdef CONFIG_STM32_I2C1
-    stm32_i2c_register(1);
-  #endif
-  #ifdef CONFIG_STM32_I2C2
-    stm32_i2c_register(2);
-  #endif
-  #ifdef CONFIG_STM32_I2C3
-    stm32_i2c_register(3);
-  #endif
 #endif
 
 #ifdef CONFIG_LCD_BACKPACK

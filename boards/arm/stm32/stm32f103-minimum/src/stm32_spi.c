@@ -213,6 +213,16 @@ uint8_t stm32_spi1status(struct spi_dev_s *dev, uint32_t devid)
 void stm32_spi2select(struct spi_dev_s *dev, uint32_t devid,
                       bool selected)
 {
+   spiinfo("devid: %d CS: %s\n",
+          (int)devid, selected ? "assert" : "de-assert");
+  // printf("\n spi3 devid: %d CS: %s\n",
+  // (int)devid, (selected ? "assert" : "de-assert"));
+  switch (devid)
+  {
+    case SPIDEV_FLASH(0):
+      stm32_gpiowrite(GPIO_CS_MAG, !selected);
+      break;
+  }
 }
 
 uint8_t stm32_spi2status(struct spi_dev_s *dev, uint32_t devid)
