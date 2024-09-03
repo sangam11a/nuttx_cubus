@@ -178,11 +178,15 @@ int main(int argc, FAR char *argv[])
 
   printf("[cushello] cushello_daemon started\n");
   gpio_write1(GPIO_MUX_EN_EM, false);
-  gpio_write1(GPIO_SFM_CS, false);
+  gpio_write1(GPIO_MUX_EN, false);
+
+  gpio_write1(GPIO_SFM_CS, true);
   gpio_write1(GPIO_SFM_MODE, true);
   
   gpio_write(GPIO_MSN_3V3_EN_EM, true);
-    gpio_write(GPIO_MSN1_EN, true);
-    gpio_write(GPIO_DCDC_MSN_3V3_2_EN, true);
+  gpio_write1(GPIO_MUX_EN, true);
+
+  gpio_write(GPIO_MSN1_EN, true);
+  gpio_write(GPIO_DCDC_MSN_3V3_2_EN, true);
   return EXIT_SUCCESS;
 }
