@@ -106,7 +106,7 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
   printf("Turning on  4v dcdc line..\n");
   gpio_write(GPIO_DCDC_4V_EN, 1);
   printf("Turning on COM 4V line..\n");
-  gpio_write(GPIO_COM_4V_EN, 1);
+  gpio_write(GPIO_COM_4V_BBM_EN, 1);
   printf("Opening uart dev path : %s\n", dev_path);
   fd = open(dev_path, O_WRONLY);
 
@@ -575,6 +575,8 @@ static int COM_TASK(int argc, char *argv[])
   uint8_t rx_data[COM_RX_CMD_SIZE] = {'\0'};
   printf("Turning on COM MSN...\n");
   gpio_write(GPIO_3V3_COM_EN, 1);
+  // gpio_write(GPIO_3V3_COM, 1);
+
   usleep(2000000);
   ret = handshake_COM(data); // tx rx data is flushed before closing the file
   usleep(PRINT_DELAY * 100);
@@ -717,7 +719,7 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
     return -1;
   }
 
-  int wr1 = write(fd, data, 6); // writing handshake data
+  int wr1 = write(fd, data, 7); // writing handshake data
   if (wr1 < 0)
   {
     printf("Unable to send data through %d UART", devpath);
@@ -948,64 +950,75 @@ Declaring structure necessary for collecting HK data
 int main(int argc, FAR char *argv[])
 {
 
-  // if (argc > 1)
-  // {
-  //   satellite_health_s sat_health_buf;
-  //   reader_mq_edited();
-  //   // retrieve_latest_sat_health_data(&sat_health_buf);
-  //   // printf("    accl_x:%f\n accl_y:%f\n accl_z:%f\n gyro_x:%f\n gyro_y:%f\n gyro_z:%f\n mag_x:%f\n mag_y:%f\n mag_z:%f",
-  //   //        sat_health_buf.accl_x, sat_health_buf.accl_y, sat_health_buf.accl_z,
-  //   //        sat_health_buf.gyro_x, sat_health_buf.gyro_y, sat_health_buf.gyro_z,
-  //   //        sat_health_buf.mag_x, sat_health_buf.mag_y);
-  // }
-  // else
-  // {
-  // Setup();
-  // RUN_HK();
-  // COM_TASK(argc,argv);
-  struct file fptr;
-  int fd;
-  uint8_t data[112];
-  printf("\ndata reading as\n:");
-  fd = open("/mnt/fs/mfm/mtd_mainstorage/flags.txt", O_RDONLY);
-  int ret = read(fd, data, sizeof(data));
-  // ssize_t readBytes = file_read(&fptr, data, sizeof(data));
-  if (ret > 0)
-  {
-    for (int i = 0; i < ret; i++)
-    {
-      printf("%d|%c ", data[i], data[i]);
-    }
-  }
-  printf("\n data reading completed%d %d", fd, ret);
-  close(fd);
-  //   if (strcmp(argv[1], "com") == 0x00)
-  {
-    // int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
-    // if (retval < 0)
-    // {
-    //   printf("unable to create COM task\n");
-    //   return -1;
-    // }
-  }
-  printf("************************************************\n");
+  //   if (argc > 1){
+  // uint8_t ACK1[7] = {0x53, 0x01, 0xcc, 0xaa, 0xcc, 0x7e};
 
-  //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
-  //     //TODO: add work queue to perform antenna deployment after 30 minutes
-  //     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
-  //   }else{
-  //     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
+  //     int ret = handshake_MSN(1,  ACK1) ;
   //   }
-  //   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
-  // #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
-  //   RUN_HK();
-  //   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
+  if (argc > 1)
+  {
+    satellite_health_s sat_health_buf;
+    reader_mq_edited();
+    // retrieve_latest_sat_health_data(&sat_health_buf);
+    // printf("    accl_x:%f\n accl_y:%f\n accl_z:%f\n gyro_x:%f\n gyro_y:%f\n gyro_z:%f\n mag_x:%f\n mag_y:%f\n mag_z:%f",
+    //        sat_health_buf.accl_x, sat_health_buf.accl_y, sat_health_buf.accl_z,
+    //        sat_health_buf.gyro_x, sat_health_buf.gyro_y, sat_health_buf.gyro_z,
+    //        sat_health_buf.mag_x, sat_health_buf.mag_y);
+  }
+  else
+  {
+    Setup();
+    RUN_HK();
+    COM_TASK(argc, argv);
+    int ret = task_create("task1", 100, 1024, COM_TASK, NULL);
+    if(ret <0){
+      printf("failed to createt ask com__task\n");
+    }
+    struct file fptr;
+  }
+  if(0==1){
+    int fd;
+    uint8_t data[112];
+    printf("\ndata reading as\n:");
+    fd = open("/mnt/fs/mfm/mtd_mainstorage/flags.txt", O_RDONLY);
+    int ret = read(fd, data, sizeof(data));
+    // ssize_t readBytes = file_read(&fptr, data, sizeof(data));
+    if (ret > 0)
+    {
+      for (int i = 0; i < ret; i++)
+      {
+        printf("%d|%c ", data[i], data[i]);
+      }
+    }
+    printf("\n data reading completed%d %d", fd, ret);
+    close(fd);
+    //   if (strcmp(argv[1], "com") == 0x00)
+    {
+      // int retval = task_create("task1", 100, 1024, COM_TASK, NULL);
+      // if (retval < 0)
+      // {
+      //   printf("unable to create COM task\n");
+      //   return -1;
+      // }
+    }
+    printf("************************************************\n");
 
-  // #endif
-  printf("************************************************\n");
-  // }
-  // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
+    //   if(critic_flags.ANT_DEP_STAT == UNDEPLOYED && critic_flags.UL_STATE == UL_NOT_RX){
+    //     //TODO: add work queue to perform antenna deployment after 30 minutes
+    //     work_queue(HPWORK, &work_ant_dep, Antenna_Deployment, NULL, SEC2TICK(ANT_DEP_DELAY));
+    //   }else{
+    //     printf("Antenna in Deployed State...\n Not entering antenna deployment sequence\n");
+    //   }
+    //   // work_queue(HPWORK, &work_hk, collect_hk, NULL, MSEC2TICK(HK_DELAY));
+    // #if defined(CONFIG_CUSTOM_APPS_CUBUS_USE_EXT_ADC) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC1) || defined(CONFIG_CUSTOM_APPS_CUBUS_USE_INT_ADC3)
+    //   RUN_HK();
+    //   work_queue(HPWORK, &work_hk, RUN_HK, NULL, SEC2TICK(HK_DELAY));
 
+    // #endif
+    printf("************************************************\n");
+    // }
+    // TODO: after checking flags data are being written/read correctly, we'll enable satellite health things as well and have a basic complete work queue functions except UART
+  }
   return 0;
 }
 
@@ -1321,14 +1334,14 @@ void collect_imu_mag()
   if (fd < 0)
   {
     printf("Failed to open mpu6500\n");
-    return; // This might create an issue
+    // return; // This might create an issue
   }
 
   fd_mag = open("/dev/mag0", O_RDONLY);
   if (fd_mag < 0)
   {
     printf("Failed to open magnetometer\n");
-    close(fd_mag);
+    // close(fd_mag);Cu
     // return;// This might create an issue
   }
   printf("************************************************\n");

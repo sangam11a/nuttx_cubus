@@ -64,7 +64,7 @@ struct spi_dev_s *g_spidev5 = NULL;
 
 void weak_function stm32_spidev_initialize(void)
 {
-#ifdef CONFIG_MT25QL
+#ifdef CONFIG_MT25QL || CONFIG_MTD_MT25QL
   printf("Configure GPIO for MT25QL flash memory.\n");
   stm32_configgpio(GPIO_MFM_CS);
   stm32_configgpio(GPIO_SFM_CS);
@@ -75,6 +75,7 @@ void weak_function stm32_spidev_initialize(void)
   stm32_gpiowrite(GPIO_SFM_CS, true);
   stm32_gpiowrite(GPIO_SFM_MODE, true);
   stm32_gpiowrite(GPIO_MUX_EN, true);
+  
 #endif
 
 #ifdef CONFIG_SENSORS_LIS3MDL
@@ -184,7 +185,11 @@ void stm32_spi4select(struct spi_dev_s *dev,
   switch (devid)
   {
   case SPIDEV_FLASH(0):
+    gpio_write1(GPIO_SFM_MODE, false);
+    usleep(1000);
     stm32_gpiowrite(GPIO_SFM_CS, !selected);
+    gpio_write1(GPIO_SFM_MODE, true);
+
     break;
   }
 }
