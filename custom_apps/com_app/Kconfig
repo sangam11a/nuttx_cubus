@@ -19,12 +19,5 @@ config CUSTOM_APPS_COM_APP_PROGNAME
 		program is installed.
 
 
-config CUSTOM_APPS_COM_APP_PRIORITY
-	int "COM app task priority"
-	default 100
-
-config CUSTOM_APPS_COM_APP_STACKSIZE
-	int "COM_APP stack size"
-	default DEFAULT_TASK_STACKSIZE
 
 endif

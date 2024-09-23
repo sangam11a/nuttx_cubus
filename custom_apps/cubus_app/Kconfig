@@ -118,4 +118,28 @@ config CUSTOM_APPS_CUBUS_APP_STACKSIZE
 	int "Cubus_app stack size"
 	default DEFAULT_TASK_STACKSIZE
 
+config CUSTOM_APPS_CUBUS_APP_PRIORITY
+	int "COM app task priority"
+	default 100
+
+config CUSTOM_APPS_CUBUS_APP_STACKSIZE
+	int "COM_APP stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+config CUSTOM_APPS_CUBUS_APP_PRIMARY_UART
+	string "Primary uart line for communication between OBC and COM"
+	default "/dev/ttyS0"
+
+
+config CUSTOM_APPS_CUBUS_APP_SECONDARY_UART
+	string "Secondary uart line for communication between OBC and COM"
+	default "/dev/ttyS1"
+
+config CUSTOM_APPS_CUBUS_APP_PRIMARY_UART_BAUDRATE
+	int "UART baudrate for primary uart"
+	default 115200
+
+config CUSTOM_APPS_CUBUS_APP_SECONDARY_UART_BAUDRATE
+	int "UART baudrate for secondary uart"
+	default 115200
 endif

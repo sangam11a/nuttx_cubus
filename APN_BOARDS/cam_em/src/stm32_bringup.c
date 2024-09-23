@@ -153,6 +153,7 @@ static struct mag_priv_s mag0 =
 };
 #endif
 
+
 #ifdef CONFIG_ADC_ADS7953
 static struct adc_priv_s adc0 =
     {
@@ -182,17 +183,16 @@ static struct adc_priv_s adc0 =
 int stm32_bringup(void)
 {
 
-// TODO:REMOVE later
-stm32_gpiowrite(GPIO_3V3_COM_EN,true);
   int ret;
 
   /* Configure SPI-based devices */
 
-#ifdef CONFIG_ADC_ADS7953
+
+#ifdef CONFIG_MTD_MT25QL
 
   /* Init SPI Bus again */
 
-  spi2 = stm32_spibus_initialize(CONFIG_CUSTOM_APPS_EADC_SPI_NUMBER);
+  spi2 = stm32_spibus_initialize(2);
   if (!spi2)
   {
     syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 2.\n");
@@ -200,111 +200,57 @@ stm32_gpiowrite(GPIO_3V3_COM_EN,true);
   else
   {
     syslog(LOG_INFO, "[BRINGUP] Successfully Initalized SPI Port 2.\n");
-    adc0.dev.spi = spi2;
+
     SPI_SETFREQUENCY(spi2, 1000000);
     SPI_SETBITS(spi2, 8);
     SPI_SETMODE(spi2, SPIDEV_MODE0);
   }
-  ret = ads7953_register(EXT_ADC_PATH, adc0.dev.spi, adc0.dev.spi_devid);
-  if (ret < 0)
-  {
-    syslog(LOG_ERR, "[BRINGUP] ads7953 register failed.\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "[BRINGUP] Registered ads7953.\n");
-  }
-#endif // CONFIG_ADC_ADS7953
-
-#ifdef CONFIG_STM32_SPI3
-  /* Get the SPI port */
-
-  syslog(LOG_INFO, "Initializing SPI port 3\n");
-  spi3 = stm32_spibus_initialize(3);
-  if (!spi3)
-  {
-    syslog(LOG_ERR, "ERROR: Failed to initialize SPI port 3\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "Successfully initialized SPI port 3\n");
-  }
-  stm32_gpiowrite(GPIO_MUX_EN, false);
-  stm32_gpiowrite(GPIO_SFM_CS, false);
-  stm32_gpiowrite(GPIO_SFM_MODE, false);
-
   cubus_mft_configure(board_get_manifest());
-  // stm32_gpiowrite();
+ 
+#endif // CONFIG_MTD_MT25QL
 
-  // stm32_gpiowrite(GPIO_MUX_EN, true);
-  // stm32_gpiowrite(GPIO_SFM_CS, true);
-  // stm32_gpiowrite(GPIO_SFM_MODE, true);
+// #ifdef CONFIG_MTD_MT25QL
+//   /* Get the SPI port */
+
+//   // syslog(LOG_INFO, "Initializing SPI port %d\n",CONFIG_MTD_MT25QL_SPI_PIN);
+//   spi3 = stm32_spibus_initialize(3);
+//   if (!spi3)
+//   {
+//     syslog(LOG_ERR, "ERROR: Failed to initialize SPI port 3\n");
+//   }
+//   else
+//   {
+//     syslog(LOG_INFO, "Successfully initialized SPI port 3\n");
+//   }
+//   stm32_gpiowrite(GPIO_MUX_EN, false);
+//   stm32_gpiowrite(GPIO_SFM_CS, false);
+//   stm32_gpiowrite(GPIO_SFM_MODE, false);
+
+//   cubus_mft_configure(board_get_manifest());
+//   // stm32_gpiowrite();
+
+//   // stm32_gpiowrite(GPIO_MUX_EN, true);
+//   // stm32_gpiowrite(GPIO_SFM_CS, true);
+//   // stm32_gpiowrite(GPIO_SFM_MODE, true);
 
 
-#endif /* CONFIG_STM32_SPI3 */
 
-#ifdef CONFIG_STM32_SPI5
-  spi5 = stm32_spibus_initialize(CONFIG_CUSTOM_APPS_IMU_SPI_NUMBER);
-  if (!spi5)
-  {
-    syslog(LOG_ERR, "[BRING_UP] ERROR: Failed to Initialize SPI 5 bus.\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "[BRING_UP] Initialized bus on SPI port 5.\n");
-    SPI_SETFREQUENCY(spi5, 1000000);
-    SPI_SETBITS(spi5, 8);
-    SPI_SETMODE(spi5, SPIDEV_MODE0);
-
-#ifdef CONFIG_SENSORS_MPU60X0
-    struct mpu_config_s *mpu_config = NULL;
-    //  SPI_SETFREQUENCY(spi5, 1000000);
-    //   SPI_SETBITS(spi5, 8);
-    //   SPI_SETMODE(spi5, SPIDEV_MODE0);
-    printf("got here in config_sensoors_mpu6500");
-    mpu_config = kmm_zalloc(sizeof(struct mpu_config_s));
-    printf("the size of mpu_config is %d", sizeof(mpu_config));
-    if (mpu_config == NULL)
-    {
-      printf("ERROR: Failed to allocate mpu60x0 driver\n");
-    }
-    else
-    {
-      printf("INside else\n");
-      mpu_config->spi = spi5;
-      mpu_config->spi_devid = SPIDEV_IMU(0);
-      ret = mpu60x0_register("/dev/mpu6500", mpu_config);
-      printf("the value of ret is : %d\n", ret);
-      if (ret < 0)
-      {
-        printf("[bring up] failed to initialize driver of mppu 6500");
-      }
-      else
-      {
-        printf("[bringup ] successfully initialized driver of mpu 6500");
-      }
-    }
-#endif // mpu configuration
-    // SPI_SETFREQUENCY(spi5, 1000000);
-    // SPI_SETBITS(spi5, 8);
-    // SPI_SETMODE(spi5, SPIDEV_MODE0);
-  }
-#ifdef CONFIG_SENSORS_LIS3MDL
-#ifdef CONFIG_UORB
-  ret = lis3mdl_register(0, spi5, &mag0.dev); // since we're using uORB
-#else
-  ret = lis3mdl_register("dev/mag0", spi5, &mag0.dev);
-#endif  //CONFIG_UORB
-  if (ret < 0)
-  {
-    syslog(LOG_INFO, "[BRING_UP] Error: Failed to register LIS3MDL driver.\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "[BRING_UP] LIS3MDL registered on SPI 5.\n");
-  }
-#endif // CONFIG_SENSORS_LIS3MDL
-#endif // CONFIG_STM32_SPI5
+// #ifdef CONFIG_SENSORS_LIS3MDL
+// #ifdef CONFIG_UORB
+//   ret = lis3mdl_register(0, spi5, &mag0.dev); // since we're using uORB
+// #else
+//   ret = lis3mdl_register("dev/mag0", spi5, &mag0.dev);
+// #endif  //CONFIG_UORB
+//   if (ret < 0)
+//   {
+//     syslog(LOG_INFO, "[BRING_UP] Error: Failed to register LIS3MDL driver.\n");
+//   }
+//   else
+//   {
+//     syslog(LOG_INFO, "[BRING_UP] LIS3MDL registered on SPI 5.\n");
+//   }
+// #endif // CONFIG_SENSORS_LIS3MDL
+// #endif // CONFIG_STM32_SPI5
 
 #ifdef CONFIG_ADC
   /* Initialize ADC and register the ADC device. */

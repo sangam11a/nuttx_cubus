@@ -1,5 +1,5 @@
 ############################################################################
-# apps/custom_apps/spi_driver_test/Makefile
+# apps/custom_apps/custom_hello/Makefile
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -20,15 +20,14 @@
 
 include $(APPDIR)/Make.defs
 
-# SPI sensor and driver test application
+# Custom Hello World, application
 
-PROGNAME  = $(CONFIG_CUSTOM_APPS_SPI_DRIVER_TEST_PROGNAME)
-PRIORITY  = $(CONFIG_CUSTOM_APPS_SPI_DRIVER_TEST_PRIORITY)
-STACKSIZE = $(CONFIG_CUSTOM_APPS_SPI_DRIVER_TEST_STACKSIZE)
-MODULE    = $(CONFIG_CUSTOM_APPS_SPI_DRIVER_TEST)
+PROGNAME  = $(CONFIG_CUSTOM_APPS_MAG_MAIN_PROGNAME)
+PRIORITY  = $(CONFIG_CUSTOM_APPS_MAG_MAIN_PRIORITY)
+STACKSIZE = $(CONFIG_CUSTOM_APPS_MAG_MAIN_STACKSIZE)
+MODULE    = $(CONFIG_CUSTOM_APPS_MAG_MAIN)
 
+# Custom Hello
 
-MAINSRC = spi_driver_test.c
-
-CSRC += rs.c
+MAINSRC = hk_main.c
 include $(APPDIR)/Application.mk

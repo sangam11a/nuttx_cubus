@@ -52,8 +52,14 @@
  ************************************************************************************/
  void board_peripheral_reset(int ms)
 {
-	// setting flash control pins
+	// Setting the kill switch control gpio
+
 	
+	// setting flash control pins
+	stm32_configgpio(GPIO_SFM_CS);
+	stm32_gpiowrite(GPIO_SFM_CS, 1);
+	
+
 	usleep(ms * 1000);
 	syslog(LOG_DEBUG, "reset done, %d ms\n", ms);
   	printf("Reset Done.\n");
@@ -72,9 +78,9 @@
 
 void stm32_boardinitialize(void)
 {
-   	
-	// Configure Flash control pins
-  	 printf("Hey configured flash memory cs\n");
+   
+  stm32_configgpio(GPIO_SFM_CS);
+  
 
 #ifdef HAVE_CCM_HEAP
   /* Initialize CCM allocator */
@@ -141,6 +147,7 @@ int board_app_initialize(uintptr_t arg)
 
   printf("Initializing board applications.\n");
   board_peripheral_reset(10);
+
 #if defined(CONFIG_STM32_SPI1) || defined(CONFIG_STM32_SPI2) || \
     defined(CONFIG_STM32_SPI3) || defined(CONFIG_STM32_SPI4) || \
     defined(CONFIG_STM32_SPI5)

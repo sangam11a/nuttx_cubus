@@ -38,7 +38,7 @@
 #include "stm32.h"
 #include "stm32f427a.h"
 
-#if defined(CONFIG_STM32_SPI1) || defined(CONFIG_STM32_SPI2) || defined(CONFIG_STM32_SPI3) || \
+#if defined(CONFIG_STM32_SPI1) || defined(CONFIG_STM32_SPI2) || defined(CONFIG_STM32_SPI3) ||\
     defined(CONFIG_STM32_SPI4) || defined(CONFIG_STM32_SPI5) || defined(CONFIG_STM32_SPI6)
 
 /****************************************************************************
@@ -64,11 +64,14 @@ struct spi_dev_s *g_spidev5 = NULL;
 
 void weak_function stm32_spidev_initialize(void)
 {
-#ifdef CONFIG_MT25QL
+  #ifdef CONFIG_MT25QL
   printf("Configure GPIO for MT25QL flash memory.\n");
-  
+
   stm32_gpiowrite(GPIO_SFM_CS, true);
-#endif
+  // prin
+   #endif
+
+
 
 }
 
@@ -113,22 +116,22 @@ uint8_t stm32_spi1status(struct spi_dev_s *dev, uint32_t devid)
 }
 #endif
 
-#ifdef CONFIG_STM32_SPI5
-void stm32_spi5select(struct spi_dev_s *dev,
+#ifdef CONFIG_STM32_SPI2
+void stm32_spi2select(struct spi_dev_s *dev,
                       uint32_t devid,
                       bool selected)
 {
-  spiinfo("devid: %d CS: %s\n",
-          (int)devid, (selected ? "assert" : "de-assert"));
+   spiinfo("devid: %d CS: %s\n",
+          (int)devid, selected ? "assert" : "de-assert");
   switch (devid)
   {
-  case SPIDEV_USER(1):
-    stm32_gpiowrite(GPIO_EXT_ADC1_CS, !selected);
-    break;
+    case SPIDEV_FLASH(0):
+      stm32_gpiowrite(GPIO_SFM_CS, !selected);
+      break;
   }
 }
 
-uint8_t stm32_spi5status(struct spi_dev_s *dev, uint32_t devid)
+uint8_t stm32_spi2status(struct spi_dev_s *dev, uint32_t devid)
 {
   return 0;
 }
@@ -142,9 +145,9 @@ void stm32_spi3select(struct spi_dev_s *dev,
           (int)devid, selected ? "assert" : "de-assert");
   switch (devid)
   {
-  case SPIDEV_FLASH(0):
-    stm32_gpiowrite(GPIO_MFM_CS, !selected);
-    break;
+    case SPIDEV_FLASH(0):
+      // stm32_gpiowrite(GPIO_MFM_CS, !selected);
+      break;
   }
 }
 
@@ -159,12 +162,12 @@ void stm32_spi4select(struct spi_dev_s *dev,
                       uint32_t devid, bool selected)
 {
   spiinfo("devid: %%d CS: %s\n",
-          (int)devid, selected ? "assert" : "de-assert");
+            (int)devid, selected ? "assert" : "de-assert");
   switch (devid)
   {
-  case SPIDEV_FLASH(0):
-    stm32_gpiowrite(GPIO_SFM_CS, !selected);
-    break;
+    case SPIDEV_FLASH(0):
+      // stm32_gpiowrite(GPIO_SFM_CS, !selected);
+      break;
   }
 }
 
@@ -174,27 +177,32 @@ uint8_t stm32_spi4status(struct spi_dev_s *dev, uint32_t devid)
 }
 #endif
 
-#ifdef CONFIG_STM32_SPI2
-void stm32_spi2select(struct spi_dev_s *dev,
+#ifdef CONFIG_STM32_SPI5
+void stm32_spi5select(struct spi_dev_s *dev,
                       uint32_t devid, bool selected)
 {
   spiinfo("devid: %d CS: %s\n",
-          (int)devid, selected ? "assert" : "de-assert");
-  switch (devid)
+            (int)devid, selected ? "assert" : "de-assert");
+  switch(devid)
   {
-  case SPIDEV_FLASH(0):
-    /* Set the CS pin for mag0*/
-    printf("Got in shared flash cs pin\n");
-    stm32_gpiowrite(GPIO_SFM_CS, !selected);
-    break;
+    case SPIDEV_USER(0):
+      /* Set the CS pin for mag0*/
+      // stm32_gpiowrite(GPIO_LIS3MDL_CS, !selected);
+      break;
+    case SPIDEV_IMU(0):
+      /* Set the CS pin for IMU0*/
+      // stm32_gpiowrite(GPIO_MPU_CS, !selected);
+      break;
+
   }
 }
 
-uint8_t stm32_spi2status(struct spi_dev_s *dev, uint32_t devid)
+uint8_t stm32_spi5status(struct spi_dev_s *dev, uint32_t devid)
 {
   return 0;
 }
 #endif
+
 
 /****************************************************************************
  * Name: stm32_spi1cmddata
@@ -256,5 +264,6 @@ int stm32_spi5cmddata(struct spi_dev_s *dev, uint32_t devid, bool cmd)
 #endif
 
 #endif /* CONFIG_SPI_CMDDATA */
+
 
 #endif /* CONFIG_STM32_SPI1 || ... CONFIG_STM32_SPI5 */

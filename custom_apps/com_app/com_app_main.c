@@ -89,6 +89,7 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
 int receive_data_uart(char *dev_path, uint8_t *data, uint16_t size)
 {
     int fd, ret;
+    
     fd = open(dev_path, O_RDONLY);
     // ioctl(fd, TCFLSH, 2);    //check if we can receive data without flushing initially
     // ioctl(fd, TCDRN, NULL);
@@ -164,6 +165,7 @@ int send_beacon_data()
         break;
     }
     beacon_data[84] = '0';
+    
     int fd = open(COM_UART, O_WRONLY);
     if (fd < 0)
     {

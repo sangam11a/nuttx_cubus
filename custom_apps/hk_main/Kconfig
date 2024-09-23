@@ -1,0 +1,42 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_HK_MAIN
+	tristate "Housekeeping data process"
+	default n
+	---help---
+		Enable the Housekeeping data process application" example
+
+if CUSTOM_APPS_HK_MAIN
+
+config CUSTOM_APPS_HK_MAIN_PROGNAME
+	string "Program name"
+	default "hkmain"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_HK_MAIN_PRIORITY
+	int "Housekeeping(HK) Main task priority"
+	default 100
+
+config CUSTOM_APPS_HK_MAIN_STACKSIZE
+	int "Housekeeping(HK) main stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+config CUSTOM_APPS_HK_MAIN_PRIORITY
+	int "Housekeeping(HK) Main task priority"
+	default 100
+
+config CUSTOM_APPS_IMU_SPI_NUMBER
+	int "Set spi number for IMU sensor"
+	default 5
+
+config CUSTOM_APPS_EADC_SPI_NUMBER
+	int "Set spi number for IMU sensor"
+	default 2
+
+endif
+

@@ -1,5 +1,5 @@
 ############################################################################
-# custom_apps/mag_main/Make.defs
+# custom_apps/hk_main/Make.defs
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,6 +18,6 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_CUSTOM_APPS_MAG_MAIN),)
-CONFIGURED_APPS += $(APPDIR)/custom_apps/mag_main
+ifneq ($(CONFIG_CUSTOM_APPS_HK_MAIN),)
+CONFIGURED_APPS += $(APPDIR)/custom_apps/hk_main
 endif

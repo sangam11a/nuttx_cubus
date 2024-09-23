@@ -18,14 +18,14 @@
 #
 # ##############################################################################
 
-if(CONFIG_CUSTOM_APPS_MAG_MAIN)
+if(CONFIG_CUSTOM_APPS_HK_MAIN)
   nuttx_add_application(
     NAME
-    ${CONFIG_CUSTOM_APPS_MAG_MAIN_PROGNAME}
+    ${CONFIG_CUSTOM_APPS_HK_MAIN_PROGNAME}
     SRCS
-    mag_main.c
+    hk_main.c
     STACKSIZE
-    ${CONFIG_CUSTOM_APPS_MAG_MAIN_STACKSIZE}
+    ${CONFIG_CUSTOM_APPS_HK_MAIN_STACKSIZE}
     PRIORITY
-    ${CONFIG_CUSTOM_APPS_MAG_MAIN_PRIORITY})
+    ${CONFIG_CUSTOM_APPS_HK_MAIN_PRIORITY})
 endif()

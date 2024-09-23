@@ -1,6 +1,6 @@
 
-#ifndef __CUSTOM_APPS_MAG_MAIN_H
-#define __CUSTOM_APPS_MAG_MAIN_H
+#ifndef __CUSTOM_APPS_HK_MAIN_H
+#define __CUSTOM_APPS_HK_MAIN_H
 
 #include <uORB/uORB.h>
 #include <sched.h>
