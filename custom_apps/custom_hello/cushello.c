@@ -191,6 +191,7 @@
 #include <math.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <sys/ioctl.h>
 
 #define DATA_BITS 4
 #define PARITY_BITS 3
@@ -270,7 +271,27 @@ int restore_number(int *hamming_code) {
     return number;
 }
 
-int main() {
+int main(int argc, FAR char *argv[]) {
+    int  ret ;
+    struct file file_p;
+    // char file_path[65];
+    char file_path[] = "/mnt/fs/sfm/mtd_mission/camera.txt";
+    // sprintf(file_path, "%s/test.txt", mount_point);
+    int fd;
+    /* //Some problem occured freezing MCU
+    if(argc >= 2){
+         fd = file_open(&file_p, file_path, O_RDONLY);
+        if(fd < 0) 
+        {
+            char seek_pointer[1000]={'\0'};
+            ssize_t bytes_read = file_read(&file_p, seek_pointer, sizeof(seek_pointer));
+            printf("Data is %s\n",seek_pointer);
+        }
+        file_close(&file_p);
+        }
+        else
+        */
+        {
     // int number;
     // int hamming_code1[TOTAL_BITS];
     // int hamming_code2[TOTAL_BITS];
@@ -319,19 +340,14 @@ int main() {
     // int combined_number = (restored_number1 << 4) | restored_number2;
     // printf("Combined 8-bit Number: %d\n", combined_number);
 
-    int  ret ;
-    struct file file_p;
-    // char file_path[65];
-    char file_path[] = "/mnt/fs/sfm/mtd_mission/camera.txt";
-    // sprintf(file_path, "%s/test.txt", mount_point);
-    int fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
+    fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
     if(fd < 0) 
     {
         syslog(LOG_ERR, "Error opening file in mainstorage of MFM.\n");
         // close(fd);
         file_close(&file_p);
     } else {
-        const char *write_data = "Written by camera mcu\n";
+        const char *write_data = "Camera, ";
         // ssize_t bytes_written = write(fd, write_data, strlen(write_data));
         ssize_t bytes_written = file_write(&file_p, write_data, strlen(write_data));
         if(bytes_written > 0)
@@ -342,9 +358,13 @@ int main() {
         } else {
             syslog(LOG_INFO, "Write Failure.\n");
         }
-            // close(fd);
-            file_syncfs(&file_p);
-            file_close(&file_p);
+        // int size_file = file_seek(&file_p, 0, SEEK_END);
+      
+        file_syncfs(&file_p);
+        file_close(&file_p);
+        
+
+    }
     }
     return 0;
 }
