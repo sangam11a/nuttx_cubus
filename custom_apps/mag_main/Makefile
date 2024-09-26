@@ -1,5 +1,5 @@
 ############################################################################
-# custom_apps/spi_adc_test/Makefile
+# apps/custom_apps/custom_hello/Makefile
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -20,17 +20,14 @@
 
 include $(APPDIR)/Make.defs
 
-# Spi_test, World! built-in application info
+# Custom Hello World, application
 
-PROGNAME  = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST_PROGNAME)
-PRIORITY  = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST_PRIORITY)
-STACKSIZE = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST_STACKSIZE)
-MODULE    = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST)
+PROGNAME  = $(CONFIG_CUSTOM_APPS_MAG_MAIN_PROGNAME)
+PRIORITY  = $(CONFIG_CUSTOM_APPS_MAG_MAIN_PRIORITY)
+STACKSIZE = $(CONFIG_CUSTOM_APPS_MAG_MAIN_STACKSIZE)
+MODULE    = $(CONFIG_CUSTOM_APPS_MAG_MAIN)
 
-# Spi_test, World! Example
+# Custom Hello
 
-MAINSRC = spi_adc_main.c
-
-CSRC += cubus_mtd.c
-
+MAINSRC = mag_main.c
 include $(APPDIR)/Application.mk

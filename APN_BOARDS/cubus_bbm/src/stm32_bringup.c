@@ -230,10 +230,12 @@ stm32_gpiowrite(GPIO_3V3_COM_EN,true);
     syslog(LOG_INFO, "Successfully initialized SPI port 3\n");
   }
   stm32_gpiowrite(GPIO_MUX_EN, false);
-  stm32_gpiowrite(GPIO_SFM_CS, false);
+  stm32_gpiowrite(GPIO_SFM_CS, true);
   stm32_gpiowrite(GPIO_SFM_MODE, false);
 
-  cubus_mft_configure(board_get_manifest());
+   cubus_mft_configure(board_get_manifest());
+  stm32_gpiowrite(GPIO_SFM_MODE, true);
+
   // stm32_gpiowrite();
 
   // stm32_gpiowrite(GPIO_MUX_EN, true);
@@ -484,5 +486,8 @@ stm32_gpiowrite(GPIO_3V3_COM_EN,true);
 #ifdef CONFIG_STM32_WWDG
   stm32_wwdginitialize("/dev/wwdg0");
 #endif
+stm32_gpiowrite(GPIO_MUX_EN, false);
+stm32_gpiowrite(GPIO_SFM_MODE, true);
+
   return 0;
 }

@@ -9,7 +9,6 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <syslog.h>
 #include "cubus_mtd.h"
 
 extern struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd,
@@ -353,7 +352,7 @@ memoryout:
 				sprintf(mount_point, "/mnt%s",instances[i]->partition_names[part]);
 				printf("nx_mount: blockname: %s partition: %s mount_point: %s\n", blockname, instances[i]->partition_names[part],
 				       mount_point);
-				rv = nx_mount(blockname, mount_point, "littlefs", 1, "");
+				rv = nx_mount(blockname, mount_point, "littlefs", 0, "");
 				if (rv < 0) {
 					syslog(LOG_ERR,"NX_Mount %s on mount point: %s failed: %d\n", instances[i]->partition_names[part], mount_point, rv);
 					syslog(LOG_INFO,"Trying to mount again");
@@ -367,9 +366,8 @@ memoryout:
 					
 					syslog(LOG_INFO, "Performing write testing.");
 					struct file file_p;
-					char file_path[65];
-					sprintf(file_path, "%s/satelliteHealth.txt", mount_point);
-					// int fd = open(file_path, O_CREAT | O_RDWR);
+					char file_path[] = "/mnt/fs/sfm/mtd_mainstorage/test.txt";
+					// sprintf(file_path, "%s/test.txt", mount_point);
 					int fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
 					if(fd < 0) 
 					{

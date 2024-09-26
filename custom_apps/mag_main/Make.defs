@@ -1,5 +1,5 @@
 ############################################################################
-# custom_apps/spi_adc_test/Makefile
+# custom_apps/mag_main/Make.defs
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,19 +18,6 @@
 #
 ############################################################################
 
-include $(APPDIR)/Make.defs
-
-# Spi_test, World! built-in application info
-
-PROGNAME  = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST_PROGNAME)
-PRIORITY  = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST_PRIORITY)
-STACKSIZE = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST_STACKSIZE)
-MODULE    = $(CONFIG_CUSTOM_APPS_SPI_ADC_TEST)
-
-# Spi_test, World! Example
-
-MAINSRC = spi_adc_main.c
-
-CSRC += cubus_mtd.c
-
-include $(APPDIR)/Application.mk
+ifneq ($(CONFIG_CUSTOM_APPS_MAG_MAIN),)
+CONFIGURED_APPS += $(APPDIR)/custom_apps/mag_main
+endif
