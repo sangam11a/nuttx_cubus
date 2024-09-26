@@ -1,7 +1,7 @@
 [submodule "nuttx"]
 	path = nuttx
 	url = git@github.com:sangam11a/nuttx.git
-	branch = main
+	branch = rebased
 [submodule "nuttx-apps"]
 	path = nuttx-apps
 	url = git@github.com:sangam11a/nuttx-apps.git
