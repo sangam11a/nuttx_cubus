@@ -267,3 +267,7 @@ int open_file_flash(struct file *file_pointer, char *flash_strpath, char *filena
 //   sat_health->mag_z = mag.mag_z;
 //   close(mag_fd);
 // }
+
+//TODO WRITE A TASK OR WORK QUEUE FOR READING THE DATA/COMMAND EVERY SECOND AND PERFORM FLASH OPERATIONS
+
+void flash_operations(){}

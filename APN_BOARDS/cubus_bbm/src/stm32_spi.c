@@ -182,10 +182,14 @@ void stm32_spi4select(struct spi_dev_s *dev,
 {
   spiinfo("devid: %%d CS: %s\n",
             (int)devid, selected ? "assert" : "de-assert");
+
   switch (devid)
   {
     case SPIDEV_FLASH(0):
+      
+
       stm32_gpiowrite(GPIO_SFM_CS, !selected);
+
       break;
   }
 }

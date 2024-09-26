@@ -1,8 +1,8 @@
 [submodule "nuttx"]
 	path = nuttx
-	url = https://github.com/Jaddu-jd/nuttx.git
-	branch = cubus-v1
+	url = https://github.com/sangam11a/nuttx.git
+	branch = recovered
 [submodule "nuttx-apps"]
 	path = nuttx-apps
-	url = https://github.com/Jaddu-jd/nuttx-apps.git
-	branch = apn
+	url = https://github.com/sangam11a/nuttx-apps.git
+	branch = recovered

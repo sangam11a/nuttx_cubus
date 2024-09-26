@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "cubus_mtd.h"
+#include "stm32f427a.h"
 
 extern struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd,
                                     off_t firstblock, off_t nblocks);
@@ -390,6 +391,8 @@ memoryout:
 							// close(fd);
 							file_syncfs(&file_p);
 							file_close(&file_p);
+							stm32_gpiowrite(GPIO_SFM_MODE, true);
+
 					}
 					
 
