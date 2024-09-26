@@ -295,9 +295,9 @@ static int lis3mdl_push_data(FAR struct lis3mdl_dev_s *dev,
   struct sensor_lowerhalf_s lower = dev->dev.lower;
 
   mag_data.timestamp = data->timestamp;
-  mag_data.x =  data->x;
-  mag_data.y = data->y;
-  mag_data.z = data->z;
+  mag_data.mag_x =  data->x;
+  mag_data.mag_y = data->y;
+  mag_data.mag_z = data->z;
   mag_data.temperature = data->temperature;
 
   ret = lower.push_event(lower.priv, &mag_data,
