@@ -33,6 +33,7 @@
 #include <nuttx/wqueue.h>
 #include <nuttx/clock.h>
 #include <time.h>
+#include <malloc.h> 
 
 #include "com_app_main.h"
 #include "gpio_definitions.h"
@@ -202,9 +203,9 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
   uint8_t ack[85] = {0x53, 0xac, 0x04, 0x01, 0x62, 0x63, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x70, 0x71, 0x72, 0x7e, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x80, 0x7e};
   printf("waiting for telecommands from COM\n");
   int ret;
-  ret = 1;
+  // ret = 1;
   // TODO remove the comment line below and comment the upper line to int ret
-  // ret = receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
+  ret = receive_data_uart(COM_UART, COM_RX_DATA, COM_RX_CMD_SIZE); // telecommand receive
   printf("Received ret as %d and value :%s\n", ret, COM_RX_DATA);
   if (ret < 0)
   {
@@ -216,78 +217,79 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
   else
   {
     //Todo uncomment the line later
+    syslog(LOG_SYSLOG,"COmmand received %s\n",COM_RX_DATA);
     parse_command(COM_RX_DATA);
 
-    uint8_t commands[30] = {11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 0x01, 0x01, 0xca, 0xd1, 0xf3, 0, 0, 0, 0, 0, 0, 00, 0, 0};
-    printf("parse command 22starting\n");
+    // uint8_t commands[30] = {11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 0x01, 0x01, 0xca, 0xd1, 0xf3, 0, 0, 0, 0, 0, 0, 00, 0, 0};
+    // printf("parse command 22starting\n");
 
-    // Check whether the received data in uart_com has initial 0x00 value or not if the initial is 0x00 then MCU_ID is supposed to be there at index 16, otherwise it is in index 17
-    parse_command(commands);
+    // // Check whether the received data in uart_com has initial 0x00 value or not if the initial is 0x00 then MCU_ID is supposed to be there at index 16, otherwise it is in index 17
+    // parse_command(commands);
 
-    commands[16] = 0x01;
-    commands[17] = 0x1d;
-    commands[18] = 0xd2;
-    commands[19] = 0xf5;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
+    // commands[16] = 0x01;
+    // commands[17] = 0x1d;
+    // commands[18] = 0xd2;
+    // commands[19] = 0xf5;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
 
-    commands[16] = 0x01;
-    commands[17] = 0xca;
-    commands[18] = 0xd2;
-    commands[19] = 0xf5;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
-    commands[16] = 0x02;
-    commands[17] = 0xdf;
-    commands[18] = 0xab;
-    commands[19] = 0xd1;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
-    commands[16] = 0x01;
-    commands[17] = 0xee;
-    commands[18] = 0xee;
-    commands[19] = 0xee;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
+    // commands[16] = 0x01;
+    // commands[17] = 0xca;
+    // commands[18] = 0xd2;
+    // commands[19] = 0xf5;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
+    // commands[16] = 0x02;
+    // commands[17] = 0xdf;
+    // commands[18] = 0xab;
+    // commands[19] = 0xd1;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
+    // commands[16] = 0x01;
+    // commands[17] = 0xee;
+    // commands[18] = 0xee;
+    // commands[19] = 0xee;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
 
-    commands[16] = 0x01;
-    commands[17] = 0xee;
-    commands[18] = 0xaa;
-    commands[19] = 0xaa;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
+    // commands[16] = 0x01;
+    // commands[17] = 0xee;
+    // commands[18] = 0xaa;
+    // commands[19] = 0xaa;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
 
-    commands[16] = 0x01;
-    commands[17] = 0x1a;
-    commands[18] = 0xe0;
-    commands[19] = 0x1e;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
-    commands[16] = 0x03;
-    commands[17] = 0x0e;
-    commands[18] = 0x53;
-    commands[19] = 0xce;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
-    commands[16] = 0x04;
-    commands[17] = 0xcc;
-    commands[18] = 0x5e;
-    commands[19] = 0xbd;
-    for (int i = 0; i < 9; i++)
-      sleep(1);
-    parse_command(commands);
-    commands[16] = 0x05;
-    commands[17] = 0xac;
-    commands[18] = 0xcf;
-    commands[19] = 0xcf;
-    parse_command(commands);
+    // commands[16] = 0x01;
+    // commands[17] = 0x1a;
+    // commands[18] = 0xe0;
+    // commands[19] = 0x1e;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
+    // commands[16] = 0x03;
+    // commands[17] = 0x0e;
+    // commands[18] = 0x53;
+    // commands[19] = 0xce;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
+    // commands[16] = 0x04;
+    // commands[17] = 0xcc;
+    // commands[18] = 0x5e;
+    // commands[19] = 0xbd;
+    // for (int i = 0; i < 9; i++)
+    //   sleep(1);
+    // parse_command(commands);
+    // commands[16] = 0x05;
+    // commands[17] = 0xac;
+    // commands[18] = 0xcf;
+    // commands[19] = 0xcf;
+    // parse_command(commands);
 
     return 0; // todo remove this part
   }
@@ -579,7 +581,7 @@ void parse_command(uint8_t COM_RX_DATA[30])
     // Command to ENABLE/DISABLE or run epdm(MSN3) mission
     {
       printf("EPDM MCU ID has been received\n");
-      if (cmds[0] == 0xAC && cmds[1] == 0xCF && cmds[2] == 0xCF)
+      if (cmds[0] == 0xeC && cmds[1] == 0xCF && cmds[2] == 0xCF)
       {
         send_data_uart(COM_UART, ack, sizeof(ack));
 
@@ -1872,39 +1874,42 @@ int send_beacon_data()
     beacon_data[83] = 0x7e;
 
     beacon_data[84] = '\0';
-    int fd = send_data_uart(COM_UART, beacon_data, sizeof(beacon_data));
+    int fd ;//
+    //fd= send_data_uart(COM_UART, beacon_data, sizeof(beacon_data));
     // fd = send_data_uart(COM_UART, test, sizeof(test));
 
     printf("beacon data size %d\n", fd);
-    // int fd = open(COM_UART, O_WRONLY);
-    // if (fd < 0)
-    // {
-    //   printf("unable to open: %s\n", COM_UART);
-    //   return -1;
-    // }
-    // sleep(2);
+    fd = open(COM_UART, O_WRONLY);
+    if (fd < 0)
+    {
+      printf("unable to open: %s\n", COM_UART);
+      return -1;
+    }
+    sleep(2);
 
-    // printf("Turning on  4v dcdc line..\n");
-    // gpio_write(GPIO_DCDC_4V_EN, 1);
-    // printf("Turning on COM 4V line..\n");
-    // gpio_write(GPIO_COM_4V_EN, 1);
+    printf("Turning on  4v dcdc line..\n");
+    gpio_write(GPIO_DCDC_4V_EN, 1);
+    printf("Turning on COM 4V line..\n");
+    gpio_write(GPIO_COM_4V_EN, 1);
 
-    // int ret = write(fd, beacon_data, BEACON_DATA_SIZE);
-    // usleep(10000);
-    // if (ret < 0)
-    // {
-    //   printf("unable to send data\n");
-    //   for (int i = 0; i < BEACON_DATA_SIZE; i++)
-    //   {
-    //     ret = write(fd, &beacon_data[i], 1);
-    //     usleep(1000);
-    //   }
-    //   if (ret < 0)
-    //   {
-    //     printf("Unable to send data through byte method..\n");
-    //     return -1;
-    //   }
-    // }
+    int ret = write(fd, beacon_data, BEACON_DATA_SIZE);
+    usleep(10000);
+    if (ret < 0)
+    {
+      printf("unable to send data\n");
+      for (int i = 0; i < BEACON_DATA_SIZE; i++)
+      {
+        ret = write(fd, &beacon_data[i], 1);
+        usleep(1000);
+      }
+      if (ret < 0)
+      {
+        printf("Unable to send data through byte method..\n");
+        return -1;
+      }
+    }
+     
+
     /*To delete*/
     if (beacon_status == 0)
     {
@@ -1916,24 +1921,6 @@ int send_beacon_data()
     }
     beacon_type = !beacon_type;
 
-    // printf("\n");
-    // /*To delete*/
-    // int x = 0;
-    // while (x < 200000)
-    // {
-    //   x += 200;
-    //   usleep(200);
-    // }
-
-    // printf("urning off  4v DCDC line..\n");
-    // gpio_write(GPIO_DCDC_4V_EN, 0);
-    // // printf("Turning off COM 4V line..\n");
-    // gpio_write(GPIO_COM_4V_EN, 0);
-    // ioctl(fd, TCFLSH, 2);
-    // ioctl(fd, TCDRN, 2);
-    // printf("TX RX buffer flused\n");
-    // close(fd);
-    // printf("Turned off COM 4V line..\n");
     printf("Beacon Type %d sequence complete\n", beacon_type);
     work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
   }

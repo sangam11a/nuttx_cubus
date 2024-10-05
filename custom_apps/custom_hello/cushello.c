@@ -192,6 +192,7 @@
 #include <fcntl.h>
 #include <syslog.h>
 #include <sys/ioctl.h>
+#include "gpio_def.h"
 
 #define DATA_BITS 4
 #define PARITY_BITS 3
@@ -339,7 +340,9 @@ int main(int argc, FAR char *argv[]) {
     // // Combine both restored numbers into one 8-bit number
     // int combined_number = (restored_number1 << 4) | restored_number2;
     // printf("Combined 8-bit Number: %d\n", combined_number);
-
+    // gpio_write(GPIO_MUX_EN, false);
+    // gpio_write(GPIO_SFM_MODE, false);
+    // gpio_write(GPIO_)
     fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
     if(fd < 0) 
     {
@@ -362,6 +365,7 @@ int main(int argc, FAR char *argv[]) {
       
         file_syncfs(&file_p);
         file_close(&file_p);
+    // gpio_write(GPIO_SFM_MODE, true);
         
 
     }

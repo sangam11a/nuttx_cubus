@@ -29,6 +29,4 @@ MODULE    = $(CONFIG_CUSTOM_APPS_SPI_DRIVER_TEST)
 
 
 MAINSRC = spi_driver_test.c
-
-CSRC += rs.c
 include $(APPDIR)/Application.mk

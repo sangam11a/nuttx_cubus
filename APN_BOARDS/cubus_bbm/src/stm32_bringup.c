@@ -192,7 +192,7 @@ stm32_gpiowrite(GPIO_3V3_COM_EN,true);
 
   /* Init SPI Bus again */
 
-  spi2 = stm32_spibus_initialize(CONFIG_CUSTOM_APPS_EADC_SPI_NUMBER);
+  spi2 = stm32_spibus_initialize(2);
   if (!spi2)
   {
     syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 2.\n");
@@ -230,7 +230,7 @@ stm32_gpiowrite(GPIO_3V3_COM_EN,true);
     syslog(LOG_INFO, "Successfully initialized SPI port 3\n");
   }
   stm32_gpiowrite(GPIO_MUX_EN, false);
-  stm32_gpiowrite(GPIO_SFM_CS, true);
+  // stm32_gpiowrite(GPIO_SFM_CS, true);
   stm32_gpiowrite(GPIO_SFM_MODE, false);
 
    cubus_mft_configure(board_get_manifest());
@@ -240,13 +240,13 @@ stm32_gpiowrite(GPIO_3V3_COM_EN,true);
 
   // stm32_gpiowrite(GPIO_MUX_EN, true);
   // stm32_gpiowrite(GPIO_SFM_CS, true);
-  // stm32_gpiowrite(GPIO_SFM_MODE, true);
+  stm32_gpiowrite(GPIO_SFM_MODE, false);
 
 
 #endif /* CONFIG_STM32_SPI3 */
 
 #ifdef CONFIG_STM32_SPI5
-  spi5 = stm32_spibus_initialize(CONFIG_CUSTOM_APPS_IMU_SPI_NUMBER);
+  spi5 = stm32_spibus_initialize(5);
   if (!spi5)
   {
     syslog(LOG_ERR, "[BRING_UP] ERROR: Failed to Initialize SPI 5 bus.\n");
@@ -487,7 +487,7 @@ stm32_gpiowrite(GPIO_3V3_COM_EN,true);
   stm32_wwdginitialize("/dev/wwdg0");
 #endif
 stm32_gpiowrite(GPIO_MUX_EN, false);
-stm32_gpiowrite(GPIO_SFM_MODE, true);
+stm32_gpiowrite(GPIO_SFM_MODE, false);
 
   return 0;
 }

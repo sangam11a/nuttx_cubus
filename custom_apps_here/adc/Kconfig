@@ -1,0 +1,144 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_INT_ADC
+	tristate "Internal ADC Operations"
+	default n
+	depends on ADC && BOARDCTL
+	---help---
+		Enable the ADC example
+
+if CUSTOM_APPS_INT_ADC
+
+config CUSTOM_APPS_INT_ADC_PROGNAME
+  string "Name of the application"
+  default "int_adc"
+  
+config CUSTOM_APPS_INT_ADC_PRIORITY
+  int "Internal ADC operation task priority"
+  default 100
+
+config CUSTOM_APPS_INT_ADC_STACKSIZE
+  int "Cubus app stack size"
+  default DEFAULT_TASK_STACKSIZE
+
+config CUSTOM_APPS_ADC_USE_INT_ADC1
+  bool "use Interal ADC1"
+  default n
+  ---help---
+    Enable internal ADC1
+
+config CUSTOM_APPS_ADC_USE_INT_ADC2
+  bool "use Internal ADC2"
+  default n
+  ---help---
+    Enable internal ADC2
+
+config CUSTOM_APPS_ADC_USE_INT_ADC3
+  bool "use Internal ADC3"
+  default n
+  ---help---
+    Enable internal ADC3
+
+if CUSTOM_APPS_ADC_USE_INT_ADC1
+
+config CUSTOM_APPS_INT_ADC1_DEVPATH
+  string "Internal ADC1 Device path"
+  default "/dev/adc0"
+  ---help---
+    The Path of the internal ADC 1.
+
+config CUSTOM_APPS_INT_ADC1_NSAMPLES
+  int "Number of sample groups for internal ADC 1"
+  default 0
+  ---help---
+    The number of samples to collect before  the program terminates.
+    Default: 0 (Samples are collected indefinitely)
+
+config CUSTOM_APPS_INT_ADC1_GROUPSIZE
+  int "Number of samples per group"
+  default 16
+  ---help---
+    The number of samples to read at once. Default: 16 (All channels including temperature and VrefInt).
+
+config CUSTOM_APPS_INT_ADC1_SWTRIG
+  bool "Enable INT ADC1 software trigger"
+  default n
+  ---help---
+    Some ADC may be configured so there is no automatic or periodic
+    conversion of samples. Rather, the ADC sampling must  be trigger
+    by software via an ioctl command. Select this options only if applicable
+    for your ADC configuration. In this case, the test will issue the software 
+    trigger ioctl before attempting to read from the adc.
+
+endif
+
+if CUSTOM_APPS_ADC_USE_INT_ADC2
+
+config CUSTOM_APPS_INT_ADC2_DEVPATH
+  string "Internal ADC2 Device path"
+  default "/dev/adc1"
+  ---help---
+    The Path of the internal ADC 1.
+
+config CUSTOM_APPS_INT_ADC2_NSAMPLES
+  int "Number of sample groups for internal ADC 2"
+  default 0
+  ---help---
+    The number of samples to collect before  the program terminates.
+    Default: 0 (Samples are collected indefinitely)
+
+config CUSTOM_APPS_INT_ADC2_GROUPSIZE
+  int "Number of samples per group"
+  default 16
+  ---help---
+    The number of samples to read at once. Default: 16 (All channels including temperature and VrefInt).
+
+config CUSTOM_APPS_INT_ADC2_SWTRIG
+  bool "Enable INT ADC2 software trigger"
+  default n
+  ---help---
+    Some ADC may be configured so there is no automatic or periodic
+    conversion of samples. Rather, the ADC sampling must  be trigger
+    by software via an ioctl command. Select this options only if applicable
+    for your ADC configuration. In this case, the test will issue the software 
+    trigger ioctl before attempting to read from the adc.
+
+endif
+
+if CUSTOM_APPS_ADC_USE_INT_ADC3
+
+config CUSTOM_APPS_INT_ADC3_DEVPATH
+  string "Internal ADC3 Device path"
+  default "/dev/adc2"
+  ---help---
+    The Path of the internal ADC 3.
+
+config CUSTOM_APPS_INT_ADC3_NSAMPLES
+  int "Number of sample groups for internal ADC 3"
+  default 0
+  ---help---
+    The number of samples to collect before  the program terminates.
+    Default: 0 (Samples are collected indefinitely)
+
+config CUSTOM_APPS_INT_ADC3_GROUPSIZE
+  int "Number of samples per group"
+  default 1
+  ---help---
+    The number of samples to read at once. Default: 16 (All channels including temperature and VrefInt).
+
+config CUSTOM_APPS_INT_ADC3_SWTRIG
+  bool "Enable INT ADC3 software trigger"
+  default n
+  ---help---
+    Some ADC may be configured so there is no automatic or periodic
+    conversion of samples. Rather, the ADC sampling must  be trigger
+    by software via an ioctl command. Select this options only if applicable
+    for your ADC configuration. In this case, the test will issue the software 
+    trigger ioctl before attempting to read from the adc.
+
+endif
+
+endif

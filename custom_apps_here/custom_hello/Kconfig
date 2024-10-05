@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_CUSTOM_HELLO
+	tristate "\"custom Hello, World!\" example"
+	default n
+	---help---
+		Enable the \"custom Hello, World!\" example
+
+if CUSTOM_APPS_CUSTOM_HELLO
+
+config CUSTOM_APPS_CUSTOM_HELLO_PROGNAME
+	string "Program name"
+	default "cushello"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_CUSTOM_HELLO_PRIORITY
+	int "Custom Hello task priority"
+	default 100
+
+config CUSTOM_APPS_CUSTOM_HELLO_STACKSIZE
+	int "Custom Hello stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+endif

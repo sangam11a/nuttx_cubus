@@ -38,7 +38,7 @@
 #include <fcntl.h>
 
 #include <poll.h>
-// #include <sensor/adc.h>
+#include <sensor/adc.h>
 #include <uORB/uORB.h>
 #include <sched.h>
 #include <math.h>

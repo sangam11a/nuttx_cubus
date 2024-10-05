@@ -1,0 +1,312 @@
+// /****************************************************************************
+//  * custom_apps/custom_hello/custom_hello.c
+//  *
+//  * Licensed to the Apache Software Foundation (ASF) under one or more
+//  * contributor license agreements.  See the NOTICE file distributed with
+//  * this work for additional information regarding copyright ownership.  The
+//  * ASF licenses this file to you under the Apache License, Version 2.0 (the
+//  * "License"); you may not use this file except in compliance with the
+//  * License.  You may obtain a copy of the License at
+//  *
+//  *   http://www.apache.org/licenses/LICENSE-2.0
+//  *
+//  * Unless required by applicable law or agreed to in writing, software
+//  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+//  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+//  * License for the specific language governing permissions and limitations
+//  * under the License.
+//  *
+//  ****************************************************************************/
+
+
+// /****************************************************************************
+//  * Included Files
+//  ****************************************************************************/
+
+
+// #include <pthread.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <nuttx/sensors/sensor.h>
+// #include <unistd.h>
+
+// static int counter ;
+// static int lis3mdl_push_data()
+// {
+// //   struct gpio gpio_pin;
+// //   gpio_pin.timestamp = sensor_get_timestamp();
+//   printf("Lis3mdl push data called : %d\n",counter++);
+//   return OK;
+// }
+
+// typedef int (*push_data_func)();
+
+// static const push_data_func deliver_data =
+// {
+//   lis3mdl_push_data
+// };
+// // Function prototypes
+// void *function1(void *arg);
+// void *function2(void *arg);
+// void *function3(void *arg);
+
+// // Mutex for synchronization
+// pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// // Variable to track the current function (initially function1)
+// int current_function = 1;
+
+// int main(void) {
+//     pthread_t thread1, thread2, thread3;
+//     int ret;
+
+//     // Create threads
+//     ret = pthread_create(&thread1, NULL, function1, NULL);
+//     if (ret != 0) {
+//         perror("pthread_create");
+//         exit(EXIT_FAILURE);
+//     }
+
+//     ret = pthread_create(&thread2, NULL, function2, NULL);
+//     if (ret != 0) {
+//         perror("pthread_create");
+//         exit(EXIT_FAILURE);
+//     }
+
+//     ret = pthread_create(&thread3, NULL, function3, NULL);
+//     if (ret != 0) {
+//         perror("pthread_create");
+//         exit(EXIT_FAILURE);
+//     }
+
+//     // Wait for all threads to finish
+//     pthread_join(thread1, NULL);
+//     pthread_join(thread2, NULL);
+//     pthread_join(thread3, NULL);
+
+//     // Destroy the mutex (optional for cleanup)
+//     pthread_mutex_destroy(&mutex);
+
+//     printf("All threads finished.\n");
+//     return EXIT_SUCCESS;
+// }
+
+// // Function implementations (replace with your actual logic)
+// void *function1(void *arg) {
+//     while (1) {
+//         pthread_mutex_lock(&mutex); // Acquire the mutex
+//         if (current_function != 1) {
+//             current_function = 1;
+//             printf("Function 1 is running.\n");
+//         }
+//         pthread_mutex_unlock(&mutex); // Release the mutex
+//         usleep(1000000); // Simulate some work
+//     }
+//     return NULL;
+// }
+
+// void *function2(void *arg) {
+//     while (1) {
+//         pthread_mutex_lock(&mutex); // Acquire the mutex
+//         if (current_function != 2) {
+//             current_function = 2;
+//             printf("Function 2 is running.\n");
+//             deliver_data();
+//         }
+//         pthread_mutex_unlock(&mutex); // Release the mutex
+//         usleep(2000000); // Simulate some work
+//     }
+//     return NULL;
+// }
+
+// void *function3(void *arg) {
+//     while (1) {
+//         pthread_mutex_lock(&mutex); // Acquire the mutex
+//         if (current_function != 3) {
+//             current_function = 3;
+//             printf("Function 3 is running.\n");
+//         }
+//         pthread_mutex_unlock(&mutex); // Release the mutex
+//         sleep(6); // Simulate some work
+//     }
+//     return NULL;
+// }
+
+
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <mqueue.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+
+#define QUEUE_NAME "/firstQ"
+#define QUEUE_PERMISSIONS 0660
+#define MAX_MESSAGES 10
+#define MAX_MSG_SIZE 256
+#define MSG_BUFFER_SIZE MAX_MSG_SIZE+10
+
+#define NUMBER_OF_MESSAGES 5
+
+void writer_mq() {
+    mqd_t mqd;
+    struct mq_attr attr;
+    mqd = mq_open("/mqp", O_WRONLY| O_CREAT, S_IRUSR | S_IWUSR, NULL);
+
+    char buff[8192] = {'\0'};
+    char str[12][6] = {"A", "posix", "message", "queue", "example","kjsalkfjsdaf"};
+
+    // printf("Writing messages to the POSIX message queue\n\n");
+    printf("Size of str is %d\n",sizeof(str));
+    for(int i = 0; i < sizeof(str); i++) {
+        // Write to the POSIX message queue
+        mq_send(mqd, str[i], strlen(str[i]), 0);
+        printf("Go this data sent :%s\n",str[i]);
+        
+    }
+     mq_close(mqd);
+    // Delete the corresponding file from the filesystem
+    // mq_unlink("/mqp");
+    
+}
+
+// void reader_mq() {
+//     struct mq_attr attr;
+// mqd_t mqd;
+// mqd = mq_open("/mqp", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR, NULL);
+
+//     printf("Reading messages from the POSIX message queue\n\n");
+
+//     for(int i = 0; i < NUMBER_OF_MESSAGES; i++) {
+//         char buff[8192] = {'\0'};
+
+//         // Read from the POSIX message queue
+//         mq_receive(mqd, buff, attr.mq_msgsize, NULL);
+//         printf("The message read from the queue: %s\n", buff);
+
+//         // Read the number of messages in the queue
+//         mq_getattr(mqd, &attr);
+//         printf("Number of messages in the queue: %d\n", attr.mq_curmsgs);
+//         sleep(0.5);
+//     }
+// }
+
+void *function1(void *arg) {
+    while (1) {
+       writer_mq();
+    //  printf("func 1 called\n");
+        usleep(2000000); // Simulate some work
+    }
+    return NULL;
+}
+
+void *function2(void *arg) {
+    while (1) {
+       reader_mq();
+
+        printf("func 2 called\n");
+        usleep(6000000); 
+    }
+    return NULL;
+}
+int main(void) {
+    pthread_t thread1, thread2, thread3;
+    int ret;
+      writer_mq();
+    //  printf("func 1 called\n");
+    // Create threads
+    // ret = pthread_create(&thread1, NULL, function1, NULL);
+    // if (ret != 0) {
+    //     perror("pthread_create");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // ret = pthread_create(&thread2, NULL, function2, NULL);
+    // if (ret != 0) {
+    //     perror("pthread_create");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // // ret = pthread_create(&thread3, NULL, function3, NULL);
+    // if (ret != 0) {
+    //     perror("pthread_create");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // // Wait for all threads to finish
+    // pthread_join(thread1, NULL);
+    // pthread_join(thread2, NULL);
+
+    // Destroy the mutex (optional for cleanup)
+    // pthread_mutex_destroy(&mutex);
+
+    printf("All threads finished.\n");
+    return EXIT_SUCCESS;
+}
+
+// int main(int argc, char **argv){
+//     int ret;
+//     pthread_t thread1,thread2;
+     
+//     ret = pthread_create(&thread1, NULL, function1, NULL);
+//     if (ret != 0) {
+//         perror("pthread_create");
+//         exit(EXIT_FAILURE);
+//     }
+
+//     ret = pthread_create(&thread2, NULL, function2, NULL);
+//     if (ret != 0) {
+//         perror("pthread_create");
+//         exit(EXIT_FAILURE);
+//     }
+//         pthread_join(thread1, NULL);
+//     pthread_join(thread2, NULL);
+//     // writer_mq(mqd);
+
+//     // printf("\nPress enter to continue");
+//     // getchar();
+
+//     // Read messages from the queue
+//     // reader_mq(mqd);
+
+//     // Close the message queue
+//     // mq_close(mqd);
+//     // Delete the corresponding file from the filesystem
+//     // mq_unlink("/mqp");
+//     // mqd_t qd_server, qd_client;
+//     // long token_number = 1;
+//     // printf("Server hello");
+//     // struct mq_attr attr;
+//     // attr.mq_flags = 0;
+//     // attr.mq_maxmsg = MAX_MESSAGES;
+//     // attr.mq_msgsize = MAX_MSG_SIZE;
+//     // attr.mq_curmsgs = 0;
+    
+//     // if((qd_server == mq_open(QUEUE_NAME, O_RDONLY | O_CREAT, QUEUE_PERMISSIONS, &attr)) == -1){
+//     //     perror("Server : mq_open(server)");
+//     //     exit(1);
+//     // }
+//     // char in_buffer[MSG_BUFFER_SIZE], out_buffer[MSG_BUFFER_SIZE];
+//     // while(1){
+//     //     if( mq_receive(qd_server, in_buffer, MSG_BUFFER_SIZE, NULL) == -1){
+//     //         perror("Server : mq_receive");
+//     //         exit(1);
+//     //     }
+//     //     printf("Server message received\n");
+        
+//     //     if((qd_client = mq_open(in_buffer, O_WRONLY)) == 1){
+//     //         perror("Server: not able to open client queue");
+//     //         continue;
+//     //     }
+
+//     //     sprintf(out_buffer, "%ld", token_number);
+
+//     //     if(mq_send(qd_client, out_buffer, strlen(out_buffer) + 1, 0) == -1){
+//     //         perror("Server : Not able to send mesage to client");
+//     //     }
+//     //     printf("Server : respons sent to client . \n");
+//     //     token_number++;
+//     // }
+// }

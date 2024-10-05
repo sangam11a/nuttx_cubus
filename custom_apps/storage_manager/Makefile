@@ -30,5 +30,7 @@ MODULE    = $(CONFIG_CUSTOM_APPS_STORAGE_MANAGER)
 
 MAINSRC = storage_manager.c
 
-CSRC+= consumer.c
+CSRC+= common_functions_edited.c
+
+CSRC+= file_operations.c
 include $(APPDIR)/Application.mk

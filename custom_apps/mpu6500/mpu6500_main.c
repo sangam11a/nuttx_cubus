@@ -90,30 +90,30 @@ ORB_DEFINE(mpu6500_imu_msg, struct mpu6500_imu_msg, print_mpu6500_imu_msg);
 int mpu6500_daemon(int argc, FAR char *argv[])
 {
   g_mpu6500_daemon_started = true;
-  int fd;
-  int afd;
+  int fd_mpu;
+  int afd_mpu;
   int ret;
   int instance = 0;
 
   int16_t imu_raw[7];
   struct mpu6500_imu_msg imu0;
 
-  afd = orb_advertise_multi_queue_persist(ORB_ID(mpu6500_imu_msg), &imu0,
+  afd_mpu = orb_advertise_multi_queue_persist(ORB_ID(mpu6500_imu_msg), &imu0,
                                           &instance, sizeof(struct mpu6500_imu_msg));
-  if (afd < 0)
+  if (afd_mpu < 0)
   {
     syslog(LOG_ERR, "Orb advertise failed.\n");
   }
 for (;;)
 {
-  fd = open(CONFIG_IMU0_PATH, O_RDONLY);
-  if (fd < 0)
+  fd_mpu = open(CONFIG_IMU0_PATH, O_RDONLY);
+  if (fd_mpu < 0)
   {
     syslog(LOG_ERR, "[mpu6500] failed to open mpu6500.");
     goto error;
   }
 
-  ret = read(fd, imu_raw, sizeof(imu_raw));
+  ret = read(fd_mpu, imu_raw, sizeof(imu_raw));
 
   if (ret != sizeof(imu_raw))
   {
@@ -130,9 +130,9 @@ for (;;)
   imu0.gyro_z = (((imu_raw[6] & REG_HIGH_MASK) << 8) + ((imu_raw[6] & REG_LOW_MASK) >> 8)) / MPU6500_FS_SEL;
   imu0.timestamp = orb_absolute_time();
    
-  close(fd);
+  close(fd_mpu);
 
-  if (OK != orb_publish(ORB_ID(mpu6500_imu_msg), afd, &imu0))
+  if (OK != orb_publish(ORB_ID(mpu6500_imu_msg), afd_mpu, &imu0))
   {
     syslog(LOG_ERR, "Orb Publish failed\n");
   }
@@ -140,13 +140,13 @@ for (;;)
 }
 
 
-  ret = orb_unadvertise(afd);
+  ret = orb_unadvertise(afd_mpu);
   if (ret < 0)
   {
     syslog(LOG_ERR, "Orb Unadvertise failed.\n");
   }
 rd_err:
-  close(fd);
+  close(fd_mpu);
 error:
   return 0;
 }

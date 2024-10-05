@@ -1,0 +1,145 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_CUBUS_APP
+	tristate "CUBUS APP"
+	default n
+	---help---
+		Enable the \"CUBUS APP \" 
+
+if CUSTOM_APPS_CUBUS_APP
+
+config CUSTOM_APPS_CUBUS_APP_PROGNAME
+	string "Program name"
+	default "Cubus"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_CUBUS_APP_SAMPLE_RATE
+	int "Number of samples to acquire for IMU sensors"
+	default 100
+
+config CUSTOM_APPS_CUBUS_USE_EXT_ADC
+	bool "Use external ADC"
+	default n
+	---help---
+		Select if we need to use the external ADC. 
+
+config CUSTOM_APPS_CUBUS_USE_INT_ADC1
+	bool "Use internal ADC1"
+	default n
+	depends on ADC && BOARDCTL
+	---help---
+		Enable internal ADC1 for Cubus 
+
+if CUSTOM_APPS_CUBUS_USE_INT_ADC1
+
+config CUSTOM_APPS_CUBUS_INT_ADC1_DEVPATH
+	string "ADC1 device path"
+	default "/dev/adc0"
+	---help---
+		The default path to the ADC1 device. Default: /dev/adc0
+
+config CUSTOM_APPS_CUBUS_INT_ADC1_NSAMPLES
+	int "Number of Sample Groups"
+	default 0
+	---help---
+		This number of samples is collected and the program terminates.
+		Default:  0 (samples are collected indefinitely).
+
+config CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE
+	int "Number of Samples per Group"
+	default 4
+	---help---
+		The number of samples to read at once. Default: 4
+
+config CUSTOM_APPS_CUBUS_INT_ADC1_SWTRIG
+	bool "Use software trigger"
+	default n
+	---help---
+		Some ADCs may be configured so there is no automatic or periodic
+		conversion of samples.  Rather, the ADC sampling must be trigger by
+		software via an ioctl command.  Select this option only if
+		applicable for your ADC configuration.  In this case, the test will
+		issue the software trigger ioctl before attempting to read from the
+		ADC.
+
+endif
+
+config CUSTOM_APPS_CUBUS_USE_INT_ADC3
+	bool "Use internal ADC3"
+	default n
+	depends on ADC && BOARDCTL
+	---help---
+		Enable internal ADC3 for Cubus 
+
+if CUSTOM_APPS_CUBUS_USE_INT_ADC3
+
+config CUSTOM_APPS_CUBUS_INT_ADC3_DEVPATH
+	string "ADC1 device path"
+	default "/dev/adc1"
+	---help---
+		The default path to the ADC3 device. Default: /dev/adc0
+
+config CUSTOM_APPS_CUBUS_INT_ADC3_NSAMPLES
+	int "Number of Sample Groups"
+	default 0
+	---help---
+		This number of samples is collected and the program terminates.
+		Default:  0 (samples are collected indefinitely).
+
+config CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE
+	int "Number of Samples per Group"
+	default 4
+	---help---
+		The number of samples to read at once. Default: 4
+
+config CUSTOM_APPS_CUBUS_INT_ADC3_SWTRIG
+	bool "Use software trigger"
+	default n
+	---help---
+		Some ADCs may be configured so there is no automatic or periodic
+		conversion of samples.  Rather, the ADC sampling must be trigger by
+		software via an ioctl command.  Select this option only if
+		applicable for your ADC configuration.  In this case, the test will
+		issue the software trigger ioctl before attempting to read from the
+		ADC.
+
+endif
+
+config CUSTOM_APPS_CUBUS_APP_PRIORITY
+	int "Cubus app task priority"
+	default 100
+
+config CUSTOM_APPS_CUBUS_APP_STACKSIZE
+	int "Cubus_app stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+config CUSTOM_APPS_CUBUS_APP_PRIORITY
+	int "COM app task priority"
+	default 100
+
+config CUSTOM_APPS_CUBUS_APP_STACKSIZE
+	int "COM_APP stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+config CUSTOM_APPS_CUBUS_APP_PRIMARY_UART
+	string "Primary uart line for communication between OBC and COM"
+	default "/dev/ttyS0"
+
+
+config CUSTOM_APPS_CUBUS_APP_SECONDARY_UART
+	string "Secondary uart line for communication between OBC and COM"
+	default "/dev/ttyS1"
+
+config CUSTOM_APPS_CUBUS_APP_PRIMARY_UART_BAUDRATE
+	int "UART baudrate for primary uart"
+	default 115200
+
+config CUSTOM_APPS_CUBUS_APP_SECONDARY_UART_BAUDRATE
+	int "UART baudrate for secondary uart"
+	default 115200
+endif

@@ -1,0 +1,57 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_MPU6500
+	tristate "start MPU6500 sensor"
+	default n
+	---help---
+		start mpu6500 sensor data collection
+
+if CUSTOM_APPS_MPU6500
+
+config CUSTOM_APPS_MPU6500_PROGNAME
+	string "Program name"
+	default "mpu6500"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_MPU6500_PRIORITY
+	int "mpu6500 task priority"
+	default 100
+
+config CUSTOM_APPS_MPU6500_STACKSIZE
+	int "MPU6500 stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+config IMU_NO
+  int "no of IMU devices"
+  default 1
+
+
+config IMU0_PATH
+  string "path of first IMU device"
+  default "/dev/mpu6500"
+  ---help---
+    This is the device location of first IMU device
+
+if IMU_NO > 1
+
+config IMU1_PATH
+  string "path of second IMU device"
+  default "/dev/mpu6500_1"
+
+if IMU_NO > 2
+
+config IMU2_PATH
+  string "path of third IMU device"
+  default "/dev/mpu6500_2"
+
+endif
+
+endif
+
+endif
+

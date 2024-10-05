@@ -185,8 +185,10 @@ void stm32_spi4select(struct spi_dev_s *dev,
   switch (devid)
   {
     case SPIDEV_FLASH(0):
-      stm32_gpiowrite(GPIO_SFM_MODE, !selected);
+      // stm32_gpiowrite(GPIO_SFM_MODE, !selected);
       stm32_gpiowrite(GPIO_SFM_CS, !selected);
+      // stm32_gpiowrite(GPIO_SFM_MODE, true);
+     
       break;
   }
 }

@@ -3,7 +3,7 @@
 #include <nuttx/config.h>
 
 #include <stdbool.h>
-#include <stdio.h>
+// #include <stdio.h>
 #include <debug.h>
 #include <errno.h>
 #include <string.h>

@@ -18,8 +18,8 @@
  *
  ****************************************************************************/
 
-#ifndef __APPS_CUSTOM_APPS_ADC_H
-#define __APPS_CUSTOM_APPS_ADC_H
+#ifndef __APPS_CUSTOM_APPS_CUBUS_APP_ADC_H
+#define __APPS_CUSTOM_APPS_CUBUS_APP_ADC_H
 
 /****************************************************************************
  * Included Files

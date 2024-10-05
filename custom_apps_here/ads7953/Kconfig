@@ -1,0 +1,80 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config CUSTOM_APPS_ADS7953
+	tristate "Start ADS7953 ADC"
+	default n
+	---help---
+		Start ADS7953 Analog data collector
+
+if CUSTOM_APPS_ADS7953
+
+config CUSTOM_APPS_ADS7953_PROGNAME
+	string "Program name"
+	default "ads7953"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config CUSTOM_APPS_ADS7953_PRIORITY
+	int "ads7953 task priority"
+	default 100
+
+config CUSTOM_APPS_ADS7953_STACKSIZE
+	int "Ads7953 stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+config IOCTL_MODE
+  bool "Enable IOCTL mode operation"
+  default y
+  
+
+config EXT_ADC_NO
+  int "no of ADC devices"
+  default 1
+
+
+config EADC0_PATH
+  string "path of first external ADC device"
+  default "/dev/eadc0"
+  ---help---
+    This is the device location of first External ADC device
+
+config EADC0_CHAN_NO
+  int "No of channels for EXT ADC 0"
+  default 12
+  ---help---
+    No of channels being used on external ADC 0. The channels needs to be activated serially, from 0.
+
+if EXT_ADC_NO > 1
+
+config EADC1_PATH
+  string "path of second external ADC device"
+  default "/dev/eadc1"
+
+config EADC1_CHAN_NO
+  int "No of channels for EXT ADC 1"
+  default 12
+  ---help---
+    No of channels being used on external ADC 1. The channels needs to be activated serially, from 0.
+if EXT_ADC_NO > 2
+
+config EADC2_PATH
+  string "path of third exernal ADC device"
+  default "/dev/eadc2"
+
+config EADC2_CHAN_NO
+  int "No of channles for EXT ADC 2"
+  default 12
+  ---help---
+    No of channels being used on external ADC 2. The channls needs to be activated serially, from 0.
+    
+
+endif
+
+endif
+
+endif
+
