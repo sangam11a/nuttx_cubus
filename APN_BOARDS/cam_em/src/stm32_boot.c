@@ -80,8 +80,8 @@ void stm32_boardinitialize(void)
 {
    
   stm32_configgpio(GPIO_SFM_CS);
-  
-
+  stm32_configgpio(GPIO_OCP_EN);
+ 
 #ifdef HAVE_CCM_HEAP
   /* Initialize CCM allocator */
 

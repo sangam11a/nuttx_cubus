@@ -184,6 +184,9 @@ int stm32_bringup(void)
 {
 
   int ret;
+  stm32_gpiowrite(GPIO_OCP_EN, false);
+  stm32_gpiowrite(GPIO_OCP_EN, true);
+
 
   /* Configure SPI-based devices */
 
