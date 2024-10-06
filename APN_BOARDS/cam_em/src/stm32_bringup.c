@@ -104,17 +104,6 @@ typedef struct mag_priv_s
 } mag_priv_s;
 #endif
 
-#ifdef CONFIG_ADC_ADS7953
-
-typedef struct adc_priv_s
-{
-  struct ads7953_config_s dev;
-  xcpt_t handler;
-  void *arg;
-  uint32_t intcfg;
-} adc_priv_s;
-#endif
-
 struct mtd_dev_s *mtd;
 
 /* IRQ/GPIO access callbacks.  These operations all hidden behind
@@ -128,39 +117,6 @@ struct mtd_dev_s *mtd;
  *   irq_enable       - Enable or disable the GPIO interrupt
  */
 
-#ifdef CONFIG_SENSORS_LIS3MDL
-static int stm32_attach_mag_irq(const struct lis3mdl_config_s *lower,
-                                xcpt_t handler, void *arg)
-{
-  struct mag_priv_s *priv = (struct mag_priv_s *)lower;
-
-  DEBUGASSERT(priv != NULL);
-
-  /* Just save the handler for use when the interrupt is enabled */
-
-  priv->handler = handler;
-  priv->arg = arg;
-  return OK;
-}
-
-static struct mag_priv_s mag0 =
-    {
-        .dev.attach = stm32_attach_mag_irq,
-        .dev.spi_devid = SPIDEV_USER(0),
-        .dev.irq = 0,
-        .handler = NULL,
-        .intcfg = GPIO_LIS3MDL_DRDY,
-};
-#endif
-
-
-#ifdef CONFIG_ADC_ADS7953
-static struct adc_priv_s adc0 =
-    {
-        .dev.spi = NULL,
-        .dev.spi_devid = SPIDEV_USER(1),
-};
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -185,85 +141,36 @@ int stm32_bringup(void)
 
   int ret;
   stm32_gpiowrite(GPIO_OCP_EN, false);
-  stm32_gpiowrite(GPIO_OCP_EN, true);
+
+  sleep(1);
+  // stm32_gpiowrite(GPIO_OCP_EN, true);
+
 
 
   /* Configure SPI-based devices */
 
 
-#ifdef CONFIG_MTD_MT25QL
-
-  /* Init SPI Bus again */
-
-  spi2 = stm32_spibus_initialize(2);
-  if (!spi2)
-  {
-    syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 2.\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "[BRINGUP] Successfully Initalized SPI Port 2.\n");
-
-    SPI_SETFREQUENCY(spi2, 1000000);
-    SPI_SETBITS(spi2, 8);
-    SPI_SETMODE(spi2, SPIDEV_MODE0);
-  }
-  cubus_mft_configure(board_get_manifest());
- 
-#endif // CONFIG_MTD_MT25QL
-
 // #ifdef CONFIG_MTD_MT25QL
-//   /* Get the SPI port */
 
-//   // syslog(LOG_INFO, "Initializing SPI port %d\n",CONFIG_MTD_MT25QL_SPI_PIN);
-//   spi3 = stm32_spibus_initialize(3);
-//   if (!spi3)
+//   /* Init SPI Bus again */
+
+//   spi2 = stm32_spibus_initialize(2);
+//   if (!spi2)
 //   {
-//     syslog(LOG_ERR, "ERROR: Failed to initialize SPI port 3\n");
+//     syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 2.\n");
 //   }
 //   else
 //   {
-//     syslog(LOG_INFO, "Successfully initialized SPI port 3\n");
-//   }
-//   stm32_gpiowrite(GPIO_MUX_EN, false);
-//   stm32_gpiowrite(GPIO_SFM_CS, false);
-//   stm32_gpiowrite(GPIO_SFM_MODE, false);
+//     syslog(LOG_INFO, "[BRINGUP] Successfully Initalized SPI Port 2.\n");
 
+//     SPI_SETFREQUENCY(spi2, 1000000);
+//     SPI_SETBITS(spi2, 8);
+//     SPI_SETMODE(spi2, SPIDEV_MODE0);
+//   }
 //   cubus_mft_configure(board_get_manifest());
-//   // stm32_gpiowrite();
+ 
+// #endif // CONFIG_MTD_MT25QL
 
-//   // stm32_gpiowrite(GPIO_MUX_EN, true);
-//   // stm32_gpiowrite(GPIO_SFM_CS, true);
-//   // stm32_gpiowrite(GPIO_SFM_MODE, true);
-
-
-
-// #ifdef CONFIG_SENSORS_LIS3MDL
-// #ifdef CONFIG_UORB
-//   ret = lis3mdl_register(0, spi5, &mag0.dev); // since we're using uORB
-// #else
-//   ret = lis3mdl_register("dev/mag0", spi5, &mag0.dev);
-// #endif  //CONFIG_UORB
-//   if (ret < 0)
-//   {
-//     syslog(LOG_INFO, "[BRING_UP] Error: Failed to register LIS3MDL driver.\n");
-//   }
-//   else
-//   {
-//     syslog(LOG_INFO, "[BRING_UP] LIS3MDL registered on SPI 5.\n");
-//   }
-// #endif // CONFIG_SENSORS_LIS3MDL
-// #endif // CONFIG_STM32_SPI5
-
-#ifdef CONFIG_ADC
-  /* Initialize ADC and register the ADC device. */
-
-  ret = stm32_adc_setup();
-  if (ret < 0)
-  {
-    syslog(LOG_ERR, "ERROR: stm32_adc_setup() failed: %d\n", ret);
-  }
-#endif
 
 #ifdef CONFIG_STM32_OWN_LED
   printf("External gpio driver initializing...\n");
@@ -279,136 +186,32 @@ int stm32_bringup(void)
 #endif
   UNUSED(ret);
 
-#if defined(CONFIG_MTD) && defined(CONFIG_MTD_PROGMEM)
-  mtd = progmem_initialize();
-  if (mtd == NULL)
-  {
-    syslog(LOG_ERR, "ERROR: progmem_initialize\n");
-    printf("[BRINGUP: PROGMEM] error initializing progmem\n");
-  }
-  else
-  {
-    syslog(LOG_INFO, "INFO: Initialized progmem successfully: \n");
-    printf("[BRINGUP: PROGMEM] Initialized progmem sucessfully...\r\n");
-  }
+// #if defined(CONFIG_MTD) && defined(CONFIG_MTD_PROGMEM)
+//   mtd = progmem_initialize();
+//   if (mtd == NULL)
+//   {
+//     syslog(LOG_ERR, "ERROR: progmem_initialize\n");
+//     printf("[BRINGUP: PROGMEM] error initializing progmem\n");
+//   }
+//   else
+//   {
+//     syslog(LOG_INFO, "INFO: Initialized progmem successfully: \n");
+//     printf("[BRINGUP: PROGMEM] Initialized progmem sucessfully...\r\n");
+//   }
 
-  ret = register_mtddriver("/dev/intflash", mtd, 0, mtd);
-  if (ret < 0)
-  {
-    syslog(LOG_ERR, "ERROR: register_mtddriver() failed: %d\n", ret);
-    printf("[BRINGUP: PROGMEM] Error registering mtd driver");
-  }
-  else
-  {
-    syslog(LOG_INFO, "INFO: registered mtd driver successfully \n");
-    printf("[BRINGUP: PROGMEM] Registerd internal flash mtd driver successfullyy.....\r\n");
-  }
-#endif
+//   ret = register_mtddriver("/dev/intflash", mtd, 0, mtd);
+//   if (ret < 0)
+//   {
+//     syslog(LOG_ERR, "ERROR: register_mtddriver() failed: %d\n", ret);
+//     printf("[BRINGUP: PROGMEM] Error registering mtd driver");
+//   }
+//   else
+//   {
+//     syslog(LOG_INFO, "INFO: registered mtd driver successfully \n");
+//     printf("[BRINGUP: PROGMEM] Registerd internal flash mtd driver successfullyy.....\r\n");
+//   }
+// #endif
 
-#ifdef CONFIG_STM32_TIM6
-
-  ret = stm32_timer_initialize("/dev/timer6", 6);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer6 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 6 has been initialized successfully\n");
-  }
-#endif
-
-#ifdef CONFIG_STM32_TIM7
-  ret = stm32_timer_initialize("/dev/timer7", 7);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer7 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 77 has been initialized successfully\n");
-  }
-
-#endif
-
-#ifdef CONFIG_STM32_TIM8
-  ret = stm32_timer_initialize("/dev/timer8", 8);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer8 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 87 has been initialized successfully\n");
-  }
-
-#endif
-
-#ifdef CONFIG_STM32_TIM9
-
-  ret = stm32_timer_initialize("/dev/timer9", 9);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer9 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 9 has been initialized successfully\n");
-  }
-
-#endif
-
-#ifdef CONFIG_STM32_TIM10
-  ret = stm32_timer_initialize("/dev/timer10", 10);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer10 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 10 has been initialized successfully\n");
-  }
-
-#endif
-
-#ifdef CONFIG_STM32_TIM11
-  ret = stm32_timer_initialize("/dev/timer11", 11);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer11 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 11 has been initialized successfully\n");
-  }
-
-#endif
-
-#ifdef CONFIG_STM32_TIM12
-  ret = stm32_timer_initialize("/dev/timer12", 12);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer12 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 12 has been initialized successfully\n");
-  }
-
-#endif
-
-#ifdef CONFIG_STM32_TIM13
-  ret = stm32_timer_initialize("/dev/timer13", 13);
-  if (ret < 0)
-  {
-    printf("failed to initialize /dev/timer13 : %d\n", ret);
-  }
-  else
-  {
-    printf("Timer 13 has been initialized successfully\n");
-  }
-
-#endif
 
 #ifdef CONFIG_STM32_IWDG
   // struct watchdog_lowerhalf_s lower;
