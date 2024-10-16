@@ -116,6 +116,6 @@ config CUSTOM_APPS_CUBUS_APP_PRIORITY
 
 config CUSTOM_APPS_CUBUS_APP_STACKSIZE
 	int "Cubus_app stack size"
-	default 9048
+	default DEFAULT_TASK_STACKSIZE
 
 endif

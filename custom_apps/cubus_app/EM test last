@@ -161,7 +161,7 @@ uint8_t RX_DATA_EPDM[48] = {'\0'};
 uint8_t digipeating = 1;
 // int Execute_EPDM();
 extern ext_adc_s ext_adc_data[EXT_ADC_MAX_CHANNELS];
-CRITICAL_FLAGS critic_flags;
+CRITICAL_FLAGS critic_flags={0x00};
 
 CRITICAL_FLAGS test_flags;
 
@@ -639,7 +639,7 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
     ioctl(fd, TCDRN, NULL);
     printf("drained tx rx buffer\n");
     printf("\n%d bytes written\n", wr1);
-    pet_counter = 0; //TODO rethink on this later internal wdog
+    pet_counter = 0; // TODO rethink on this later internal wdog
   }
   close_uart(fd);
   return wr1;
@@ -1206,7 +1206,6 @@ static int COM_TASK(int argc, char *argv[])
     syslog(LOG_DEBUG, "Successful handshake with COM\n");
     COM_HANDSHAKE_STATUS = 1;
     // wdog_fd = open(DEVNAME, O_RDONLY);
-    
   }
   if (ret != 0)
   {
@@ -2376,7 +2375,7 @@ int main(int argc, FAR char *argv[])
 {
   int hand = 5;
   bool g_mpu_task_started = false;
-  bool g_wdog_task_started = false;
+  // bool g_wdog_task_started = false;
   printf("************************************************\n");
   printf("***********S2S commander app************\n");
 
@@ -2386,29 +2385,29 @@ int main(int argc, FAR char *argv[])
 
   // watchdog code
   //  {
-      if (g_wdog_task_started)
-     {
-       printf("[Watchdog TASK] Task already started.\n");
-       return EXIT_SUCCESS;
-     }
-     else
-     {
-       int retval = task_create("WATCHDOG_TASK", 50, 4096, watchdog_task, NULL);
-       if (retval < 0)
-       {
-         printf("unable to create WATCHDOG_TASK task\n");
-         for (int i = 0; i < 4; i++)
-         {
-           retval = task_create("WATCHDOG_TASK", 100, 896, watchdog_task, NULL);
-           if (retval >= 0)
-           {
-             break;
-             return 0;
-           }
-         }
-         return -1;
-       }
-     }
+  if (g_wdog_task_started)
+  {
+    printf("[Watchdog TASK] Task already started.\n");
+    return EXIT_SUCCESS;
+  }
+  else
+  {
+    int retval = task_create("WATCHDOG_TASK", 100, 1296, watchdog_task, NULL);
+    if (retval < 0)
+    {
+      printf("unable to create WATCHDOG_TASK task\n");
+      for (int i = 0; i < 4; i++)
+      {
+        retval = task_create("WATCHDOG_TASK", 100, 1096, watchdog_task, NULL);
+        if (retval >= 0)
+        {
+          break;
+          return 0;
+        }
+      }
+      return -1;
+    }
+  }
   //  }
 
   // Setup();//TODO this setup is used to create a text file first if not created. the process will be handled by storage app
@@ -2428,6 +2427,27 @@ int main(int argc, FAR char *argv[])
     {
       gpio_write(GPIO_GBL_RST, true);
     }
+  }
+  else if (strcmp(argv[1], "internal") == 0)
+  {
+    CRITICAL_FLAGS rd_flags_int = {0x00};
+
+    int fd = open("/dev/intflash", O_RDWR);
+    if (fd >= 0)
+    { // internal flash file opened successfully
+      syslog(LOG_INFO, "Printing Internal flash flag data.\n");
+      up_progmem_read(FLAG_DATA_INT_ADDR, &critic_flags, sizeof(critic_flags));
+      // for(int i=0;i<6;i++){
+      //   critic_flags
+      // } 
+      print_critical_flag_data(&critic_flags);
+
+      up_progmem_write(FLAG_DATA_INT_ADDR, &rd_flags_int, sizeof(rd_flags_int));
+    }
+      up_progmem_read(FLAG_DATA_INT_ADDR, &critic_flags, sizeof(critic_flags));
+
+    print_critical_flag_data(&critic_flags);
+    close(fd);
   }
   else if (strcmp(argv[1], "mpu") == 0)
   {
@@ -2724,7 +2744,7 @@ void send_flash_data(uint8_t *beacon_data)
     }
     else
     {
-      pet_counter = 0;//TODO rethink on this later internal wdog
+      pet_counter = 0; // TODO rethink on this later internal wdog
 
       if (ret2 >= 0)
       {
@@ -2894,11 +2914,11 @@ void Antenna_Deployment(int argc, char *argv[])
   int i = 0;
   do
   {
-    sleep(1);
-    if (i > 25)
-      printf("%d second has passesd\n", i);
+    sleep(60);
+    // if (i > 25)
+    //   printf("%d second has passesd\n", i);
     i++;
-  } while (i < 30);
+  } while (i <= 30);
 
   printf("Entering antenna deployment sequence\n");
   int retval, retval1 = 0;
@@ -2920,17 +2940,16 @@ void Antenna_Deployment(int argc, char *argv[])
       printf("Turning off burner circuit\n");
       gpio_write(GPIO_UNREG_EN, false);
       gpio_write(GPIO_BURNER_EN, false);
-      // usleep(1000 * 1000 * 2); // 2 seconds
       sleep(10);
       printf("%d Antenna deployment sequence completed\n", i);
     }
   }
-  // ant_check.ANT_DEP_STAT = DEPLOYED;
-  // ant_check.UL_STATE
-  // // store_flag_data(&ant_check);
-  // // printf("Updated flag data...\n");
-  // // check_flag_data();
-  // print_critical_flag_data(&critic_flags);
+  critic_flags.ANT_DEP_STAT = DEPLOYED;
+  critic_flags.UL_STATE = UL_NOT_RX;
+  store_flag_data(&critic_flags);
+  printf("Updated flag data...\n");
+  check_flag_data();
+  print_critical_flag_data(&critic_flags);
 }
 
 void adcs_operation(uint8_t mode)

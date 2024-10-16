@@ -550,15 +550,7 @@ int store_flag_data(CRITICAL_FLAGS *flag_data)
 //  */
 void print_critical_flag_data(CRITICAL_FLAGS *flags)
 {
-  CRITICAL_FLAGS rd_flags_int = {0xff};
 
-  int fd = open("/dev/intflash", O_RDWR);
-  if (fd >= 0)
-  { // internal flash file opened successfully
-    syslog(LOG_INFO, "Printing Internal flash flag data.\n");
-    up_progmem_read(FLAG_DATA_INT_ADDR, &rd_flags_int, sizeof(rd_flags_int));
-    print_critical_flag_data(&rd_flags_int);
-  }
 
   printf(" ********************************************\r\n");
   printf(" |   Antenna Deployment Status \t %d \t|\r\n", flags->ANT_DEP_STAT);
