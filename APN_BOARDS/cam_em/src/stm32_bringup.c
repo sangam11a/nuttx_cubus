@@ -150,26 +150,26 @@ int stm32_bringup(void)
   /* Configure SPI-based devices */
 
 
-// #ifdef CONFIG_MTD_MT25QL
+#ifdef CONFIG_MTD_MT25QL
 
-//   /* Init SPI Bus again */
+  /* Init SPI Bus again */
 
-//   spi2 = stm32_spibus_initialize(2);
-//   if (!spi2)
-//   {
-//     syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 2.\n");
-//   }
-//   else
-//   {
-//     syslog(LOG_INFO, "[BRINGUP] Successfully Initalized SPI Port 2.\n");
+  spi2 = stm32_spibus_initialize(2);
+  if (!spi2)
+  {
+    syslog(LOG_ERR, "[BRINGUP] Failed to initialize SPI Port 2.\n");
+  }
+  else
+  {
+    syslog(LOG_INFO, "[BRINGUP] Successfully Initalized SPI Port 2.\n");
 
-//     SPI_SETFREQUENCY(spi2, 1000000);
-//     SPI_SETBITS(spi2, 8);
-//     SPI_SETMODE(spi2, SPIDEV_MODE0);
-//   }
-//   cubus_mft_configure(board_get_manifest());
+    SPI_SETFREQUENCY(spi2, 1000000);
+    SPI_SETBITS(spi2, 8);
+    SPI_SETMODE(spi2, SPIDEV_MODE0);
+  }
+  cubus_mft_configure(board_get_manifest());
  
-// #endif // CONFIG_MTD_MT25QL
+#endif // CONFIG_MTD_MT25QL
 
 
 #ifdef CONFIG_STM32_OWN_LED

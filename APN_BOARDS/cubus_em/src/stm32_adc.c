@@ -88,25 +88,48 @@ static const uint8_t g_chanlist1[ADC1_NCHANNELS] =
 
 /* Configurations of pins used by each ADC channel */
 
+// static const uint32_t g_pinlist1[ADC1_NCHANNELS]  =
+// {
+//   GPIO_ADC1_IN0_0,                /* PA0      UNREG Current               ADC1/2/3 COMP. */
+//   GPIO_ADC1_IN2_0,                /* PA2      MAIN 3V3 Current            ADC1/2/3 COMP. */
+//   GPIO_ADC1_IN3_0,                /* PA3      3V3 COM Current             ADC1/2/3 COMP. */
+//   GPIO_ADC1_IN4_0,                /* PA4/N2   5V CURRENT                  ADC1/2 COMP. */
+//   GPIO_ADC1_IN5_0,                /* PA5/M3   BATTERY MONITOR             ADC1/2 COMP. */
+//   GPIO_ADC1_IN6_0,                /* PA6/N3   SOLAR PANEL 1 CURRENT       ADC1/2 COMP. */
+//   GPIO_ADC1_IN7_0,                /* PA7/K4   3V3 2 CURRENT               ADC1/2 COMP. */
+//   GPIO_ADC1_IN8_0,                /* PB0/N4   SOLAR PANEL 4 CURRENT       ADC1/2 COMP. */
+//   GPIO_ADC1_IN9_0,                /* PB1/K5   SOLAR PANEL 5 CURRENT       ADC1/2 COMP. */
+//   GPIO_ADC1_IN10_0,               /* PC0      BATTERY Current             ADC1/2/3 COMP. */
+//   GPIO_ADC1_IN11_0,               /* PC1      SOLAR Total Current         ADC1/2/3 COMP. */
+//   GPIO_ADC1_IN12_0,               /* PC2      RAW Current                 ADC1/2/3 COMP. */
+//   GPIO_ADC1_IN14_0,               /* PC4/L4   SOLAR PANEL 2 CURRENT       ADC1/2 COMP. */
+//   GPIO_ADC1_IN15_0                /* PC5/M4   SOLAR PANEL 3 CURRENT       ADC1/2 COMP. */
+//   // ADC1_IN17,                    /* VREF INT Internal voltage reference channel    ADC1   */
+//   // ADC1_IN18,                    /* TEMP_SENSE Internal Temperature sensor chanel  ADC1   */
+// };
+
+//NEW
+
 static const uint32_t g_pinlist1[ADC1_NCHANNELS]  =
 {
-  GPIO_ADC1_IN0_0,                /* PA0      UNREG Current               ADC1/2/3 COMP. */
-  GPIO_ADC1_IN2_0,                /* PA2      MAIN 3V3 Current            ADC1/2/3 COMP. */
+  GPIO_ADC1_IN10_0,                /* PA0      UNREG Current               ADC1/2/3 COMP. */
+  GPIO_ADC1_IN4_0,                /* PA2      MAIN 3V3 Current            ADC1/2/3 COMP. */
   GPIO_ADC1_IN3_0,                /* PA3      3V3 COM Current             ADC1/2/3 COMP. */
-  GPIO_ADC1_IN4_0,                /* PA4/N2   5V CURRENT                  ADC1/2 COMP. */
+  GPIO_ADC1_IN2_0,                /* PA4/N2   5V CURRENT                  ADC1/2 COMP. */
   GPIO_ADC1_IN5_0,                /* PA5/M3   BATTERY MONITOR             ADC1/2 COMP. */
-  GPIO_ADC1_IN6_0,                /* PA6/N3   SOLAR PANEL 1 CURRENT       ADC1/2 COMP. */
+  GPIO_ADC1_IN14_0,                /* PA6/N3   SOLAR PANEL 1 CURRENT       ADC1/2 COMP. */
   GPIO_ADC1_IN7_0,                /* PA7/K4   3V3 2 CURRENT               ADC1/2 COMP. */
-  GPIO_ADC1_IN8_0,                /* PB0/N4   SOLAR PANEL 4 CURRENT       ADC1/2 COMP. */
-  GPIO_ADC1_IN9_0,                /* PB1/K5   SOLAR PANEL 5 CURRENT       ADC1/2 COMP. */
-  GPIO_ADC1_IN10_0,               /* PC0      BATTERY Current             ADC1/2/3 COMP. */
-  GPIO_ADC1_IN11_0,               /* PC1      SOLAR Total Current         ADC1/2/3 COMP. */
+  GPIO_ADC1_IN12_0,                /* PB0/N4   SOLAR PANEL 4 CURRENT       ADC1/2 COMP. */
+  GPIO_ADC1_IN6_0,                /* PB1/K5   SOLAR PANEL 5 CURRENT       ADC1/2 COMP. */
+  GPIO_ADC1_IN9_0,               /* PC0      BATTERY Current             ADC1/2/3 COMP. */
+  GPIO_ADC1_IN0_0,               /* PC1      SOLAR Total Current         ADC1/2/3 COMP. */
   GPIO_ADC1_IN12_0,               /* PC2      RAW Current                 ADC1/2/3 COMP. */
-  GPIO_ADC1_IN14_0,               /* PC4/L4   SOLAR PANEL 2 CURRENT       ADC1/2 COMP. */
-  GPIO_ADC1_IN15_0                /* PC5/M4   SOLAR PANEL 3 CURRENT       ADC1/2 COMP. */
+  GPIO_ADC1_IN15_0,               /* PC4/L4   SOLAR PANEL 2 CURRENT       ADC1/2 COMP. */
+  GPIO_ADC1_IN8_0                /* PC5/M4   SOLAR PANEL 3 CURRENT       ADC1/2 COMP. */
   // ADC1_IN17,                    /* VREF INT Internal voltage reference channel    ADC1   */
   // ADC1_IN18,                    /* TEMP_SENSE Internal Temperature sensor chanel  ADC1   */
 };
+//NEW
 #endif /* DEV1_PORT == 1 */
 
 #ifdef DEV2_PORT

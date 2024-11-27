@@ -146,6 +146,8 @@ int board_app_initialize(uintptr_t arg)
 {
 
   printf("Initializing board applications.\n");
+  // gpio_write(GPIO_OCP_EN, true);
+
   board_peripheral_reset(10);
 
 #if defined(CONFIG_STM32_SPI1) || defined(CONFIG_STM32_SPI2) || \
