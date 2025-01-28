@@ -33,7 +33,7 @@
 
 #include "stm32f427a.h"
 #include "stm32.h"
-
+#include<time.h>
 #include <arch/board/board.h>
 bool wdog_task_started = false;
 
@@ -53,15 +53,46 @@ void wdt_toggle_task(void *arg)
   static bool gpio_state = true;
   stm32_gpiowrite(GPIO_WD_WDI, gpio_state);
   stm32_gpiowrite(GPIO_WD_WDI, !gpio_state);
+  uint32_t start_time=0, end_time=0;
+  int min = 20;
+  int max = 50; // Generates a number between min and max
+
+  int array[] = {5, 10, 15, 20};
+  int array_size = sizeof(array) / sizeof(array[0]); // Calculate number of elements in the array
+
+  // Seed the random number generator with the current time
+  srand(time(NULL));
+
+  // Generate a random index
+  int random_index =  rand() % array_size;
+
+  // Get the random element
+  end_time =  ( array[random_index]) * 60;
+
+  // Print the result
+  printf("\n********************************************************************************\n\n\nSatellite resetting in  %d minutes\n", end_time);
+  // end_time = (20 + (rand() )%31 );
+  // irqstate_t  flags;
   while (1)
   {
     // Toggle GPIO state every 500ms
     // flags = enter_critical_section();
     stm32_gpiowrite(GPIO_WD_WDI, gpio_state);
-    syslog(LOG_DEBUG,"\nGPio toggle state is %d\n", gpio_state);
+    // syslog(LOG_DEBUG,"\nGPio toggle state is %d\n", gpio_state);
     gpio_state = !gpio_state;
     // leave_critical_section(flags);
-    usleep(500000);
+    // usleep(900000);
+    sleep(1);
+    start_time+=1;
+    
+    // random_index = rand() % array_size;
+
+    // if(start_time >= end_time){
+    //   while(1){
+    //     printf("\n\nResetting Now %d %d\n",start_time, end_time);
+    //     usleep(50000);
+    //   }
+    // }
 
     // sleep(1); // 500ms delay
   }

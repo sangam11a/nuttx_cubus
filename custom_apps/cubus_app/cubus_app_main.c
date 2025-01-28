@@ -4196,6 +4196,7 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
 
       uint32_t file_size = file_seek(&fptr, 0, SEEK_END);
       printf("The file_size is %d\n", file_size);
+      critic_flags.RST_COUNT = file_size / 10;
 
       if (file_size == 0 || file_size < sizeof(struct reservation_command))
       {
@@ -4204,18 +4205,62 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
       }
       else
       {
-        file_seek(&fptr, 0, SEEK_SET);
-        file_read(&fptr, res, sizeof(struct reservation_command));
-        res->latest_time = ((uint32_t)res->cmd[3] << 8 | res->cmd[4]) * 60;
-        // if(timer_status == false)
-        printf("Read the data as: MCU ID: %02x, CMD: %02x %02x %02x %02x %02x %d\n",
-               res->mcu_id, res->cmd[0], res->cmd[1], res->cmd[2], res->cmd[3], res->cmd[4], res->latest_time);
-        // *timer = 0; // Reset the timer
-        if (timer_status == false)
-        {
-          timer_counter = timer;
-          timer_status = true;
-        }
+          file_seek(&fptr, 0, SEEK_SET);
+          file_read(&fptr, res, sizeof(struct reservation_command));
+          res->latest_time = ((uint32_t)res->cmd[3] << 8 | res->cmd[4]) * 60;
+          // if(timer_status == false)
+          if(res->mcu_id >=3 && res->mcu_id <=5)
+          {
+            printf("Read the data as: MCU ID: %02x, CMD: %02x %02x %02x %02x %02x %d\n",
+                  res->mcu_id, res->cmd[0], res->cmd[1], res->cmd[2], res->cmd[3], res->cmd[4], res->latest_time);
+            // *timer = 0; // Reset the timer
+            if (timer_status == false)
+            {
+              timer_counter = timer;
+              timer_status = true;
+            }
+          }
+          else{
+            memset(res, '\0', sizeof(res));
+             struct reservation_command res_temp[16];
+             struct file file_ptr;
+              uint16_t file_size = file_seek(&file_ptr, 0, SEEK_END);
+              int n = file_size / sizeof(struct reservation_command);
+
+              for (int i = 0; i < n; i++)
+              {
+                file_seek(&file_ptr, i * sizeof(struct reservation_command), SEEK_SET);
+                file_read(&file_ptr, &res_temp[i], sizeof(struct reservation_command));
+              }
+            
+              file_close(&file_ptr);
+
+              // Sort the reservation commands
+              for (int i = 0; i < n - 1; i++)
+              {
+                for (int j = 0; j < n - i - 1; j++)
+                {
+                  uint16_t t1 = (uint16_t)res_temp[j].cmd[3] << 8 | res_temp[j].cmd[4];
+                  uint16_t t2 = (uint16_t)res_temp[j + 1].cmd[3] << 8 | res_temp[j + 1].cmd[4];
+                  if (t1 > t2)
+                  {
+                    struct reservation_command temp = res_temp[j];
+                    res_temp[j] = res_temp[j + 1];
+                    res_temp[j + 1] = temp;
+                  }
+                }
+              }
+
+              fd = open_file_flash(&file_ptr, MFM_MAIN_STRPATH, "/reservation_command.txt", O_TRUNC | O_WRONLY);
+              if (fd >= 0)
+              {
+                for (int i = 1; i < n; i++)
+                {
+                  file_write(&file_ptr, &res_temp[i], sizeof(struct reservation_command));
+                }
+                file_close(&file_ptr);
+              }
+          }
       }
     }
 
