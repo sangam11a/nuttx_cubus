@@ -56,7 +56,7 @@ int clear_int_flag(){
   int fd;
   pthread_mutex_lock(&flash_mutex); // Lock the mutex
   //  flags = enter_critical_section();
-  irqstate_t flags = enter_critical_section();
+  // irqstate_t flags = enter_critical_section();
 
 
   fd = open("/dev/intflash", O_WRONLY);
@@ -64,7 +64,7 @@ int clear_int_flag(){
   up_progmem_write(FLAG_DATA_INT_ADDR, c, sizeof(CRITICAL_FLAGS));
 
   close(fd);
-  leave_critical_section(flags);
+  // leave_critical_section(flags);
   // fd = file_open(&fp, "/mnt/fs/mfm/mtd_mainstorage/flags.txt", O_TRUNC);
   // file_close(&fp);
   pthread_mutex_unlock(&flash_mutex); // Lock the mutex
@@ -92,12 +92,18 @@ int store_flag_data(CRITICAL_FLAGS *flag_data)
     //         syslog(LOG_ERR, "Error erasing flash block\n");
     //         ret = -1;
     //     }
-    //     else if (up_progmem_write(FLAG_DATA_INT_ADDR, flag_data, sizeof(CRITICAL_FLAGS)) < 0)
-    //     {
-    //         syslog(LOG_ERR, "Error writing to flash memory\n");
-    //         ret = -1;
+    //     else{
+    //       if (up_progmem_write(FLAG_DATA_INT_ADDR, flag_data, sizeof(CRITICAL_FLAGS)) < 0)
+    //       {
+    //           syslog(LOG_ERR, "Error writing to flash memory\n");
+    //           ret = -1;
+    //       }
+    //       else{
+    //         printf("Written to internal flash success\n");
+    //       }
+    //       close(fd);
     //     }
-    //     close(fd);
+    //     // else 
     // }
     // else
     // {
@@ -153,7 +159,6 @@ int check_flag_data(CRITICAL_FLAGS *flags)
   printf("*********Checking flag data**********\n");
   toggle_wdg();
   // pthread_mutex_lock(&flash_mutex); // Lock the mutex
-  flags = enter_critical_section();
   
   int fd = open("/dev/intflash", O_RDWR);
   if (fd >= 0)
@@ -168,7 +173,6 @@ int check_flag_data(CRITICAL_FLAGS *flags)
     syslog(LOG_ERR, "Error opening internal flash\n");
     return -1;
   }
-  leave_critical_section(flags);
 
   // pthread_mutex_unlock(&flash_mutex); // Lock the mutex
 

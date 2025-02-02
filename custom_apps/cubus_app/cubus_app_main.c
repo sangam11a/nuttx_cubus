@@ -2947,7 +2947,7 @@ void Antenna_Deployment(int argc, char *argv[])
 
   printf("\n----------------Antenna Deployment Flag: %d------------\n", rd_flags_int.ANT_DEP_STAT);
 
-  if ((rd_flags_int.ANT_DEP_STAT != DEPLOYED || rd_flags_int.UL_STATE != UL_RX) || (rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT < 3))
+  if ((rd_flags_int.ANT_DEP_STAT != DEPLOYED || rd_flags_int.UL_STATE != UL_RX))// || (rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT < 3))
   {
     printf("****************************************\n");
     printf("ANtenna not deployed\n-----------------Antenna deployment starting-----------------\n");
@@ -2964,7 +2964,7 @@ void Antenna_Deployment(int argc, char *argv[])
     } while (i < ANT_DEPLOY_TIME);
 
     printf("Entering antenna deployment sequence\n");
-    for (int j = 0; j <= 2; j++)
+    for (int j = 0; j <=1; j++)
     {
       printf("Turning on burner circuit\nAttempt: %d\n", j + 1);
       retval = gpio_write(GPIO_BURNER_EN, true);
@@ -2989,13 +2989,14 @@ void Antenna_Deployment(int argc, char *argv[])
       critic_flags.OPER_MODE = NRML_MODE;
       critic_flags.RSV_FLAG = RSV_NOT_RUNNING;
       critic_flags.UL_STATE = UL_RX;
-    if(rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT <= 3)
-    {
-      // critic_flags
-      critic_flags.RST_COUNT += 1;
-    }
+    // if(rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT <= 3)
+    // {
+    //   // critic_flags
+    //   critic_flags.RST_COUNT += 1;
+    // }
 
-    else{
+    // else
+    {
 
       critic_flags.RST_COUNT = 0;
     }
@@ -4196,7 +4197,7 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
 
       uint32_t file_size = file_seek(&fptr, 0, SEEK_END);
       printf("The file_size is %d\n", file_size);
-      critic_flags.RST_COUNT = file_size / 10;
+      critic_flags.RSV_FLAG = file_size / 10;
 
       if (file_size == 0 || file_size < sizeof(struct reservation_command))
       {

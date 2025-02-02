@@ -57,7 +57,7 @@ void wdt_toggle_task(void *arg)
   int min = 20;
   int max = 50; // Generates a number between min and max
 
-  int array[] = {5, 10, 15, 20};
+  int array[] = {10, 20, 40, 60, 80};
   int array_size = sizeof(array) / sizeof(array[0]); // Calculate number of elements in the array
 
   // Seed the random number generator with the current time
@@ -67,9 +67,8 @@ void wdt_toggle_task(void *arg)
   int random_index =  rand() % array_size;
 
   // Get the random element
-  end_time =  ( array[random_index]) * 60;
+  end_time = (10+ ( array[random_index])) * 60;
 
-  // Print the result
   printf("\n********************************************************************************\n\n\nSatellite resetting in  %d minutes\n", end_time);
   // end_time = (20 + (rand() )%31 );
   // irqstate_t  flags;
@@ -81,27 +80,23 @@ void wdt_toggle_task(void *arg)
     // syslog(LOG_DEBUG,"\nGPio toggle state is %d\n", gpio_state);
     gpio_state = !gpio_state;
     // leave_critical_section(flags);
-    // usleep(900000);
-    sleep(1);
-    start_time+=1;
-    
-    // random_index = rand() % array_size;
+    start_time++;
+    usleep(500000);
+    if(start_time/2 >= end_time){
+      while(1){
+        syslog(LOG_DEBUG,"WDOG will reset soon");
+        usleep(200000);
 
-    // if(start_time >= end_time){
-    //   while(1){
-    //     printf("\n\nResetting Now %d %d\n",start_time, end_time);
-    //     usleep(50000);
-    //   }
-    // }
-
-    // sleep(1); // 500ms delay
+      }
+    }
+ 
   }
 }
 /****************************************************************************
- * Name: stm32_pwm_setup
+ * Name: Toggle watchdog
  *
  * Description:
- *   Initialize PWM and register the PWM device.
+ *   Directly access the wdog gpio pin
  *
  ****************************************************************************/
 int toggle_wdg(){
@@ -109,7 +104,6 @@ int toggle_wdg(){
   stm32_gpiowrite(GPIO_WD_WDI, true);
   usleep(500000);
   stm32_gpiowrite(GPIO_WD_WDI, false);
-  // syslog(LOG_DEBUG, "TOggled wdg");
 }
 
 int stm32_wdg_setup(void)
