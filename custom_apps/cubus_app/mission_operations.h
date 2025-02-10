@@ -44,7 +44,7 @@
 #define COM_UART "/dev/ttyS0"
 #define EPDM_UART "/dev/ttyS5"
 #define CAM_UART "/dev/ttyS3"
-#define ADCS_UART "/dev/ttyS5"
+#define ADCS_UART "/dev/ttyS2"
 
 // enum MSNS
 // {

@@ -54,20 +54,20 @@ void wdt_toggle_task(void *arg)
   stm32_gpiowrite(GPIO_WD_WDI, gpio_state);
   stm32_gpiowrite(GPIO_WD_WDI, !gpio_state);
   uint32_t start_time=0, end_time=0;
-  int min = 20;
-  int max = 50; // Generates a number between min and max
+  // int min = 20;
+  // int max = 50; // Generates a number between min and max
 
-  int array[] = {10, 20, 40, 60, 80};
-  int array_size = sizeof(array) / sizeof(array[0]); // Calculate number of elements in the array
+  // int array[] = {10, 20, 40, 60, 80};
+  // int array_size = sizeof(array) / sizeof(array[0]); // Calculate number of elements in the array
 
-  // Seed the random number generator with the current time
-  srand(time(NULL));
+  // // Seed the random number generator with the current time
+  // srand(time(NULL));
 
-  // Generate a random index
-  int random_index =  rand() % array_size;
+  // // Generate a random index
+  // int random_index =  rand() % array_size;
 
-  // Get the random element
-  end_time = (10+ ( array[random_index])) * 60;
+  // // Get the random element
+  // end_time = (10+ ( array[random_index])) * 60;
 
   printf("\n********************************************************************************\n\n\nSatellite resetting in  %d minutes\n", end_time);
   // end_time = (20 + (rand() )%31 );
@@ -82,13 +82,13 @@ void wdt_toggle_task(void *arg)
     // leave_critical_section(flags);
     start_time++;
     usleep(500000);
-    if(start_time/2 >= end_time){
-      while(1){
-        syslog(LOG_DEBUG,"WDOG will reset soon");
-        usleep(200000);
+    // if(start_time/2 >= end_time){
+    //   while(1){
+    //     syslog(LOG_DEBUG,"WDOG will reset soon");
+    //     usleep(200000);
 
-      }
-    }
+    //   }
+    // }
  
   }
 }

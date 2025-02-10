@@ -536,7 +536,7 @@ int open_file_flash(struct file *file_pointer, char *flash_strpath, char *filena
   }
   else
   {
-    // syslog(LOG_INFO, "Opened file: %s ...\n", path);
+    syslog(LOG_INFO, "Opened file: %s ...\n", path);
   }
   return fd;
 }
@@ -704,86 +704,90 @@ void sort_reservation_command(uint16_t file_size, bool reorder)
 
 void maintain_data_consistency()
 {
-  struct file mfm_file_pointer, sfm_file_pointer;
-  int mfm_fd, sfm_fd;
-  uint32_t mfm_read, sfm_read, sfm_seek_pointer_status = 0, mfm_seek_pointer_status = 0;
-  uint8_t temp[2000], count = 0;
-  char filename[9][30] = {"/flags.txt", "/satHealth.txt", "/satHealth.txt", "/reservation_command.txt", "/cam_rgb.txt", "/epdm.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt","/adcs_logs.txt","/epdm.txt","/cam_rgb_logs.txt","/cam_nir_logs.txt"};
+    struct file mfm_file_pointer, sfm_file_pointer;
+    int mfm_fd, sfm_fd;
+    uint32_t mfm_read = 0, sfm_read = 0, seek_ptr = 0;
+    uint8_t temp[2000];
+    char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt","/time.txt" "/cam_rgb.txt", "/epdm.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
 
-  // char filename[4][30] = {"/flags.txt", "/satHealth.txt", "/satellite_Logs.txt", "/reservation_table.txt"}; // "/cam_nir.txt", "/epdm.txt", "/adcs.txt"};
-pthread_mutex_lock(&main_flash_mutex); // Lock the mutex
-  
-  for (int i = 0; i < 4; i++)
-  {
-    mfm_fd = open_file_flash(&mfm_file_pointer, MFM_MAIN_STRPATH, filename[i], O_RDWR);
-    sfm_fd = open_file_flash(&sfm_file_pointer, SFM_MAIN_STRPATH, filename[i], O_RDWR);
-    if (mfm_fd >= 0)
+    pthread_mutex_lock(&main_flash_mutex);
+    
+    for (int i = 0; i < sizeof(filename) / sizeof(filename[0]); i++)
     {
-      mfm_read = file_seek(&mfm_file_pointer, 0, SEEK_END);
-    }
-
-    if (sfm_fd >= 0)
-    {
-      sfm_read = file_seek(&sfm_file_pointer, 0, SEEK_END);
-    }
-    if (mfm_fd >= 0 & sfm_fd >= 0)
-    {
-      if (mfm_read != sfm_read )
-      {
-        if (mfm_read < sfm_read)
-        {
-          sfm_seek_pointer_status = mfm_read;
-          mfm_seek_pointer_status = sfm_read;
-          do
-          {
-            file_seek(&sfm_file_pointer, sfm_seek_pointer_status, SEEK_SET);
-            if (sfm_read - count > 2000)
-            {
-              count = 2000;
-            }
-            else
-            {
-              count = sfm_read - count;
-            }
-            if (file_read(&sfm_file_pointer, temp, count) >= 0)
-            {
-              ssize_t written = file_write(&mfm_file_pointer, temp, count);
-              printf("Data of size %d has been writtern\n", written);
-            }
-            sfm_seek_pointer_status += count;
-
-          } while (sfm_seek_pointer_status <= sfm_read);
-        }
-        if (mfm_read > sfm_read)
-        {
-          sfm_seek_pointer_status = mfm_read;
-          mfm_seek_pointer_status = sfm_read;
-          do
-          {
-            file_seek(&mfm_file_pointer, mfm_seek_pointer_status, SEEK_SET);
-            if (sfm_read - count > 2000)
-            {
-              count = 2000;
-            }
-            else
-            {
-              count = sfm_read - count;
-            }
-            if (file_read(&mfm_file_pointer, temp, count) >= 0)
-            {
-              ssize_t written = file_write(&sfm_file_pointer, temp, count);
-              printf("Data of size %d has been writtern\n", written);
-            }
-            mfm_seek_pointer_status += count;
-          } while (mfm_seek_pointer_status <= mfm_read);
-        }
+      if(i<=3){
+        mfm_fd = open_file_flash(&mfm_file_pointer, MFM_MAIN_STRPATH, filename[i], O_CREAT |O_RDWR | O_APPEND);
+        sfm_fd = open_file_flash(&sfm_file_pointer, SFM_MAIN_STRPATH, filename[i], O_CREAT| O_RDWR | O_APPEND);
+        
       }
+      else{
+         mfm_fd = open_file_flash(&mfm_file_pointer, MFM_MSN_STRPATH, filename[i], O_CREAT| O_RDWR | O_APPEND);
+        sfm_fd = open_file_flash(&sfm_file_pointer, SFM_MSN_STRPATH, filename[i], O_CREAT| O_RDWR | O_APPEND);
+        
+      }
+       
+        if (mfm_fd < 0 || sfm_fd < 0) {
+            if (mfm_fd >= 0) file_close(&mfm_file_pointer);
+            if (sfm_fd >= 0) file_close(&sfm_file_pointer);
+            continue;
+        }
+
+        mfm_read = file_seek(&mfm_file_pointer, 0, SEEK_END);
+        sfm_read = file_seek(&sfm_file_pointer, 0, SEEK_END);
+
+        if (sfm_read > mfm_read) {
+            seek_ptr = mfm_read;
+            file_seek(&sfm_file_pointer, seek_ptr, SEEK_SET);
+            
+            while (seek_ptr < sfm_read) {
+                uint32_t chunk_size = (sfm_read - seek_ptr > sizeof(temp)) ? sizeof(temp) : sfm_read - seek_ptr;
+                
+                ssize_t read_bytes = file_read(&sfm_file_pointer, temp, chunk_size);
+                if (read_bytes > 0) {
+                    ssize_t written = file_write(&mfm_file_pointer, temp, read_bytes);
+                    if (written != read_bytes) {
+                        printf("Error writing to MFM for %s\n", filename[i]);
+                    } else {
+                        printf("Copied %d bytes from SFM to MFM for %s\n", written, filename[i]);
+                    }
+                } else {
+                    printf("Error reading from SFM for %s\n", filename[i]);
+                    break;
+                }
+                
+                seek_ptr += chunk_size;
+            }
+        }
+        else if (mfm_read > sfm_read) {
+            seek_ptr = sfm_read;
+            file_seek(&mfm_file_pointer, seek_ptr, SEEK_SET);
+            
+            while (seek_ptr < mfm_read) {
+                uint32_t chunk_size = (mfm_read - seek_ptr > sizeof(temp)) ? sizeof(temp) : mfm_read - seek_ptr;
+                
+                ssize_t read_bytes = file_read(&mfm_file_pointer, temp, chunk_size);
+                if (read_bytes > 0) {
+                    ssize_t written = file_write(&sfm_file_pointer, temp, read_bytes);
+                    if (written != read_bytes) {
+                        printf("Error writing to SFM for %s\n", filename[i]);
+                    } else {
+                        printf("Copied %d bytes from MFM to SFM for %s\n", written, filename[i]);
+                    }
+                } else {
+                    printf("Error reading from MFM for %s\n", filename[i]);
+                    break;
+                }
+                
+                seek_ptr += chunk_size;
+            }
+        }
+
+        file_close(&mfm_file_pointer);
+        file_close(&sfm_file_pointer);
     }
-    file_close(&mfm_file_pointer);
-    file_close(&sfm_file_pointer);
-  }
-pthread_mutex_unlock(&main_flash_mutex); // Lock the mutex
+    
+    pthread_mutex_unlock(&main_flash_mutex);
 }
+
 
 // void print_seek_pointer()
 // {

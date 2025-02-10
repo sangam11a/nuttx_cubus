@@ -285,6 +285,8 @@ int stm32_bringup(void)
   #endif
 
   cubus_mft_configure(board_mfm_get_manifest(), 0);
+  cubus_mft_configure(board_sfm_get_manifest(), 2);
+
 
 #endif /* CONFIG_STM32_SPI3 */
   stm32_gpiowrite(GPIO_WD_WDI,true);
