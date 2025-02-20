@@ -1618,63 +1618,63 @@ void send_beacon(int argc, char *argv)
  * COM handshake function
  ****************************************************************************/
 
-int handshake_COM(uint8_t *ack)
+// int handshake_COM(uint8_t *ack)
 
-{
-  double fd;
-  uint8_t data1[ACK_DATA_SIZE] = {'\0'};
-  int i;
-  int count = 0, ret;
-  printf("Opening uart dev path : %s ret : %d", COM_UART, fd);
-  usleep(PRINT_DELAY);
-  fd = open(COM_UART, O_RDWR);
-  if (fd < 0)
-  {
-    printf("error opening %s\n", COM_UART);
-    usleep(PRINT_DELAY);
-    return -1;
-  }
+// {
+//   double fd;
+//   uint8_t data1[ACK_DATA_SIZE] = {'\0'};
+//   int i;
+//   int count = 0, ret;
+//   printf("Opening uart dev path : %s ret : %d", COM_UART, fd);
+//   usleep(PRINT_DELAY);
+//   fd = open(COM_UART, O_RDWR);
+//   if (fd < 0)
+//   {
+//     printf("error opening %s\n", COM_UART);
+//     usleep(PRINT_DELAY);
+//     return -1;
+//   }
 
-  int wr1 = write(fd, data, ACK_DATA_SIZE); // writing handshake data
-  if (wr1 < 0)
-  {
-    printf("Unable to send data through %d UART", COM_UART);
-    usleep(PRINT_DELAY);
-    return -1;
-  }
-  printf("\n%d bytes written\n", wr1);
-  usleep(PRINT_DELAY);
-  // ret = read(fd, data1, 10);   //try reading data from UART at once as well
-  for (i = 0; i < ACK_DATA_SIZE; i++)
-  {
-    ret = read(fd, &data1[i], 1);
-  }
-  printf("data received from %s \n", COM_UART);
-  usleep(PRINT_DELAY);
-  for (int i = 0; i < ACK_DATA_SIZE; i++)
-  {
-    printf(" %x ", data1[i]);
-  }
-  printf("\n");
-  usleep(PRINT_DELAY);
-  if (data[0] == data1[0] && data[ACK_DATA_SIZE - 2] == data1[ACK_DATA_SIZE - 2])
-  {
-    printf("\n******Acknowledgement received******\n");
-    usleep(PRINT_DELAY);
-  }
-  printf("handshake complete\n");
-  printf("\n");
-  ioctl(fd, TCFLSH, 2);
-  ioctl(fd, TCDRN, NULL);
-  printf("flused tx rx buffer\n");
-  if (close(fd) < 0)
-  {
-    close(fd);
-    printf("Failed to close COM UART: %s\n", strerror(errno));
-  }
-  sleep(1);
-  return 0;
-}
+//   int wr1 = write(fd, data, ACK_DATA_SIZE); // writing handshake data
+//   if (wr1 < 0)
+//   {
+//     printf("Unable to send data through %d UART", COM_UART);
+//     usleep(PRINT_DELAY);
+//     return -1;
+//   }
+//   printf("\n%d bytes written\n", wr1);
+//   usleep(PRINT_DELAY);
+//   // ret = read(fd, data1, 10);   //try reading data from UART at once as well
+//   for (i = 0; i < ACK_DATA_SIZE; i++)
+//   {
+//     ret = read(fd, &data1[i], 1);
+//   }
+//   printf("data received from %s \n", COM_UART);
+//   usleep(PRINT_DELAY);
+//   for (int i = 0; i < ACK_DATA_SIZE; i++)
+//   {
+//     printf(" %x ", data1[i]);
+//   }
+//   printf("\n");
+//   usleep(PRINT_DELAY);
+//   if (data[0] == data1[0] && data[ACK_DATA_SIZE - 2] == data1[ACK_DATA_SIZE - 2])
+//   {
+//     printf("\n******Acknowledgement received******\n");
+//     usleep(PRINT_DELAY);
+//   }
+//   printf("handshake complete\n");
+//   printf("\n");
+//   ioctl(fd, TCFLSH, 2);
+//   ioctl(fd, TCDRN, NULL);
+//   printf("flused tx rx buffer\n");
+//   if (close(fd) < 0)
+//   {
+//     close(fd);
+//     printf("Failed to close COM UART: %s\n", strerror(errno));
+//   }
+//   sleep(1);
+//   return 0;
+// }
 
 #define HANDSHAKE_ATTEMPTS 3
 #define HANDSHAKE_INTERVAL 20 // seconds

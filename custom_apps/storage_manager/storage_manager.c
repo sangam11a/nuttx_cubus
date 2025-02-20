@@ -991,7 +991,7 @@
              }
  
              // usleep(1050000);
-             sleep(1);//TODO Need to look on the packets so that it is not missed
+             sleep(2);//TODO Need to look on the packets so that it is not missed
            } while (num_of_packets > 0);
          }
          else
