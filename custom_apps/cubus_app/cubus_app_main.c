@@ -891,7 +891,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
           if (cmds[0] == 0x1a && cmds[1] == 0xe0 && cmds[2] == 0x1e)
           {
             printf("\n-------------------Satellite reset command received-----------------\n Resets in 2 seconds\n");
-            sleep(1);
+            sleep(10);
             gpio_write(GPIO_GBL_RST, true);
           }
           else if (cmds[0] == 0x75 && cmds[1] == 0x6e && cmds[2] == 0x69) // TIme updation using unix timestamp
