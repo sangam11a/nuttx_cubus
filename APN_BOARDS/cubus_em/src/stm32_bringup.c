@@ -286,6 +286,8 @@ int stm32_bringup(void)
 
   cubus_mft_configure(board_mfm_get_manifest(), 0);
   cubus_mft_configure(board_sfm_get_manifest(), 2);
+  
+  // cubus_mft_configure(board_get_manifest());
 
 
 #endif /* CONFIG_STM32_SPI3 */

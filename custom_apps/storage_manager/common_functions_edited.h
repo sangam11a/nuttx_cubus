@@ -38,7 +38,7 @@
 #define file_name_flag             "/flags.txt"
 #define file_name_sat_health       "/satHealth.txt"
 
-#define file_name_epdm_msn          "/epdm.txt"
+#define file_name_epdm_msn          "/epdm_new.txt"
 #define file_name_cam_msn           "/cam_rgb.txt"
 #define file_name_test_msn          "/test_msn.txt"
 
