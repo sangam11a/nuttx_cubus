@@ -343,7 +343,7 @@ static int watchdog_task(int argc, char *argv[])
       // usleep(PING_INTERVAL * 1000); // Sleep for 1 second
 
       // Pet the watchdog
-      if (pet_counter <= 370 && pet_counter>100)
+      if (pet_counter <= 370 )
       {
         if (ioctl(fd, WDIOC_KEEPALIVE, 0) < 0)
         {
@@ -357,7 +357,7 @@ static int watchdog_task(int argc, char *argv[])
           sleep(1);
         }
       }
-      else if(pet_counter >50 && pet_counter <=80){
+      else if(pet_counter >50 && pet_counter <=100){
         int ret; 
         uint8_t data[7]={0x53,0x01,0x02,0x03,0x04,0x05,0x7e,'\0'};
         gpio_write(GPIO_3V3_COM_EN, false); // Disable COM systems
@@ -366,7 +366,8 @@ static int watchdog_task(int argc, char *argv[])
         gpio_write(GPIO_3V3_COM_EN, 1);
         sleep(1);
         gpio_write(GPIO_3V3_COM_EN, true); // Enable COM systems
-        ret = handshake_MSN(0, data); // tx rx data is flushed before closing the file
+        // ret = handshake_MSN(0, data); // tx rx data is flushed before closing the file
+        ret = handshake_COM(data); // tx rx data is flushed before closing the file
         
         // // usleep(PRINT_DELAY * 100);
         sleep(1);

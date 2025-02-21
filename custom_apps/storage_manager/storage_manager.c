@@ -172,7 +172,9 @@
                  
          
                  // if (res.latest_time == 0x00 && res.mcu_id != 0)
-                 if (res.mcu_id>=0x01 && res.mcu_id <=0x05 &&res.latest_time<=35000)                
+                  uint16_t t = 0x00;
+                  t = (uint16_t)res.cmd[3] << 8 | res.cmd[4];
+                 if (res.mcu_id>=0x01 && res.mcu_id <=0x05 && t<=35000)                
                  {
                      struct file file_ptr;
                  pthread_mutex_lock(&main_flash_mutex); // Lock the mutex
