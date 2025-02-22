@@ -300,101 +300,6 @@ int configure_watchdog(int fd, int timeout);
 void send_beacon();
 void flash_read_operation_uorb();
 
-
-static int watchdog_task(int argc, char *argv[])
-{
-  // if (critic_flags.ANT_DEP_STAT == DEPLOYED)
-  {
-
-    int fd = open(DEVNAME, O_RDONLY);
-    if (fd < 0)
-    {
-      printf("Failed to open %s: %d\n", DEVNAME, errno);
-      return -1;
-    }
-
-    // Set the watchdog timeout to 10 seconds
-    if (ioctl(fd, WDIOC_SETTIMEOUT, (unsigned long)(TIMEOUT / 1000)) < 0)
-    {
-      printf("Failed to set timeout: %d\n", errno);
-      close(fd);
-      return -1;
-    }
-    else
-    {
-      printf("timeout set to %lu", (unsigned long)(TIMEOUT / 1000));
-    }
-
-    // Start the watchdog timer
-    if (ioctl(fd, WDIOC_START, 0) < 0)
-    {
-      printf("Failed to start watchdog: %d\n", errno);
-      close(fd);
-      return -1;
-    }
-    else
-    {
-      syslog(LOG_DEBUG, "\n  &&&&&&&&&&&&&&&&&************Watchdog started &&&&&&&&&&&&&&&&&************\n");
-    }
-
-    // Ping the watchdog every second
-    while (1)
-    {
-      // usleep(PING_INTERVAL * 1000); // Sleep for 1 second
-
-      // Pet the watchdog
-      if (pet_counter <= 370 )
-      {
-        if (ioctl(fd, WDIOC_KEEPALIVE, 0) < 0)
-        {
-          printf("Failed to keep alive: %d\n", errno); // Handle the failure condition as needed
-        }
-        else
-        {
-          if(pet_counter % 50 == 0)
-            printf("Watchdog petted! %d\n", pet_counter);
-          pet_counter += 1;
-          sleep(1);
-        }
-      }
-      else if(pet_counter >50 && pet_counter <=100){
-        int ret; 
-        uint8_t data[7]={0x53,0x01,0x02,0x03,0x04,0x05,0x7e,'\0'};
-        gpio_write(GPIO_3V3_COM_EN, false); // Disable COM systems
-        sleep(1);
-        syslog(LOG_DEBUG, "***************************Turning on COM MSN...***************************\n");
-        gpio_write(GPIO_3V3_COM_EN, 1);
-        sleep(1);
-        gpio_write(GPIO_3V3_COM_EN, true); // Enable COM systems
-        // ret = handshake_MSN(0, data); // tx rx data is flushed before closing the file
-        ret = handshake_COM(data); // tx rx data is flushed before closing the file
-        
-        // // usleep(PRINT_DELAY * 100);
-        sleep(1);
-        if (ret == 0)
-        {
-          syslog(LOG_DEBUG, "Successful handshake with COM\n");
-        //   COM_HANDSHAKE_STATUS = 1;
-        }
-      }
-      
-      else
-      {
-        printf("WDOG timeout reached!!!!!!!Reset soon!");
-        {
-          sleep(3);
-        }
-      }
-    }
-
-    // Stop the watchdog (never reached in this case)
-    ioctl(fd, WDIOC_STOP, 0);
-    close(fd);
-  }
-  return 0; // Return success
-}
-
-
 /*Private function prototypes declaration end */
 
 /****************************************************************************
@@ -842,7 +747,6 @@ void incorrect_command(uint8_t *ack)
   return;
 }
 
-
 void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
 {
   uint8_t ack[BEACON_DATA_SIZE] = {0x53, 0xac, 0x04, 0x01, 0x62, 0x63, 0x7e};
@@ -986,7 +890,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
           if (cmds[0] == 0x1a && cmds[1] == 0xe0 && cmds[2] == 0x1e)
           {
             printf("\n-------------------Satellite reset command received-----------------\n Resets in 2 seconds\n");
-            sleep(10);
+            sleep(1);
             gpio_write(GPIO_GBL_RST, true);
           }
           else if (cmds[0] == 0x75 && cmds[1] == 0x6e && cmds[2] == 0x69) // TIme updation using unix timestamp
@@ -1037,7 +941,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                 else
                   strcpy(__file_operations.filepath, SFM_MSN_STRPATH);
               }
-              char filename[9][30] = {"/flags.txt", "/satHealth.txt", "/satHealth.txt", "/reservation_command.txt", "/cam_rgb.txt", "/epdmNew.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt"};
+              char filename[9][30] = {"/flags.txt", "/satHealth.txt", "/satHealth.txt", "/reservation_command.txt", "/cam_rgb.txt", "/epdm.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt"};
 
               if ((cmds[2] == 0xF1))
               {
@@ -1081,7 +985,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                 __file_operations.mcu_id = 0x0b;
 
                 __file_operations.select_file = EPDM_TXT;
-                strcat(__file_operations.filepath, "/epdmNew.txt");
+                strcat(__file_operations.filepath, "/epdm.txt");
               }
               else if ((cmds[2] == 0xF7))
               {
@@ -1092,7 +996,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
               else if ((cmds[2] == 0xF8))
               {
                 __file_operations.select_file = CAMERA_NIR_TXT;
-                __file_operations.mcu_id = 0x0c;
+                __file_operations.mcu_id = 0xca;
                 strcat(__file_operations.filepath, "/cam_nir.txt");
               }
               else if ((cmds[2] == 0xF9))
@@ -1364,7 +1268,6 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
               data2[4] = cmds[1];
               mission_operation(2, data2);
               syslog(LOG_DEBUG, "------------------------  cam mission turned off(Command received from COM using RF)--------------------\n");
-              sleep(1);
             }
             else
             {
@@ -1494,14 +1397,14 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
   }
 }
 
-
 static int COM_TASK(int argc, char *argv[])
 {
   int ret = -1;
   uint8_t rx_data[COM_RX_CMD_SIZE] = {'\0'};
+  gpio_on();
   gpio_write(GPIO_3V3_COM_EN, 0);
   gpio_write(GPIO_3V3_COM_EN, false); // Disable COM systems
-  sleep(1);
+  sleep(10);
   syslog(LOG_DEBUG, "***************************Turning on COM MSN...***************************\n");
   gpio_write(GPIO_3V3_COM_EN, 1);
   sleep(1);
@@ -1650,6 +1553,7 @@ void send_beacon(int argc, char *argv)
   struct reservation_command TO_EXECUTE, res;
   // int fd_reservation;
   fd_reservation = orb_subscribe(ORB_ID(reservation_command));
+  // store_flag_data();
 
   for (;;)
   {
@@ -1669,7 +1573,6 @@ void send_beacon(int argc, char *argv)
     }
     count_beacon += 90;
     timer += 90;
-    
     sleep(90); // 90 // TODO make it 90 later
   }
 }
@@ -2566,6 +2469,9 @@ void rtc_alarm_func(uint16_t time)
     sleep(1);
   }
 }
+void reset_obc(){
+  gpio_write(GPIO_GBL_RST, 1);
+}
 
 void global_reset()
 {
@@ -2621,76 +2527,76 @@ int main(int argc, FAR char *argv[])
     file_open(&fp1,"/mnt/fs/mfm/mtd_mainstorage/flags.txt",O_CREAT|O_TRUNC);
     file_close(&fp1);
   }
-  if (strcmp(argv[1], "read") == 0)
-  {
-    // if(open_file_flash)
-    // save_64_bit();
+  // if (strcmp(argv[1], "read") == 0)
+  // {
+  //   // if(open_file_flash)
+  //   // save_64_bit();
 
-    // int r = atoi(argv[2]);
-    // printf("The data is %d\n",r);
-    // clear_int_flag();
+  //   // int r = atoi(argv[2]);
+  //   // printf("The data is %d\n",r);
+  //   // clear_int_flag();
 
-    // flash_read_operation_uorb();
-    // set_time(1733986468);
-    // save_64_bit();
-    struct file fl1;
-    int fd2 = file_open(&fl1, "/mnt/fs/mfm/mtd_mainstorage/satHealth.txt", O_RDONLY);
-    if (fd2 >= 0)
-    {
-      satellite_health_s read_pointer;
-      uint8_t ptr[94] = {'\0'};
-      // Read the structure from the file
-      ssize_t total = file_seek(&fl1, 0, SEEK_END);
-      file_seek(&fl1, total - 94, SEEK_SET);
-      ssize_t t;
-      t = file_read(&fl1, &read_pointer, sizeof(satellite_health_s));
-      //  t = file_read(&fl1,&ptr, sizeof(ptr));
-      // ptr = read_pointer;
-      // memcpy(ptr, read_pointer, sizeof(read_pointer));
-      memcpy(ptr, &read_pointer, 94);
-      printf("___________________________________________________________________________________________________\n ");
+  //   // flash_read_operation_uorb();
+  //   // set_time(1733986468);
+  //   // save_64_bit();
+  //   struct file fl1;
+  //   int fd2 = file_open(&fl1, "/mnt/fs/mfm/mtd_mainstorage/satHealth.txt", O_RDONLY);
+  //   if (fd2 >= 0)
+  //   {
+  //     satellite_health_s read_pointer;
+  //     uint8_t ptr[94] = {'\0'};
+  //     // Read the structure from the file
+  //     ssize_t total = file_seek(&fl1, 0, SEEK_END);
+  //     file_seek(&fl1, total - 94, SEEK_SET);
+  //     ssize_t t;
+  //     t = file_read(&fl1, &read_pointer, sizeof(satellite_health_s));
+  //     //  t = file_read(&fl1,&ptr, sizeof(ptr));
+  //     // ptr = read_pointer;
+  //     // memcpy(ptr, read_pointer, sizeof(read_pointer));
+  //     memcpy(ptr, &read_pointer, 94);
+  //     printf("___________________________________________________________________________________________________\n ");
 
-      for (int i = 0; i < 94; i++)
-      {
-        printf("%d ", ptr[i]);
-      }
+  //     for (int i = 0; i < 94; i++)
+  //     {
+  //       printf("%d ", ptr[i]);
+  //     }
 
-      printf("___________________________________________________________________________________________________\n ");
+  //     printf("___________________________________________________________________________________________________\n ");
 
-      printf("File size read: %zd bytes\n", t);
+  //     printf("File size read: %zd bytes\n", t);
 
-      // Close the file
-      file_close(&fl1);
+  //     // Close the file
+  //     file_close(&fl1);
 
-      // Print the read structure to verify
-      if (t > 0)
-        print_satellite_health_data(&read_pointer);
-    }
-  }
-  else if (strcmp(argv[1], "clear") == 0)
-  {
-    clear_int_flag();
-  }
-  else if (strcmp(argv[1], "logs") == 0)
-  {
-    int32_t final_count = 56789123, temp;
-    uint8_t temp_var[4] = {0};
+  //     // Print the read structure to verify
+  //     if (t > 0)
+  //       print_satellite_health_data(&read_pointer);
+  //   }
+  // }
+  // else if (strcmp(argv[1], "clear") == 0)
+  // {
+  //   clear_int_flag();
+  // }
+  // else if (strcmp(argv[1], "logs") == 0)
+  // {
+  //   int32_t final_count = 56789123, temp;
+  //   uint8_t temp_var[4] = {0};
 
-    // Break final_count into bytes
-    temp_var[3] = final_count & 0xFF;
-    temp_var[2] = (final_count >> 8) & 0xFF;
-    temp_var[1] = (final_count >> 16) & 0xFF;
-    temp_var[0] = (final_count >> 24) & 0xFF;
+  //   // Break final_count into bytes
+  //   temp_var[3] = final_count & 0xFF;
+  //   temp_var[2] = (final_count >> 8) & 0xFF;
+  //   temp_var[1] = (final_count >> 16) & 0xFF;
+  //   temp_var[0] = (final_count >> 24) & 0xFF;
 
-    // Recombine the bytes into temp
-    temp = ((int32_t)temp_var[0] << 24) |
-           ((int32_t)temp_var[1] << 16) |
-           ((int32_t)temp_var[2] << 8) |
-           ((int32_t)temp_var[3]);
+  //   // Recombine the bytes into temp
+  //   temp = ((int32_t)temp_var[0] << 24) |
+  //          ((int32_t)temp_var[1] << 16) |
+  //          ((int32_t)temp_var[2] << 8) |
+  //          ((int32_t)temp_var[3]);
 
-    // Print the recovered value
-    printf("Recovered value is %d\n", temp);
-  }
+  //   // Print the recovered value
+  //   printf("Recovered value is %d\n", temp);
+  // }
 
   /*TODO : REMOVE LATER Independent testing*/
   else
@@ -2801,7 +2707,7 @@ int main(int argc, FAR char *argv[])
         }
         else
         {
-          int retval = create_task("ADC_TASK_APP", 100, 3248, ads7953_receiver);
+          int retval = create_task("ADC_TASK_APP", 100, 2848, ads7953_receiver);
           if (retval >= 0)
           {
             g_adc_task_started = true;
@@ -2863,24 +2769,24 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
   }
 
   gpio_write(GPIO_SFM_MODE, state);
-  if ((state == true || state == 1) && (subsystem != 1))
-  {
-    cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
-    cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
-  }
-  if ((state == false || state == 0) && (subsystem != 1))
-  {
-    cubus_mft_configure(board_sfm_get_manifest(), 2);
-    // if(subsystem != 1)
-    maintain_data_consistency();
-  }
+  // if ((state == true || state == 1) && (subsystem != 1))
+  // {
+  //   cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
+  //   cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
+  // }
+  // if ((state == false || state == 0) && (subsystem != 1))
+  // {
+  //   cubus_mft_configure(board_sfm_get_manifest(), 2);
+  //   // if(subsystem != 1)
+  //   maintain_data_consistency();
+  // }
 }
 // #include
 
 // //COM
 void send_flash_data(uint8_t *beacon_data)
 {
-  printf("Turning on 4v DCDC line..\n");
+  printf("Turning on 4v dcdc line..\n");
   gpio_write(GPIO_DCDC_4V_EN, 1);
   printf("Turning on COM 4V line..\n");
   gpio_write(GPIO_COM_4V_EN, 1);
@@ -2921,14 +2827,14 @@ void send_flash_data(uint8_t *beacon_data)
 
       if (ret2 >= 0)
       {
-        // printf("Flash data sent to COM successfully\n");
-        // printf("data is:::::::: %s\n", beacon_data);
-        // for (int i = 0; i < BEACON_DATA_SIZE; i++)
-        // {
-        //   // ret = write(fd, &beacon_data[i], 1);
-        //   printf("%02x ", beacon_data[i]);
-        //   // usleep(1000);
-        // }
+        printf("Flash data sent to COM successfully\n");
+        printf("data is:::::::: %s\n", beacon_data);
+        for (int i = 0; i < BEACON_DATA_SIZE; i++)
+        {
+          // ret = write(fd, &beacon_data[i], 1);
+          printf("%02x ", beacon_data[i]);
+          // usleep(1000);
+        }
       }
       else
       {
@@ -3025,6 +2931,7 @@ int send_beacon_data()
       // print_seek_pointer();
       beacon_type = !beacon_type;
       // print_satellite_health_data(&sat_health);
+      toggle_wdg();
       store_flag_data(&critic_flags);
 
       // work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
@@ -3106,8 +3013,8 @@ void Antenna_Deployment(int argc, char *argv[])
   rd_flags_int.RST_COUNT += 1;
   critic_flags.RST_COUNT += 1;
   // save_critics_flags(&rd_flags_int);
+  
   store_flag_data(&rd_flags_int);
-
   rd_flags_int.ANT_DEP_STAT = 0x00;
   load_critics_flags(&rd_flags_int);
   // print_critical_flag_data(&rd_flags_int);
@@ -3220,264 +3127,237 @@ void Antenna_Deployment(int argc, char *argv[])
 
 void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 {
-  int hand;
-  int fd;
+  int fd = -1, hand = -1;
   int32_t initial_count = 0, final_count = 0;
   struct file file_pointer, file_pointer2;
   bool other_mission_running = false;
-  char file_name[100] = {'\0'}, file_full_path[100] = {'\0'};
+  char file_name[100] = {0}, dev_path[100] = {0};
+  int i = 1;
 
-  if (MISSION_STATUS.CAM_MISSION == true || MISSION_STATUS.CAM_MISSION == true || MISSION_STATUS.CAM_MISSION == true)
+  // Check if another mission is running
+  if (MISSION_STATUS.CAM_MISSION || MISSION_STATUS.ADCS_MISSION || MISSION_STATUS.EPDM_MISSION)
   {
     other_mission_running = true;
   }
-  printf("\n_______________Other mission running %d_________________\n", other_mission_running);
 
-  if (other_mission_running == false)
+  printf("\n_______________Other mission running: %d_________________\n", other_mission_running);
+
+  if (other_mission_running)
   {
-    uint8_t data_received[44800] = {'\0'}, rgb_cam[37000] = {'\0'};
-    char dev_path[100] = {'\0'}; //= EPDM_UART;
-    int i = 1;
-    switch (mission)
-    {
-    case 1:
-      printf("\n_______________________ADCS MISSION OPERATION SELECTED________________________\n");
-      MISSION_STATUS.ADCS_MISSION = true;
-      strcpy(file_name, "/adcs.txt\0");
-      strcpy(dev_path, ADCS_UART);
-      fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
-      break;
-    case 2:
-      MISSION_STATUS.CAM_MISSION = true;
-      strcpy(dev_path, CAM_UART);
-      strcpy(file_name, "/cam_nir.txt\0");
-      i = 2;
-      printf("\n________________CAM MISSION OPERATION SELECTED_______________\n");
+    return;
+  }
 
-      fd = open_file_flash(&file_pointer, SFM_MSN_STRPATH, file_name, O_RDONLY);
-      break;
-    case 3:
-      MISSION_STATUS.EPDM_MISSION = true;
-      strcpy(dev_path, EPDM_UART);
-      strcpy(file_name, "/epdm.txt\0");
-      printf("\n________________EPDM MISSION OPERATION SELECTED_______________\n");
-      fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
-      break;
-    }
+  // Allocate memory dynamically
+  uint8_t data_received[35002]; // = (uint8_t *)malloc(BUFFER_SIZE);
+  if (!data_received)
+  {
+    printf("Memory allocation failed!\n");
+    return;
+  }
+
+  switch (mission)
+  {
+  case 1:
+    printf("\n________ADCS MISSION OPERATION SELECTED________\n");
+    MISSION_STATUS.ADCS_MISSION = true;
+    strcpy(file_name, "/adcs.txt");
+    strcpy(dev_path, ADCS_UART);
+    break;
+  case 2:
+    printf("\n________CAM MISSION OPERATION SELECTED________\n");
+    MISSION_STATUS.CAM_MISSION = true;
+    strcpy(file_name, "/cam_nir.txt");
+    i = 2;
+    strcpy(dev_path, CAM_UART);
+    break;
+  case 3:
+    printf("\n________EPDM MISSION OPERATION SELECTED________\n");
+    MISSION_STATUS.EPDM_MISSION = true;
+    strcpy(file_name, "/epdmNew.txt");
+    strcpy(dev_path, EPDM_UART);
+    fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
+    break;
+  default:
+    printf("Invalid mission type\n");
+    free(data_received);
+    return;
+  }
+
+  // Check initial file size
+  if (fd >= 0)
+  {
+    initial_count = file_seek(&file_pointer, 0, SEEK_END);
+    file_close(&file_pointer);
+  }
+  else
+  {
+    initial_count = -1;
+  }
+
+  turn_msn_on_off(mission, 1);
+  sleep(1);
+  hand = handshake_MSN(mission, handshake_data);
+
+  if (hand < 0)
+  {
+    printf("Handshake failed\n");
+    // free(data_received);
+    turn_msn_on_off(mission, 0);
+    return;
+  }
+
+  int fd2 = open(dev_path, O_RDWR);
+  if (fd2 < 0)
+  {
+    printf("Failed to open device: %s\n", dev_path);
+    free(data_received);
+    turn_msn_on_off(mission, 0);
+    return;
+  }
+
+  uint32_t counter = 0;
+  uint8_t data3 = 0, data4 = 0;
+  time_t start_time = time(NULL);
+  int k = 0;
+  pet_counter = 0;
+  for (int j = 0; j < i; j++)
+  {
+    // Switch file for second camera
+    if (j == 1)
     {
-      sat_health.msn_flag = 0x21;
-      // fd = file_open(&file_pointer, "/mnt/fs/sfm/mtd_mainstorage/epdm.txt", O_RDONLY);
-      if (fd >= 0)
+      strcpy(file_name, "/cam_rgb.txt");
+    }
+
+    counter = 0;
+    while (1)
+    {
+      data4 = data3;
+      if (read(fd2, &data3, 1) <= 0)
       {
-        initial_count = file_seek(&file_pointer, 0, SEEK_END);
+        break;
+      }
+      if (counter == 35000)
+      {
+        k++;
+        fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
+        if (fd >= 0)
+        {
+          // final_count = file_seek(&file_pointer, 0, SEEK_END);
+          // if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
+          {
+            if (file_write(&file_pointer, data_received, counter) > 10)
+            {
+              printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
+            }
+            memset(data_received, '\0', sizeof(data_received));
+          }
+        }
+        file_close(&file_pointer);
+        // counter1 = 0;
+        counter = 0;
+      }
+
+      if (counter < 35000)
+      {
+        data_received[counter] = data3;
       }
       else
       {
-        initial_count = -1;
+        printf("Buffer overflow prevented!\n");
+        break;
       }
-      file_close(&file_pointer);
-      turn_msn_on_off(mission, 1);
-      sleep(1);
-      hand = handshake_MSN(mission, handshake_data);
-      uint8_t ret;
-      time_t start_time = time(NULL), stop_time;
+      counter++;
+      printf("%02x ", data3);
 
-      int p = 0;
-      uint8_t data3, data4;
-      uint32_t counter1 = 0, rgb_count = 0;
-      if (hand >= 0)
+      // Check for end of image (JPEG marker 0xFF 0xD9)
+      if (data4 == 0xFF && data3 == 0xD9)
       {
-        int fd2 = open(dev_path, O_RDWR);
-        for (int j = 0; j < i; j++)
+        time_t stop_time = time(NULL);
+        int elapsed_time = (int)(stop_time - start_time);
+
+        syslog(LOG_DEBUG, "Counter: %d, Time: %d sec\n", counter, elapsed_time);
+
+        if (handshake_data[4] < 1 || handshake_data[4] > 5)
         {
-          // printf("\n----------------------------------------------------------------\n********************Reached here with j value %d %d********************\n", j, i);
-          while (1)
+          elapsed_time = 5;
+        }
+        else
+        {
+          elapsed_time = handshake_data[4];
+        }
+
+        if ((mission == 3 && counter > 13000 * elapsed_time) ||
+            (mission == 3 && k >= 2) ||
+            (mission == 1 && counter > 179 && handshake_data[4] == 0x01) ||
+            (mission == 1 && counter > 39 && handshake_data[4] == 0x02) ||
+            (mission == 2 && counter > 1000))
+        {
+          pet_counter = 0;
+          printf("\n\nCounter value is %d\n\n", counter + k * 35000);
+
+          fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
+          if (fd >= 0)
           {
-            data4 = data3;
-            ret = read(fd2, &data3, 1);
-            printf("%02x ", data3);
-            if (counter1 % 800 == 0 && j == 0)
+            final_count = file_seek(&file_pointer, 0, SEEK_END);
+            if ((final_count - initial_count > 100 && initial_count > 0) || initial_count <= 0)
             {
-              syslog(LOG_DEBUG, "COUNTER : %d\n pet_counter: %d", counter1, pet_counter);
-              pet_counter = 0;
-            }
-            data_received[counter1] = data3;
-            counter1++;
+              ssize_t write_bytes = file_write(&file_pointer, data_received, counter);
+              if (write_bytes > 10)
+              {
+                printf("Data written to %s%s (size: %d)\n", MFM_MSN_STRPATH, file_name, counter);
 
-            // if (counter1 == 37000)
-            // {
-            //   fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT |O_RDWR | O_APPEND);
-            //   if (fd >= 0)
-            //   {
-            //     final_count = file_seek(&file_pointer, 0, SEEK_END);
-            //     if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
-            //     {
-            //       if (file_write(&file_pointer, data_received, counter1) > 10)
-            //       {
-            //         printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter1);
-            //         int fd_seek = open_file_flash(&file_pointer2, MFM_MSN_STRPATH, "/cam_nir_logs.txt", O_RDWR | O_APPEND);
-            //         if (fd_seek >= 0)
-            //         {
-            //           file_write(&file_pointer2, &final_count, sizeof(final_count));
-            //         }
-            //         file_close(&file_pointer2);
-            //       }
-            //       memset(data_received, '\0', sizeof(data_received));
-            //     }
-            //   }
-            //   file_close(&file_pointer);
-            //   // counter1 = 0;
-            // }
-            if (data4 == 0xff && data3 == 0xd9)
-            {
-              stop_time = time(NULL);
-              int32_t t1 = stop_time - start_time;
-              syslog(LOG_DEBUG, "\n-----------------\nValue of counter1 is %d time in seconds%d\n", counter1, t1);
-              if (handshake_data[4] < 1 || handshake_data[4] > 5)
-              {
-                t1 = 5;
-              }
-              else
-              {
-                t1 = handshake_data[4];
-              }
-
-              if ((mission == 3 && counter1 > 8300 * t1) | (mission == 1 && counter1 > 179 && handshake_data[4] == 0x01) | (mission == 1 && counter1 > 39 && handshake_data[4] == 0x02))
-              {
-                fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT |O_RDWR | O_APPEND);
-                if (fd >= 0)
+                // Log mission completion
+                char log_path[40] = {0};
+                if (mission == 1 || mission == 3)
+                  snprintf(log_path, sizeof(log_path), "%s_logs.txt", mission == 1 ? "/adcs" : "/epdm");
+                else
                 {
-                  final_count = file_seek(&file_pointer, 0, SEEK_END);
-                  if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
-                  {
-                   
-                    ssize_t write_bytes; //= file_write(&file_pointer, data_received, counter1);
-                    // if(final_count)
-                    // if (counter1 > 37000)
-                    // {
-                    //   write_bytes = file_write(&file_pointer, data_received, counter1 - 37000);
-                    // }
-                    // else
-                    {
-                      write_bytes = file_write(&file_pointer, data_received, counter1);
-                      if (mission == 1)
-                      {
-                        struct file fp;
-                        int fd = file_open(&fp, "/mnt/fs/sfm/mtd_mission/adcs.txt", O_CREAT | O_RDWR);
-                        if (fd < 0)
+                  if (strcmp(file_name, "/cam_rgb.txt") == 0)
+                    snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_rgb");
+                  else
+                    snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_nir");
+                }
+                struct file msn_flag_pointer;
+                int fd_log = open_file_flash(&msn_flag_pointer, MFM_MSN_STRPATH, log_path, O_CREAT | O_RDWR | O_APPEND);
+                if (fd_log >= 0)
+                {
+                  final_count += write_bytes;
+                  uint8_t temp_var[4] = {
+                      (final_count >> 24) & 0xFF,
+                      (final_count >> 16) & 0xFF,
+                      (final_count >> 8) & 0xFF,
+                      final_count & 0xFF};
+                  file_write(&msn_flag_pointer, temp_var, sizeof(temp_var));
+                  if(strcmp(file_name, "/cam_rgb.txt") ==0 || (mission ==2 && j == 1)){
+                    int i=0;
+                        //if it is rgb camera then in that case capture logs
+                        char buffer[100]={'\0'};
+                        for(i=0;i<100;i++)
                         {
-                          printf("Error: Failed to open adcs file from sfm\n");
-                        }
-                        else
-                        {
-                          ssize_t writeBytes = file_write(&fp, data_received, counter1);
-                          if (writeBytes > 10)
-                          {
-                            printf("ADCS data of size %d has been written to shared flash memory.\n", writeBytes);
+                          buffer[i] = data_received[i];
+                          if(buffer[i+1] == 0xff && buffer[i+2] == 0xd8){
+                            break;
                           }
                         }
-                      }
-                    }
-                    // if (mission == 3)
-                    // {
-                    //   printf("--------------------------------------------------------------------------------------\n");
-                    //   printf("--------------------------------------------------------------------------------------\n");
-
-                    //   for (int ii = 0; ii < counter1; ii++)
-                    //   {
-                    //     printf("%02x ", data_received[ii]);
-                    //   }
-                    //   printf("--------------------------------------------------------------------------------------\n");
-                    //   printf("--------------------------------------------------------------------------------------\n");
-                    // }
-
-                    if (write_bytes > 10)
-                    {
-                      printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter1);
-                      char new_path[40] = {'\0'};
-                      if (mission == 1)
-                        strcpy(new_path, "/adcs");
-                      if (mission == 3)
-                        strcpy(new_path, "/epdm");
-                      strcat(new_path, "_logs.txt");
-                      struct file msn_flag_pointer;
-                      final_count = final_count + write_bytes;
-                      uint8_t temp_var[4] = {0};
-
-                      // Break final_count into bytes
-                      temp_var[3] = final_count & 0xFF;
-                      temp_var[2] = (final_count >> 8) & 0xFF;
-                      temp_var[1] = (final_count >> 16) & 0xFF;
-                      temp_var[0] = (final_count >> 24) & 0xFF;
-
-                      printf("The seek pointer now is at %d %plocation\n", write_bytes, &final_count);
-                      int fd_seek = open_file_flash(&msn_flag_pointer, MFM_MSN_STRPATH, new_path, O_CREAT | O_RDWR | O_APPEND);
-                      if (fd_seek >= 0)
-                      {
-                        file_write(&msn_flag_pointer, temp_var, sizeof(temp_var));
-                        printf("the data written is %d %d", final_count, sizeof(final_count));
-                      }
-                      file_close(&msn_flag_pointer);
-                      if (mission == 1)
-                      {
-                        fd_seek = open_file_flash(&msn_flag_pointer, SFM_MSN_STRPATH, new_path, O_CREAT | O_RDWR | O_APPEND);
-                        if (fd_seek >= 0)
-                        {
-                          file_write(&msn_flag_pointer, temp_var, sizeof(temp_var));
-                          printf("the data written is %d %d", final_count, sizeof(final_count));
-                        }
-                        file_close(&msn_flag_pointer);
-                      }
-                    }
+                      file_write(&msn_flag_pointer, buffer, i);  
                   }
+                  file_close(&msn_flag_pointer);
                 }
-                file_close(&file_pointer);
-                break;
               }
-              if (mission == 2)
-              {
-                if (j == 0)
-                  fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_RDWR | O_APPEND);
-                else
-                  fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, "/cam_rgb.txt", O_RDWR | O_APPEND);
-                if (fd >= 0)
-                {
-                  final_count = file_seek(&file_pointer, 0, SEEK_END);
-                  if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
-                  {
-                    if (file_write(&file_pointer, data_received, counter1) > 10)
-                    {
-                      printf("\nInside here------Data has been written to %s%s pa/th with size %d\n", MFM_MSN_STRPATH, file_name, counter1);
-                      int fd_seek = open_file_flash(&file_pointer2, MFM_MSN_STRPATH, "/cam_rgb_logs.txt", O_CREAT | O_RDWR | O_APPEND);
-                      if (fd_seek >= 0)
-                      {
-                        final_count += counter1;
-                        ssize_t write_bytes = file_write(&file_pointer2, &final_count, sizeof(final_count));
-                        // final_count += write_bytes;
-                      }
-                      file_close(&file_pointer2);
-                    }
-                  }
-                }
-                file_close(&file_pointer);
-                counter1 = 0;
-                break;
-              }
-              // if (mission == 1 && counter1 > 180)
-              // {
-              //   break;
-              // }
             }
+            file_close(&file_pointer);
           }
+          break;
         }
-        close(fd2);
       }
-      turn_msn_on_off(mission, 0);
-
-      sat_health.msn_flag = 0x21;
     }
   }
+
+  // free(data_received); // Free memory **only once**
+  close(fd2);
+  turn_msn_on_off(mission, 0);
 }
+
 
 void watchdog_refresh_task(int fd)
 {
@@ -3556,7 +3436,7 @@ void int_adc1_data_convert(float *temp_buff)
     // printf("Raw Data: %d \n",);
     // printf("Channel no:%d Raw Data: %d Voltage: %f  Current: %f\n", int_adc1_sample[i].am_channel,int_adc1_sample[i].am_data, int_adc1_v[i], int_adc1_c[i]);
   }
-  // printf("\n****************************************************************************\n");
+  printf("\n****************************************************************************\n");
 
   usleep(500000);
 }
@@ -3697,7 +3577,6 @@ int ads7953_receiver(int argc, FAR char *argv[])
     if (poll_ret == 0)
     {
       printf("Poll timeout\n");
-      
       continue;
     }
 
@@ -4248,15 +4127,14 @@ void flash_operation_data(uint16_t loop)
     stop_time = time(NULL);
 
     // sleep(1);
-    // usleep(100000);
-    sleep(1);
+    usleep(100000);
     FLASH_UORB_RESPONDING = true;
     if (stop_time - start_time > 2)
     {
       FLASH_UORB_RESPONDING = false;
       break;
     }
-    printf("\n++++++++++++++++++++++\nthe value of loop is %d\n",loop);
+    // printf("the value of counter is %d\n",loop);
   } while (loop >= 0 && loop < 65505);
 
   orb_unsubscribe(flash_fd);

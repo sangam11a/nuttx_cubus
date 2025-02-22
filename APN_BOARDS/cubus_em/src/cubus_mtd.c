@@ -404,37 +404,6 @@ int cubus_mtd_config(const cubus_mtd_manifest_t *mft_mtd, int block_number)
             else
             {
                 syslog(LOG_INFO, "Mount Successful\n");
-
-                syslog(LOG_INFO, "Performing write testing.");
-                struct file file_p;
-                char file_path[65];
-                sprintf(file_path, "%s/test.txt", mount_point);
-                // if(nx_umount2(mount_point,0) >=0){
-                //     printf("\n\n\n-------------------uUnmount success ful-------------------------\n");
-                // }
-                // int fd = open(file_path, O_CREAT | O_RDWR);
-                // int fd = file_open(&file_p, file_path, O_CREAT | O_RDWR | O_APPEND);
-                // if(fd < 0)
-                // {
-                // 	syslog(LOG_ERR, "Error opening file in mainstorage of MFM.\n");
-                // 	// close(fd);
-                // 	file_close(&file_p);
-                // } else {
-                // 	const char *write_data = "Write test for LittleFS mounted system.\n";
-                // 	// ssize_t bytes_written = write(fd, write_data, strlen(write_data));
-                // 	ssize_t bytes_written = file_write(&file_p, write_data, strlen(write_data));
-                // 	if(bytes_written > 0)
-                // 	{
-                // 		syslog(LOG_INFO, "Flash Write Successful.\n Data Len: %d\n", bytes_written);
-                // 		// close(fd);
-                // 		file_close(&file_p);
-                // 	} else {
-                // 		syslog(LOG_INFO, "Write Failure.\n");
-                // 	}
-                // 		// close(fd);
-                // 		file_syncfs(&file_p);
-                // 		file_close(&file_p);
-                // }
             }
 
             total_blocks++;
@@ -456,6 +425,7 @@ int cubus_mtd_config(const cubus_mtd_manifest_t *mft_mtd, int block_number)
 
     return rv;
 }
+
 
 // int cubus_mtd_unmount(const cubus_mtd_manifest_t *mft_mtd, char path[])
 // {

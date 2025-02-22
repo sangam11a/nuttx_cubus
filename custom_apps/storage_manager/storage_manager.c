@@ -70,50 +70,50 @@
  int open_file_flash(struct file *file_pointer, char *flash_strpath, char *filename, int open_mode);
  
  
- // int store_critical_flag_data(CRITICAL_FLAGS *flag_data)
- // {
- //   struct file fp;
- //   int bwr;
+ int store_critical_flag_data(CRITICAL_FLAGS *flag_data)
+ {
+   struct file fp;
+   int bwr;
  
- //   printf("\n**************SToring flag data*********\n");
- //   print_critical_flag_data(flag_data);
- //   //pthread_mutex_lock(&flash_mutex); // Lock the mutex
+   printf("\n**************SToring flag data*********\n");
+   print_critical_flag_data(flag_data);
+   //pthread_mutex_lock(&flash_mutex); // Lock the mutex
    
- //   int fd = open("/dev/intflash", O_RDWR);
- //   if (fd >= 0)
- //   {
- //     up_progmem_eraseblock(22);
- //     up_progmem_write(FLAG_DATA_INT_ADDR, flag_data, sizeof(CRITICAL_FLAGS));
- //     close(fd);
- //   }
- //   else
- //   {
- //     syslog(LOG_ERR, "Error opening internal flash to store new flag data ... \n");
- //     return -1;
- //   }
- //   print_critical_flag_data(flag_data);
- //   //pthread_mutex_unlock(&flash_mutex); // Lock the mutex
+   int fd = open("/dev/intflash", O_RDWR);
+   if (fd >= 0)
+   {
+     up_progmem_eraseblock(22);
+     up_progmem_write(FLAG_DATA_INT_ADDR, flag_data, sizeof(CRITICAL_FLAGS));
+     close(fd);
+   }
+   else
+   {
+     syslog(LOG_ERR, "Error opening internal flash to store new flag data ... \n");
+     return -1;
+   }
+   print_critical_flag_data(flag_data);
+   //pthread_mutex_unlock(&flash_mutex); // Lock the mutex
    
- //   int fd1 = open_file_flash(&fp, MFM_MAIN_STRPATH, file_name_flag, O_RDWR);
- //   if (fd1 >= 0)
- //   {
- //     file_truncate(&fp, sizeof(CRITICAL_FLAGS));
- //     bwr = file_write(&fp, flag_data, sizeof(CRITICAL_FLAGS));
- //     if (bwr != sizeof(CRITICAL_FLAGS))
- //     {
- //       syslog(LOG_ERR, "Error in writing flag data to MFM\n");
- //     }
- //     file_close(&fp);
- //   }
- //   else
- //   {
- //     syslog(LOG_ERR, "Unable to open %s%s for writing critical flash data\n", MFM_MAIN_STRPATH, file_name_flag);
- //     return -1;
- //   }
+   int fd1 = open_file_flash(&fp, MFM_MAIN_STRPATH, file_name_flag, O_RDWR);
+   if (fd1 >= 0)
+   {
+     file_truncate(&fp, sizeof(CRITICAL_FLAGS));
+     bwr = file_write(&fp, flag_data, sizeof(CRITICAL_FLAGS));
+     if (bwr != sizeof(CRITICAL_FLAGS))
+     {
+       syslog(LOG_ERR, "Error in writing flag data to MFM\n");
+     }
+     file_close(&fp);
+   }
+   else
+   {
+     syslog(LOG_ERR, "Unable to open %s%s for writing critical flash data\n", MFM_MAIN_STRPATH, file_name_flag);
+     return -1;
+   }
    
- //   syslog(LOG_DEBUG, "\n-----Storing data to flash-----\n");
- //   return 0;
- // }
+   syslog(LOG_DEBUG, "\n-----Storing data to flash-----\n");
+   return 0;
+ }
  
  void read_and_print_mag_data(void)
  {
@@ -174,7 +174,7 @@
                  // if (res.latest_time == 0x00 && res.mcu_id != 0)
                   uint16_t t = 0x00;
                   t = (uint16_t)res.cmd[3] << 8 | res.cmd[4];
-                 if (res.mcu_id>=0x01 && res.mcu_id <=0x05 && t<=35000)                
+                 if (res.mcu_id>=0x01 && res.mcu_id <=0x05 && t <= 35000)                
                  {
                      struct file file_ptr;
                  pthread_mutex_lock(&main_flash_mutex); // Lock the mutex
@@ -597,18 +597,9 @@
    struct file flp1, flp2, flp3, flp4;
  
  //pthread_mutex_lock(&main_flash_mutex); // Lock the mutex
-   char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt","/time.txt","/epdmNew.txt", "/cam_rgb.txt", "/adcs.txt",  "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
+   char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt","/time.txt","/epdm.txt", "/cam_rgb.txt", "/adcs.txt",  "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
    int fd ;
-   for(int i=0;i<10;i++){
-     fd= file_open(&flp1,"/mnt/fs/sfm/mtd_mainstorage/testing.txt", O_CREAT|O_APPEND | O_WRONLY);
-     if (fd < 0) {
-         syslog(LOG_ERR, "Could not create file named epdmNew.txt... \n");
-     }
-     int rr =file_write(&flp1,"EPDM tests\n",12);
-     syslog(LOG_ERR,"RR is %d\n",rr);
-     file_close(&flp1);
-     close(fd);
-   }
+   
    for (int i = 0; i < sizeof(filename) / sizeof(filename[0]); i++)
    {
      if(i <= 3){
@@ -768,7 +759,7 @@
      int mfm_fd, sfm_fd;
      uint32_t mfm_read = 0, sfm_read = 0, seek_ptr = 0;
      uint8_t temp[2000];
-     char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt","/time.txt","/epdmNew.txt", "/cam_rgb.txt", "/adcs.txt",  "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
+     char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt","/time.txt","/epdm.txt", "/cam_rgb.txt", "/adcs.txt",  "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
    
      pthread_mutex_lock(&main_flash_mutex);
      
@@ -992,8 +983,8 @@
                break;
              }
  
-             // usleep(1050000);
-             sleep(2);//TODO Need to look on the packets so that it is not missed
+             usleep(3500000);
+            //  sleep(2.5);//TODO Need to look on the packets so that it is not missed
            } while (num_of_packets > 0);
          }
          else

@@ -71,7 +71,9 @@ void test();
 	stm32_gpiowrite(GPIO_DCDC_5V_EN, 0);		// Enable 5V regulator
 
 	stm32_gpiowrite(GPIO_COM_4V_EN, 0);	// Disable RF Power Amp
-	stm32_gpiowrite(GPIO_3V3_COM_EN, 0); 	// Enable COM systems
+	stm32_gpiowrite(GPIO_3V3_COM_EN, 0);
+	stm32_gpiowrite(GPIO_3V3_COM_EN, 1); 	// Enable COM systems
+	 	// Enable COM systems
 	stm32_gpiowrite(GPIO_MSN_3V3_EN, 0);	// Enable MSN Power
 	stm32_gpiowrite(GPIO_MSN_5V_EN, 0);	// enable 5V Power Rail
 	stm32_gpiowrite(GPIO_BURNER_EN, 0);	// Disable Burner enable

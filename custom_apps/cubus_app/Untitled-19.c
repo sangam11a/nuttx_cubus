@@ -942,7 +942,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                 else
                   strcpy(__file_operations.filepath, SFM_MSN_STRPATH);
               }
-              char filename[9][30] = {"/flags.txt", "/satHealth.txt", "/satHealth.txt", "/reservation_command.txt", "/cam_rgb.txt", "/epdmNew.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt"};
+              char filename[9][30] = {"/flags.txt", "/satHealth.txt", "/satHealth.txt", "/reservation_command.txt", "/cam_rgb.txt", "/epdm.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt"};
 
               if ((cmds[2] == 0xF1))
               {
@@ -986,7 +986,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                 __file_operations.mcu_id = 0x0b;
 
                 __file_operations.select_file = EPDM_TXT;
-                strcat(__file_operations.filepath, "/epdmNew.txt");
+                strcat(__file_operations.filepath, "/epdm.txt");
               }
               else if ((cmds[2] == 0xF7))
               {
@@ -997,7 +997,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
               else if ((cmds[2] == 0xF8))
               {
                 __file_operations.select_file = CAMERA_NIR_TXT;
-                __file_operations.mcu_id = 0x0c;
+                __file_operations.mcu_id = 0xca;
                 strcat(__file_operations.filepath, "/cam_nir.txt");
               }
               else if ((cmds[2] == 0xF9))
@@ -1268,8 +1268,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
               uint8_t data2[] = {0x53, 0x0c, 0x0a, 0x77, 0x01, 0x7e};
               data2[4] = cmds[1];
               mission_operation(2, data2);
-              syslog(LOG_DEBUG, "------------------------  cam mission turned off(Command received from COM using RF)--------------------\n");
-              sleep(1);
+              // syslog(LOG_DEBUG, "------------------------  cam mission turned off(Command received from COM using RF)--------------------\n");
             }
             else
             {
@@ -1618,63 +1617,63 @@ void send_beacon(int argc, char *argv)
  * COM handshake function
  ****************************************************************************/
 
-// int handshake_COM(uint8_t *ack)
+int handshake_COM(uint8_t *ack)
 
-// {
-//   double fd;
-//   uint8_t data1[ACK_DATA_SIZE] = {'\0'};
-//   int i;
-//   int count = 0, ret;
-//   printf("Opening uart dev path : %s ret : %d", COM_UART, fd);
-//   usleep(PRINT_DELAY);
-//   fd = open(COM_UART, O_RDWR);
-//   if (fd < 0)
-//   {
-//     printf("error opening %s\n", COM_UART);
-//     usleep(PRINT_DELAY);
-//     return -1;
-//   }
+{
+  double fd;
+  uint8_t data1[ACK_DATA_SIZE] = {'\0'};
+  int i;
+  int count = 0, ret;
+  printf("Opening uart dev path : %s ret : %d", COM_UART, fd);
+  usleep(PRINT_DELAY);
+  fd = open(COM_UART, O_RDWR);
+  if (fd < 0)
+  {
+    printf("error opening %s\n", COM_UART);
+    usleep(PRINT_DELAY);
+    return -1;
+  }
 
-//   int wr1 = write(fd, data, ACK_DATA_SIZE); // writing handshake data
-//   if (wr1 < 0)
-//   {
-//     printf("Unable to send data through %d UART", COM_UART);
-//     usleep(PRINT_DELAY);
-//     return -1;
-//   }
-//   printf("\n%d bytes written\n", wr1);
-//   usleep(PRINT_DELAY);
-//   // ret = read(fd, data1, 10);   //try reading data from UART at once as well
-//   for (i = 0; i < ACK_DATA_SIZE; i++)
-//   {
-//     ret = read(fd, &data1[i], 1);
-//   }
-//   printf("data received from %s \n", COM_UART);
-//   usleep(PRINT_DELAY);
-//   for (int i = 0; i < ACK_DATA_SIZE; i++)
-//   {
-//     printf(" %x ", data1[i]);
-//   }
-//   printf("\n");
-//   usleep(PRINT_DELAY);
-//   if (data[0] == data1[0] && data[ACK_DATA_SIZE - 2] == data1[ACK_DATA_SIZE - 2])
-//   {
-//     printf("\n******Acknowledgement received******\n");
-//     usleep(PRINT_DELAY);
-//   }
-//   printf("handshake complete\n");
-//   printf("\n");
-//   ioctl(fd, TCFLSH, 2);
-//   ioctl(fd, TCDRN, NULL);
-//   printf("flused tx rx buffer\n");
-//   if (close(fd) < 0)
-//   {
-//     close(fd);
-//     printf("Failed to close COM UART: %s\n", strerror(errno));
-//   }
-//   sleep(1);
-//   return 0;
-// }
+  int wr1 = write(fd, data, ACK_DATA_SIZE); // writing handshake data
+  if (wr1 < 0)
+  {
+    printf("Unable to send data through %d UART", COM_UART);
+    usleep(PRINT_DELAY);
+    return -1;
+  }
+  printf("\n%d bytes written\n", wr1);
+  usleep(PRINT_DELAY);
+  // ret = read(fd, data1, 10);   //try reading data from UART at once as well
+  for (i = 0; i < ACK_DATA_SIZE; i++)
+  {
+    ret = read(fd, &data1[i], 1);
+  }
+  printf("data received from %s \n", COM_UART);
+  usleep(PRINT_DELAY);
+  for (int i = 0; i < ACK_DATA_SIZE; i++)
+  {
+    printf(" %x ", data1[i]);
+  }
+  printf("\n");
+  usleep(PRINT_DELAY);
+  if (data[0] == data1[0] && data[ACK_DATA_SIZE - 2] == data1[ACK_DATA_SIZE - 2])
+  {
+    printf("\n******Acknowledgement received******\n");
+    usleep(PRINT_DELAY);
+  }
+  printf("handshake complete\n");
+  printf("\n");
+  ioctl(fd, TCFLSH, 2);
+  ioctl(fd, TCDRN, NULL);
+  printf("flused tx rx buffer\n");
+  if (close(fd) < 0)
+  {
+    close(fd);
+    printf("Failed to close COM UART: %s\n", strerror(errno));
+  }
+  sleep(1);
+  return 0;
+}
 
 #define HANDSHAKE_ATTEMPTS 3
 #define HANDSHAKE_INTERVAL 20 // seconds
@@ -2151,7 +2150,7 @@ void truncate_text_file(struct FILE_OPERATIONS *file_operations)
     close(fd);
   }
   // file_close(&truncate_ptr);
-  if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/epdmNew.txt") == 0)
+  if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/epdm.txt") == 0)
   {
     strcpy(same_file_logs, "/mnt/fs/mfm/mtd_mission/epdm_logs.txt");
   }
@@ -2207,7 +2206,7 @@ void track_read_seek_pointer(struct FILE_OPERATIONS *file_pointer, int8_t seek_p
       index = 0;
     else if (file_pointer->filepath == "/mnt/fs/mfm/mtd_mission/cam.txt")
       index = 4;
-    else if (file_pointer->filepath == "/mnt/fs/mfm/mtd_mission/epdmNew.txt")
+    else if (file_pointer->filepath == "/mnt/fs/mfm/mtd_mission/epdm.txt")
       index = 4 * 2;
     else if (file_pointer->filepath == "/mnt/fs/mfm/mtd_mission/adcs.txt")
       index = 3 * 4;
@@ -2551,13 +2550,12 @@ int create_task(const char *name, int priority, int stack_size, main_t entry)
  ****************************************************************************/
 int main(int argc, FAR char *argv[])
 {
-  Setup();
-
   int hand = 5;
   uint8_t test[7] = {'\0'};
   bool g_mpu_task_started = false;
   toggle_wdg();
 
+  Setup();
   if (strcmp(argv[1], "clear") == 0)
   {
     clear_int_flag();
@@ -2803,63 +2801,6 @@ int main(int argc, FAR char *argv[])
   return 0;
 }
 // //COM
-// int turn_msn_on_off(uint8_t subsystem, uint8_t state)
-// {
-//   gpio_write(GPIO_MSN3_EN, false);
-
-//   gpio_write(GPIO_DCDC_MSN_3V3_2_EN, state);
-//   stm32_gpiowrite(GPIO_MSN_3V3_EM_EN, state);
-
-//   gpio_write(GPIO_MSN1_EM_EN, false);
-//   // gpio_write(GPIO_MSN2_EN, false);MISSION_STATUS.CAM_MISSION == true || MISSION_STATUS.CAM_MISSION == true || MISSION_STATUS.CAM_MISSION == true
-
-//   // gpio_write(GPIO_MSN_3V3_EM_EN, state);
-//   // gpio_write(GPIO_DCDC_MSN_3V3_2_EN, state);
-
-//   switch (subsystem)
-//   {
-
-//   case 1:
-//     //printf("turning ADCS mission state: %d\n", state);
-//     gpio_write(GPIO_MSN1_EM_EN, state);
-//     sleep(1);
-//     gpio_write(GPIO_MSN_5V_EN, state);
-//     gpio_write(GPIO_DCDC_5V_EN, state);
-
-//     MISSION_STATUS.ADCS_MISSION = state;
-//     break;
-//   case 2:
-//    // printf("Turning CAM mission state: %d\n", state);
-//     sleep(1);
-//     gpio_write(GPIO_MSN2_EN, state);
-//     gpio_write(GPIO_MSN_5V_EN, state);
-//     gpio_write(GPIO_DCDC_5V_EN, state);
-//     MISSION_STATUS.CAM_MISSION = state;
-//     break;
-//   case 3:
-//    // printf("Turning EPDM mission state: %d\n", state);
-//     gpio_write(GPIO_MSN3_EN, state);
-//     MISSION_STATUS.EPDM_MISSION = state;
-//     sleep(1);
-//     break;
-//   default:
-//     printf("Wrong subsystem selected\n");
-//     break;
-//   }
-
-//   gpio_write(GPIO_SFM_MODE, state);
-//   if ((state == true || state == 1) && (subsystem != 1))
-//   {
-//     cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
-//     cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
-//   }
-//   if ((state == false || state == 0) && (subsystem != 1))
-//   {
-//     cubus_mft_configure(board_sfm_get_manifest(), 2);
-//     // if(subsystem != 1)
-//     maintain_data_consistency();
-//   }
-// }
 int turn_msn_on_off(uint8_t subsystem, uint8_t state)
 {
   gpio_write(GPIO_MSN3_EN, false);
@@ -2877,7 +2818,7 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
   {
 
   case 1:
-    // printf("turning ADCS mission state: %d\n", state);
+    //printf("turning ADCS mission state: %d\n", state);
     gpio_write(GPIO_MSN1_EM_EN, state);
     sleep(1);
     gpio_write(GPIO_MSN_5V_EN, state);
@@ -2886,7 +2827,7 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
     MISSION_STATUS.ADCS_MISSION = state;
     break;
   case 2:
-    // printf("Turning CAM mission state: %d\n", state);
+   // printf("Turning CAM mission state: %d\n", state);
     sleep(1);
     gpio_write(GPIO_MSN2_EN, state);
     gpio_write(GPIO_MSN_5V_EN, state);
@@ -2894,7 +2835,7 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
     MISSION_STATUS.CAM_MISSION = state;
     break;
   case 3:
-    // printf("Turning EPDM mission state: %d\n", state);
+   // printf("Turning EPDM mission state: %d\n", state);
     gpio_write(GPIO_MSN3_EN, state);
     MISSION_STATUS.EPDM_MISSION = state;
     sleep(1);
@@ -2914,7 +2855,7 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
   {
     cubus_mft_configure(board_sfm_get_manifest(), 2);
     // if(subsystem != 1)
-    // maintain_data_consistency();
+    maintain_data_consistency();
   }
 }
 // #include
@@ -3155,10 +3096,6 @@ void Antenna_Deployment(int argc, char *argv[])
   // print_critical_flag_data(&rd_flags_int);
 }
 
-
-
-
-
 // void adcs_operation(uint8_t mode)
 // {
 //   if (MISSION_STATUS.ADCS_MISSION == false && MISSION_STATUS.EPDM_MISSION == false && MISSION_STATUS.CAM_MISSION == false)
@@ -3305,14 +3242,14 @@ void Antenna_Deployment(int argc, char *argv[])
 //     case 3:
 //       MISSION_STATUS.EPDM_MISSION = true;
 //       strcpy(dev_path, EPDM_UART);
-//       strcpy(file_name, "/epdmNew.txt\0");
+//       strcpy(file_name, "/epdm.txt\0");
 //       printf("\n________________EPDM MISSION OPERATION SELECTED_______________\n");
 //       fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
 //       break;
 //     }
 //     {
 //       sat_health.msn_flag = 0x21;
-//       // fd = file_open(&file_pointer, "/mnt/fs/sfm/mtd_mainstorage/epdmNew.txt", O_RDONLY);
+//       // fd = file_open(&file_pointer, "/mnt/fs/sfm/mtd_mainstorage/epdm.txt", O_RDONLY);
 //       if (fd >= 0)
 //       {
 //         initial_count = file_seek(&file_pointer, 0, SEEK_END);
@@ -3524,13 +3461,12 @@ void Antenna_Deployment(int argc, char *argv[])
 //     }
 //   }
 // }
-
 void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 {
   int fd = -1, hand = -1;
   int32_t initial_count = 0, final_count = 0;
   struct file file_pointer, file_pointer2;
-  bool other_mission_running = false;
+  bool other_mission_running = false; 
   char file_name[100] = {0}, dev_path[100] = {0};
   int i = 1;
 
@@ -3548,7 +3484,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   }
 
   // Allocate memory dynamically
-  uint8_t data_received[35002]; // = (uint8_t *)malloc(BUFFER_SIZE);
+  uint8_t *data_received = (uint8_t *)malloc(BUFFER_SIZE);
   if (!data_received)
   {
     printf("Memory allocation failed!\n");
@@ -3573,7 +3509,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   case 3:
     printf("\n________EPDM MISSION OPERATION SELECTED________\n");
     MISSION_STATUS.EPDM_MISSION = true;
-    strcpy(file_name, "/epdmNew.txt");
+    strcpy(file_name, "/epdm.txt");
     strcpy(dev_path, EPDM_UART);
     fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
     break;
@@ -3601,7 +3537,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   if (hand < 0)
   {
     printf("Handshake failed\n");
-    // free(data_received);
+    free(data_received);
     turn_msn_on_off(mission, 0);
     return;
   }
@@ -3618,13 +3554,12 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   uint32_t counter = 0;
   uint8_t data3 = 0, data4 = 0;
   time_t start_time = time(NULL);
-  int k = 0;
-  pet_counter = 0;
+  int k=0;
+  pet_counter =0;
   for (int j = 0; j < i; j++)
   {
     // Switch file for second camera
-    if (j == 1)
-    {
+    if (j == 1) {
       strcpy(file_name, "/cam_rgb.txt");
     }
 
@@ -3636,34 +3571,38 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
       {
         break;
       }
-      if (counter == 35000)
-      {
-        k++;
-        fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
-        if (fd >= 0)
-        {
-          // final_count = file_seek(&file_pointer, 0, SEEK_END);
-          // if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
-          {
-            if (file_write(&file_pointer, data_received, counter) > 10)
+       if (counter == 35000)
             {
-              printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
-            }
-            memset(data_received, '\0', sizeof(data_received));
+              k++;
+              fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT |O_RDWR | O_APPEND);
+              if (fd >= 0)
+              {
+                final_count = file_seek(&file_pointer, 0, SEEK_END);
+                if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
+                {
+                  if (file_write(&file_pointer, data_received, counter) > 10)
+                  {
+                    printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
+                    int fd_seek = open_file_flash(&file_pointer2, MFM_MSN_STRPATH, "/cam_nir_logs.txt", O_RDWR | O_APPEND);
+                    if (fd_seek >= 0)
+                    {
+                      file_write(&file_pointer2, &final_count, sizeof(final_count));
+                    }
+                    file_close(&file_pointer2);
+                  }
+                  memset(data_received, '\0', sizeof(data_received));
+                }
+              }
+              file_close(&file_pointer);
+              // counter1 = 0;
+              counter=0;
           }
-        }
-        file_close(&file_pointer);
-        // counter1 = 0;
-        counter = 0;
-      }
 
-      if (counter < 35000)
-      {
-        data_received[counter] = data3;
-      }
-      else
-      {
-        printf("Buffer overflow prevented!\n");
+      if (counter < 35000) {
+        data_received[counter] = data3;        
+      } 
+      else {
+        // printf("Buffer overflow prevented!\n");
         break;
       }
       counter++;
@@ -3686,14 +3625,15 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
           elapsed_time = handshake_data[4];
         }
 
-        if ((mission == 3 && counter > 13000 * elapsed_time) ||
-            (mission == 3 && k >= 2) ||
+        if ((mission == 3 && counter > 15000 * elapsed_time) ||
+            (mission == 3 && k>=2) ||
             (mission == 1 && counter > 179 && handshake_data[4] == 0x01) ||
             (mission == 1 && counter > 39 && handshake_data[4] == 0x02) ||
             (mission == 2 && counter > 1000))
         {
-          pet_counter = 0;
-          printf("\n\nCounter value is %d\n\n", counter + k * 35000);
+          pet_counter=0;
+          printf("\n\nCOunter value is %d\n\n",counter + k*35000);
+        
 
           fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
           if (fd >= 0)
@@ -3708,11 +3648,10 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 
                 // Log mission completion
                 char log_path[40] = {0};
-                if (mission == 1 || mission == 3)
-                  snprintf(log_path, sizeof(log_path), "%s_logs.txt", mission == 1 ? "/adcs" : "/epdm");
-                else
-                {
-                  if (strcmp(file_name, "/cam_rgb.txt") == 0)
+                if(mission ==1 || mission ==3)
+                snprintf(log_path, sizeof(log_path), "%s_logs.txt", mission == 1 ? "/adcs" : "/epdm");
+                else{
+                  if(strcmp(file_name,"/cam_rgb.txt") ==0) 
                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_rgb");
                   else
                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_nir");
@@ -3728,19 +3667,6 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
                       (final_count >> 8) & 0xFF,
                       final_count & 0xFF};
                   file_write(&msn_flag_pointer, temp_var, sizeof(temp_var));
-                  if(strcmp(file_name, "/cam_rgb.txt") ==0 || (mission ==2 && j == 1)){
-                    int i=0;
-                        //if it is rgb camera then in that case capture logs
-                        char buffer[100]={'\0'};
-                        for(i=0;i<100;i++)
-                        {
-                          buffer[i] = data_received[i];
-                          if(buffer[i+1] == 0xff && buffer[i+2] == 0xd8){
-                            break;
-                          }
-                        }
-                      file_write(&msn_flag_pointer, buffer, i);  
-                  }
                   file_close(&msn_flag_pointer);
                 }
               }
@@ -3753,10 +3679,11 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
     }
   }
 
-  // free(data_received); // Free memory **only once**
+  free(data_received); // Free memory **only once**
   close(fd2);
   turn_msn_on_off(mission, 0);
 }
+
 
 void watchdog_refresh_task(int fd)
 {
@@ -3983,37 +3910,7 @@ int ads7953_receiver(int argc, FAR char *argv[])
     if (poll_ret < 0)
     {
       printf("Poll error ads7953: %d\n", errno);
-      // continue;
-      int err = errno;
-      syslog(LOG_ERR, "Poll error: %d (%s)\n", err, strerror(err));
-
-      if (err == EINTR)
-      {
-        syslog(LOG_WARNING, "Poll was interrupted, retrying...\n");
-        continue;
-      }
-      // else if (err == EINVAL)
-      // {
-      //   syslog(LOG_ERR, "Poll called with invalid arguments.\n");
-      //   // break;
-      // }
-      // else
-      // {
-      //   syslog(LOG_ERR, "Unknown poll error. Attempting to recover...\n");
-
-      //   // Reconfigure uORB
-      //   orb_unsubscribe(fd);
-      //   fd = orb_subscribe(ORB_ID(orb_mag_scaled));
-      //   if (fd < 0)
-      //   {
-      //     syslog(LOG_ERR, "Re-subscription failed. Exiting loop.\n");
-      //     break;
-      //   }
-
-      //   // Reset poll structure
-      //   fds.fd = fd;
-      //   fds.events = POLLIN;
-      // }
+      continue;
     }
 
     // Check for ads7953_raw_msg updates
@@ -4244,13 +4141,10 @@ void subscribe_and_retrieve_data(void)
 
       // Re-subscribe
       fd = orb_subscribe(ORB_ID(orb_mag_scaled));
-      if (fd < 0)
-      {
-        syslog(LOG_ERR, "Re-subscription to orb_mag_scaled failed.\n");
-      }
-      else
-      {
-        syslog(LOG_DEBUG, "Re-subscribed to orb_mag_scaled.\n");
+      if (fd < 0) {
+          syslog(LOG_ERR, "Re-subscription to orb_mag_scaled failed.\n");
+      } else {
+          syslog(LOG_DEBUG, "Re-subscribed to orb_mag_scaled.\n");
       }
 
       // Reconfigure poll structure
@@ -4266,6 +4160,7 @@ void subscribe_and_retrieve_data(void)
   }
   return 0;
 }
+
 
 void print_beacon_a()
 {

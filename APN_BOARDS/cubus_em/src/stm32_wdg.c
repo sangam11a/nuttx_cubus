@@ -81,7 +81,8 @@ void wdt_toggle_task(void *arg)
     gpio_state = !gpio_state;
     // leave_critical_section(flags);
     start_time++;
-    usleep(500000);
+    usleep(400000);
+    // sleep(1.2);
     // if(start_time/2 >= end_time){
     //   while(1){
     //     syslog(LOG_DEBUG,"WDOG will reset soon");
@@ -102,7 +103,8 @@ void wdt_toggle_task(void *arg)
 int toggle_wdg(){
   stm32_configgpio(GPIO_WD_WDI);
   stm32_gpiowrite(GPIO_WD_WDI, true);
-  usleep(500000);
+  usleep(5000);
+  // printf("____________________TOggled wdog_________\n");
   stm32_gpiowrite(GPIO_WD_WDI, false);
 }
 

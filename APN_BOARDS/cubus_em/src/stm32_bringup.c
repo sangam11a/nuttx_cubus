@@ -189,7 +189,10 @@ void rtc_alarm_callback(void) {
     // Set GPIO pin high to trigger reset
     stm32_gpiowrite(GPIO_GBL_RST, true);
 }
+int gpio_on(){
+  stm32_gpiowrite(GPIO_3V3_COM_EN, true);
 
+}
 void configure_rtc(void) {
     rtc_initialize();
     // rtc_set_alarm(60); // Set alarm for 24 hours
