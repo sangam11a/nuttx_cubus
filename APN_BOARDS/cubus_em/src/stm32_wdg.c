@@ -81,8 +81,8 @@ void wdt_toggle_task(void *arg)
     gpio_state = !gpio_state;
     // leave_critical_section(flags);
     start_time++;
-    usleep(400000);
-    // sleep(1.2);
+    // usleep(400000);
+    sleep(1.2);
     // if(start_time/2 >= end_time){
     //   while(1){
     //     syslog(LOG_DEBUG,"WDOG will reset soon");

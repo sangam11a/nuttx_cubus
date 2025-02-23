@@ -59,11 +59,11 @@ int clear_int_flag(){
   // irqstate_t flags = enter_critical_section();
 
 
-  fd = open("/dev/intflash", O_WRONLY);
-  up_progmem_eraseblock(22);
-  up_progmem_write(FLAG_DATA_INT_ADDR, c, sizeof(CRITICAL_FLAGS));
+  // fd = open("/dev/intflash", O_WRONLY);
+  // up_progmem_eraseblock(22);
+  // up_progmem_write(FLAG_DATA_INT_ADDR, c, sizeof(CRITICAL_FLAGS));
 
-  close(fd);
+  // close(fd);
   // leave_critical_section(flags);
   // fd = file_open(&fp, "/mnt/fs/mfm/mtd_mainstorage/flags.txt", O_TRUNC);
   // file_close(&fp);
@@ -159,30 +159,30 @@ int store_flag_data(CRITICAL_FLAGS *flag_data)
     toggle_wdg();
 
     // Open internal flash
-    int fd = open("/dev/intflash", O_RDWR);
-    if (fd >= 0)
-    {
-        // Measure time for erase
-        clock_gettime(CLOCK_MONOTONIC, &start);
-        up_progmem_eraseblock(22);
-        clock_gettime(CLOCK_MONOTONIC, &end);
+    // int fd = open("/dev/intflash", O_RDWR);
+    // if (fd >= 0)
+    // {
+    //     // Measure time for erase
+    //     clock_gettime(CLOCK_MONOTONIC, &start);
+    //     up_progmem_eraseblock(22);
+    //     clock_gettime(CLOCK_MONOTONIC, &end);
         
-        elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
-        syslog(LOG_INFO, "Erase time: %ld ms", elapsed_ms);
+    //     elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+    //     syslog(LOG_INFO, "Erase time: %ld ms", elapsed_ms);
 
-        // Measure time for write
-        clock_gettime(CLOCK_MONOTONIC, &start);
-        up_progmem_write(FLAG_DATA_INT_ADDR, flag_data, sizeof(CRITICAL_FLAGS));
-        clock_gettime(CLOCK_MONOTONIC, &end);
+    //     // Measure time for write
+    //     clock_gettime(CLOCK_MONOTONIC, &start);
+    //     up_progmem_write(FLAG_DATA_INT_ADDR, flag_data, sizeof(CRITICAL_FLAGS));
+    //     clock_gettime(CLOCK_MONOTONIC, &end);
 
-        elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
-        syslog(LOG_INFO, "Write time: %ld ms", elapsed_ms);
-    }
-    else
-    {
-        syslog(LOG_ERR, "Error opening internal flash to store new flag data ... \n ");
-    }
-    close(fd);
+    //     elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+    //     syslog(LOG_INFO, "Write time: %ld ms", elapsed_ms);
+    // }
+    // else
+    // {
+    //     syslog(LOG_ERR, "Error opening internal flash to store new flag data ... \n ");
+    // }
+    // close(fd);
 
     // Open MFM storage
     int fd1 = open_file_flash(&fp, MFM_MAIN_STRPATH, file_name_flag, O_RDWR);
@@ -227,19 +227,19 @@ int check_flag_data(CRITICAL_FLAGS *flags)
   toggle_wdg();
   // pthread_mutex_lock(&flash_mutex); // Lock the mutex
   
-  int fd = open("/dev/intflash", O_RDWR);
-  if (fd >= 0)
-  {
-    syslog(LOG_INFO, "Printing Internal flash flag data.\n");
-    up_progmem_read(FLAG_DATA_INT_ADDR, &rd_flags_int, sizeof(rd_flags_int));
-    print_critical_flag_data(&rd_flags_int);
-    close(fd);
-  }
-  else
-  {
-    syslog(LOG_ERR, "Error opening internal flash\n");
-    return -1;
-  }
+  // int fd = open("/dev/intflash", O_RDWR);
+  // if (fd >= 0)
+  // {
+  //   syslog(LOG_INFO, "Printing Internal flash flag data.\n");
+  //   up_progmem_read(FLAG_DATA_INT_ADDR, &rd_flags_int, sizeof(rd_flags_int));
+  //   print_critical_flag_data(&rd_flags_int);
+  //   close(fd);
+  // }
+  // else
+  // {
+  //   syslog(LOG_ERR, "Error opening internal flash\n");
+  //   return -1;
+  // }
 
   // pthread_mutex_unlock(&flash_mutex); // Lock the mutex
 
@@ -326,14 +326,16 @@ int load_critics_flags(CRITICAL_FLAGS *flags)
     memset(flags, 0, sizeof(CRITICAL_FLAGS));
     pthread_mutex_lock(&flash_mutex); // Lock the mutex
 
-    int fd = open("/dev/intflash", O_RDONLY);
-    if (fd < 0)
-    {
-        perror("Failed to open /dev/intflash for reading");
-        return -1;
-    }
-    ssize_t bytesRead = read(fd, flags, sizeof(CRITICAL_FLAGS));
-    close(fd);
+    int fd;
+    ssize_t bytesRead;
+    // fd = open("/dev/intflash", O_RDONLY);
+    // if (fd < 0)
+    // {
+    //     perror("Failed to open /dev/intflash for reading");
+    //     return -1;
+    // }
+    //  bytesRead = read(fd, flags, sizeof(CRITICAL_FLAGS));
+    // close(fd);
     pthread_mutex_unlock(&flash_mutex); // Unlock the mutex
 
     if (bytesRead != sizeof(CRITICAL_FLAGS))
