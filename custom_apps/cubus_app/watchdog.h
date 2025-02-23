@@ -25,6 +25,9 @@
 #define PING_INTERVAL 10 // 1 second for pinging
 #define STACK_SIZE 848   // Stack size for the watchdog task
 
+void reset_obc(){
+  gpio_write(GPIO_GBL_RST, 1);
+}
 extern CRITICAL_FLAGS critic_flags;
 int pet_counter = 0;
 // Watchdog task function
@@ -71,7 +74,7 @@ static int watchdog_task(int argc, char *argv[])
       // usleep(PING_INTERVAL * 1000); // Sleep for 1 second
 
       // Pet the watchdog
-      if (pet_counter <= 360)
+      if (pet_counter <= 330)
       {
         if (ioctl(fd, WDIOC_KEEPALIVE, 0) < 0)
         {
@@ -129,7 +132,39 @@ static int watchdog_task(int argc, char *argv[])
       {
         printf("WDOG timeout reached!!!!!!!Reset soon!");
         {
-          sleep(3);
+          // sleep(3);
+          int ret;
+            is_this_true = 1;
+            uint8_t data[7] = {0x53, 0x01, 0x02, 0x03, 0x04, 0x7e, '\0'};
+            gpio_write(GPIO_3V3_COM_EN, false); // Disable COM systems
+            sleep(1);
+            syslog(LOG_DEBUG, "***************************Turning on COM MSN...***************************\n");
+            gpio_write(GPIO_3V3_COM_EN, 1);
+            sleep(1);
+            gpio_write(GPIO_3V3_COM_EN, true); // Enable COM systems
+            // ret = handshake_COM(data);
+            int fd_com = open(COM_UART, O_WRONLY);
+            if (fd_com < 0)
+            {
+              printf("error opening %s\n", COM_UART);
+              usleep(PRINT_DELAY);
+              return -1;
+            }
+            int wr1 = write(fd_com, data, 7); // writing handshake data
+            if (wr1 < 0)
+            {
+              printf("Unable to send data through %d UART", COM_UART);
+              // usleep(PRINT_DELAY);
+              is_this_true = 0;
+              pet_counter =0;
+              // return -1;
+            }
+            else
+            {
+              printf("Handshake Initiated\n");
+            }
+
+            close(fd_com);
         }
       }
     }

@@ -73,8 +73,7 @@ pthread_mutex_t uart_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool timer_status = false;
 uint64_t timer_counter = 0;
 float x[8], y[8];
-uint32_t gbl_count =0;
-
+uint32_t gbl_count = 0;
 
 int ads7953_receiver(int argc, FAR char *argv[]);
 
@@ -835,6 +834,8 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
     }
     return;
   }
+
+
   else if (COM_RX_DATA[0] == 0x72)
   {
     syslog(LOG_DEBUG, "parse command starting\n");
@@ -890,7 +891,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
           if (cmds[0] == 0x1a && cmds[1] == 0xe0 && cmds[2] == 0x1e)
           {
             printf("\n-------------------Satellite reset command received-----------------\n Resets in 2 seconds\n");
-            sleep(1);
+            sleep(10);
             gpio_write(GPIO_GBL_RST, true);
           }
           else if (cmds[0] == 0x75 && cmds[1] == 0x6e && cmds[2] == 0x69) // TIme updation using unix timestamp
@@ -996,7 +997,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
               else if ((cmds[2] == 0xF8))
               {
                 __file_operations.select_file = CAMERA_NIR_TXT;
-                __file_operations.mcu_id = 0xca;
+                __file_operations.mcu_id = 0x0c;
                 strcat(__file_operations.filepath, "/cam_nir.txt");
               }
               else if ((cmds[2] == 0xF9))
@@ -1268,6 +1269,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
               data2[4] = cmds[1];
               mission_operation(2, data2);
               syslog(LOG_DEBUG, "------------------------  cam mission turned off(Command received from COM using RF)--------------------\n");
+              sleep(1);
             }
             else
             {
@@ -1401,16 +1403,13 @@ static int COM_TASK(int argc, char *argv[])
 {
   int ret = -1;
   uint8_t rx_data[COM_RX_CMD_SIZE] = {'\0'};
-  gpio_on();
   gpio_write(GPIO_3V3_COM_EN, 0);
   gpio_write(GPIO_3V3_COM_EN, false); // Disable COM systems
-  sleep(10);
+  sleep(2);
   syslog(LOG_DEBUG, "***************************Turning on COM MSN...***************************\n");
   gpio_write(GPIO_3V3_COM_EN, 1);
   sleep(1);
   gpio_write(GPIO_3V3_COM_EN, true); // Enable COM systems
-
-  // usleep(2000000);
   sleep(2);
   // ret = handshake_COM(data); // tx rx data is flushed before closing the file
   ret = handshake_MSN(0, data); // tx rx data is flushed before closing the file
@@ -2113,20 +2112,20 @@ void truncate_text_file(struct FILE_OPERATIONS *file_operations)
     printf("Failed to close UART: %s\n", strerror(errno));
     close(fd);
   }
-  // file_close(&truncate_ptr);
-  if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/epdm.txt" == 0))
+  // file_close(&truncate_ptr);check_flag_data
+  if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/epdm.txt") == 0)
   {
     strcpy(same_file_logs, "/mnt/fs/mfm/mtd_mission/epdm_logs.txt");
   }
-  else if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/cam_nir.txt" == 0))
+  else if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/cam_nir.txt") == 0)
   {
     strcpy(same_file_logs, "/mnt/fs/mfm/mtd_mission/cam_nir_logs.txt");
   }
-  else if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/cam_rgb.txt" == 0))
+  else if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/cam_rgb.txt") == 0)
   {
     strcpy(same_file_logs, "/mnt/fs/mfm/mtd_mission/cam_rgb_logs.txt");
   }
-  else if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/adcs.txt" == 0))
+  else if (strcmp(file_path, "/mnt/fs/mfm/mtd_mission/adcs.txt") == 0)
   {
     strcpy(same_file_logs, "/mnt/fs/mfm/mtd_mission/adcs_logs.txt");
   }
@@ -2162,7 +2161,7 @@ void track_read_seek_pointer(struct FILE_OPERATIONS *file_pointer, int8_t seek_p
   // switch(file_pointer->)
   uint32_t address = file_pointer->address[3] << 24 | file_pointer->address[2] << 16 | file_pointer->address[1] << 8 | file_pointer->address[0] & 0xff;
   // if (address != 0)
-  fd = open_file_flash(&fptr, "", file_pointer->filepath, O_CREAT| O_RDWR);
+  fd = open_file_flash(&fptr, "", file_pointer->filepath, O_CREAT | O_RDWR);
   // ssize_t readBytes = file_read(&fptr, seek_pointer, sizeof(seek_pointer));
   // if (readBytes > 0)
   {
@@ -2469,23 +2468,21 @@ void rtc_alarm_func(uint16_t time)
     sleep(1);
   }
 }
-void reset_obc(){
-  gpio_write(GPIO_GBL_RST, 1);
-}
 
 void global_reset()
 {
   printf("\n******Global reset task has started*****\n");
   // for (;;)
   bool mode = true;
-  for(;;)
+  for (;;)
   {
-    
+
     // gpio_write(GPIO_WD_WDI, mode);
     // mode = !mode;
-    if(gbl_count >= 86400){
-      gbl_count=0;
-    gpio_write(GPIO_GBL_RST, 1);
+    if (gbl_count >= 86400)
+    {
+      gbl_count = 0;
+      gpio_write(GPIO_GBL_RST, 1);
     }
     gbl_count++;
     // usleep(80000);
@@ -2521,10 +2518,11 @@ int main(int argc, FAR char *argv[])
   toggle_wdg();
 
   Setup();
-  if (strcmp(argv[1], "clear") == 0){
+  if (strcmp(argv[1], "clear") == 0)
+  {
     clear_int_flag();
     struct file fp1;
-    file_open(&fp1,"/mnt/fs/mfm/mtd_mainstorage/flags.txt",O_CREAT|O_TRUNC);
+    file_open(&fp1, "/mnt/fs/mfm/mtd_mainstorage/flags.txt", O_CREAT | O_TRUNC);
     file_close(&fp1);
   }
   // if (strcmp(argv[1], "read") == 0)
@@ -2932,7 +2930,7 @@ int send_beacon_data()
       beacon_type = !beacon_type;
       // print_satellite_health_data(&sat_health);
       toggle_wdg();
-      store_flag_data(&critic_flags);
+      store_flag_data(&critic_flags, timer);
 
       // work_queue(HPWORK, &work_beacon, send_beacon_data, NULL, SEC2TICK(BEACON_DELAY));
     }
@@ -2986,22 +2984,22 @@ void Antenna_Deployment(int argc, char *argv[])
     // critic_flags.ANT_DEP_STAT = DEPLOYED;
     // critic_flags.UL_STATE = UL_RX;
 
+    rd_flags_int.ANT_DEP_STAT = DEPLOYED;
+    rd_flags_int.UL_STATE = UL_RX;
 
-      rd_flags_int.ANT_DEP_STAT = DEPLOYED;
-      rd_flags_int.UL_STATE = UL_RX;
-
-      critic_flags.ANT_DEP_STAT = DEPLOYED;
-      critic_flags.KILL_SWITCH_STAT = KILL_SW_OFF;
-      critic_flags.OPER_MODE = NRML_MODE;
-      critic_flags.RSV_FLAG = RSV_NOT_RUNNING;
-      critic_flags.UL_STATE = UL_RX;
-    if(rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT <= 3)
+    critic_flags.ANT_DEP_STAT = DEPLOYED;
+    critic_flags.KILL_SWITCH_STAT = KILL_SW_OFF;
+    critic_flags.OPER_MODE = NRML_MODE;
+    critic_flags.RSV_FLAG = RSV_NOT_RUNNING;
+    critic_flags.UL_STATE = UL_RX;
+    if (rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT <= 3)
     {
       // critic_flags
       critic_flags.RST_COUNT += 1;
     }
 
-    else{
+    else
+    {
 
       critic_flags.RST_COUNT = 0;
     }
@@ -3013,8 +3011,8 @@ void Antenna_Deployment(int argc, char *argv[])
   rd_flags_int.RST_COUNT += 1;
   critic_flags.RST_COUNT += 1;
   // save_critics_flags(&rd_flags_int);
-  
-  store_flag_data(&rd_flags_int);
+
+  store_flag_data(&rd_flags_int, timer);
   rd_flags_int.ANT_DEP_STAT = 0x00;
   load_critics_flags(&rd_flags_int);
   // print_critical_flag_data(&rd_flags_int);
@@ -3328,18 +3326,20 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
                       (final_count >> 8) & 0xFF,
                       final_count & 0xFF};
                   file_write(&msn_flag_pointer, temp_var, sizeof(temp_var));
-                  if(strcmp(file_name, "/cam_rgb.txt") ==0 || (mission ==2 && j == 1)){
-                    int i=0;
-                        //if it is rgb camera then in that case capture logs
-                        char buffer[100]={'\0'};
-                        for(i=0;i<100;i++)
-                        {
-                          buffer[i] = data_received[i];
-                          if(buffer[i+1] == 0xff && buffer[i+2] == 0xd8){
-                            break;
-                          }
-                        }
-                      file_write(&msn_flag_pointer, buffer, i);  
+                  if (strcmp(file_name, "/cam_rgb.txt") == 0 || (mission == 2 && j == 1))
+                  {
+                    int i = 0;
+                    // if it is rgb camera then in that case capture logs
+                    char buffer[100] = {'\0'};
+                    for (i = 0; i < 100; i++)
+                    {
+                      buffer[i] = data_received[i];
+                      if (buffer[i + 1] == 0xff && buffer[i + 2] == 0xd8)
+                      {
+                        break;
+                      }
+                    }
+                    file_write(&msn_flag_pointer, buffer, i);
                   }
                   file_close(&msn_flag_pointer);
                 }
@@ -3357,7 +3357,6 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   close(fd2);
   turn_msn_on_off(mission, 0);
 }
-
 
 void watchdog_refresh_task(int fd)
 {
@@ -3436,9 +3435,8 @@ void int_adc1_data_convert(float *temp_buff)
     // printf("Raw Data: %d \n",);
     // printf("Channel no:%d Raw Data: %d Voltage: %f  Current: %f\n", int_adc1_sample[i].am_channel,int_adc1_sample[i].am_data, int_adc1_v[i], int_adc1_c[i]);
   }
-  printf("\n****************************************************************************\n");
-
-  usleep(500000);
+  // printf("\n****************************************************************************\n");
+  sleep(5);
 }
 
 #endif
@@ -3934,7 +3932,8 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
       printf("Error: Failed to open reservation command file\n");
       // return;
     }
-    else{
+    else
+    {
       struct reservation_command res_temp[16];
       uint16_t file_size = file_seek(&file_ptr, 0, SEEK_END);
       int n = file_size / sizeof(struct reservation_command);
@@ -3944,7 +3943,7 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
         file_seek(&file_ptr, i * sizeof(struct reservation_command), SEEK_SET);
         file_read(&file_ptr, &res_temp[i], sizeof(struct reservation_command));
       }
-    
+
       file_close(&file_ptr);
 
       // Sort the reservation commands
@@ -3981,8 +3980,8 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
         critic_flags.RSV_FLAG -= 1;
         sat_health.rsv_flag = critic_flags.RSV_FLAG;
       }
-    // save_critics_flags(&critic_flags);
-    // timer = 0;
+      // save_critics_flags(&critic_flags);
+      // timer = 0;
     }
   }
 }
@@ -4126,8 +4125,8 @@ void flash_operation_data(uint16_t loop)
     }
     stop_time = time(NULL);
 
-    // sleep(1);
-    usleep(100000);
+    sleep(1);
+    // usleep(100000);
     FLASH_UORB_RESPONDING = true;
     if (stop_time - start_time > 2)
     {
