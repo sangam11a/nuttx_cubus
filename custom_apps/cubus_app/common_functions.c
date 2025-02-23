@@ -291,7 +291,7 @@ int store_flag_data(CRITICAL_FLAGS *flag_data, uint32_t timer)
                 clock_gettime(CLOCK_MONOTONIC, &end);
 
                 elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
-                syslog(LOG_INFO, "Erase time: %ld ms", elapsed_ms);
+                // syslog(LOG_INFO, "Erase time: %ld ms", elapsed_ms);
 
                 // Measure time for write
                 clock_gettime(CLOCK_MONOTONIC, &start);
@@ -299,7 +299,7 @@ int store_flag_data(CRITICAL_FLAGS *flag_data, uint32_t timer)
                 clock_gettime(CLOCK_MONOTONIC, &end);
 
                 elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
-                syslog(LOG_INFO, "Write time: %ld ms", elapsed_ms);
+                // syslog(LOG_INFO, "Write time: %ld ms", elapsed_ms);
 
                 syslog(LOG_INFO, "Critical flags updated in internal flash.");
             }
@@ -326,6 +326,7 @@ int store_flag_data(CRITICAL_FLAGS *flag_data, uint32_t timer)
             // Compare existing data with new flag_data
             if (memcmp(&existing_data, flag_data, sizeof(CRITICAL_FLAGS)) != 0)
             {
+              toggle_wdg();
                 // Data is different, proceed with truncate and write
 
                 file_seek(&fp, 0, SEEK_SET);
@@ -336,7 +337,7 @@ int store_flag_data(CRITICAL_FLAGS *flag_data, uint32_t timer)
                 clock_gettime(CLOCK_MONOTONIC, &end);
 
                 elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
-                syslog(LOG_INFO, "MFM Write time: %ld ms", elapsed_ms);
+                // syslog(LOG_INFO, "MFM Write time: %ld ms", elapsed_ms);
 
                 if (bwr == 0 || bwr != sizeof(CRITICAL_FLAGS))
                 {
@@ -559,6 +560,9 @@ int check_flag_data(CRITICAL_FLAGS *flags)
     pthread_mutex_unlock(&flash_mutex);
     return -1;
   }
+  pthread_mutex_unlock(&flash_mutex); // Unlock the mutex
+
+  pthread_mutex_lock(&flash_mutex); // Lock the mutex
 
   // Read from MFM
   int fd1 = file_open(&fp_mfm, "/mnt/fs/mfm/mtd_mainstorage/flags.txt", O_RDWR);
@@ -575,8 +579,9 @@ int check_flag_data(CRITICAL_FLAGS *flags)
     read_size_sharedfm = file_read(&fp_sharedfm, &rd_flags_sharedfm, sizeof(CRITICAL_FLAGS));
     file_close(&fp_sharedfm);
   }
+  pthread_mutex_unlock(&flash_mutex); // Lock the mutex
 
-  pthread_mutex_unlock(&flash_mutex); // Unlock the mutex
+
 
   // Print MFM and SharedFM data
   print_critical_flag_data(&rd_flags_mfm);

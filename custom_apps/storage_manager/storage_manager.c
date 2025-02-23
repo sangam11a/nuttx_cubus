@@ -75,7 +75,7 @@
    struct file fp;
    int bwr;
  
-   printf("\n**************SToring flag data*********\n");
+   //printf("\n**************SToring flag data*********\n");
    print_critical_flag_data(flag_data);
    //pthread_mutex_lock(&flash_mutex); // Lock the mutex
    
@@ -147,22 +147,22 @@
          // }
          count+=10;
        
-         // printf(
+         // //printf(
          //   "read and print amg))))))))))))))))))))))))))))))))))))))\n"
          // );
  
          orb_check(fd_reservation, &updated);
-         // printf("The value of updated is %d\n",updated);
+         // //printf("The value of updated is %d\n",updated);
          if (updated)
          {
  
              orb_copy(ORB_ID(reservation_command), fd_reservation, &res);
-             // printf("the timestamp data is %d %d", res.timestamp,time(NULL));
+             // //printf("the timestamp data is %d %d", res.timestamp,time(NULL));
  
              // Process only if it's a new command
              if (memcmp(&res, &last_res, sizeof(res)) != 0 )//res.mcu_id>=3 && res.mcu_id <=5
              {
-                 printf("Value of reservation command uORB has been updated\n");
+                 //printf("Value of reservation command uORB has been updated\n");
  
                  // Update the last processed command
                  // res.latest_time += time_counter;
@@ -186,7 +186,7 @@
                          ssize_t bytes_written = file_write(&file_ptr, &res, sizeof(res));
                          if (bytes_written > 0)
                          {
-                             printf("File size is %zd. Reservation table updated with %zd bytes\n", file_size, bytes_written);
+                             //printf("File size is %zd. Reservation table updated with %zd bytes\n", file_size, bytes_written);
                              // res.latest_time -= time_counter;
                          }
                          // file_close(&file_ptr);
@@ -241,7 +241,7 @@
  
                  store_sat_health_data(&satHealth, MFM_MAIN_STRPATH);
                  store_sat_health_data(&satHealth, SFM_MAIN_STRPATH);
-                 print_satellite_health_data(&satHealth);
+                //  print_satellite_health_data(&satHealth);
                  // maintain_data_consistency();
              }
          }
@@ -299,8 +299,8 @@
  //       // updated = false;
  //       struct file file_ptr;
  //       orb_copy(ORB_ID(reservation_command), fd_reservation, &res);
- //       printf("Value of reservation command uorb has been updated");
- //       printf("The reservation command is %02x %02x %02x\n", res.cmd[0], res.cmd[1], res.cmd[2]);
+ //       //printf("Value of reservation command uorb has been updated");
+ //       //printf("The reservation command is %02x %02x %02x\n", res.cmd[0], res.cmd[1], res.cmd[2]);
  //       if (res.latest_time == 0x00 && res.mcu_id != 0)
  //       {
  //         int fd = open_file_flash(&file_ptr, MFM_MAIN_STRPATH, RESERVATION_CMD, O_CREAT | O_WRONLY | O_APPEND);
@@ -308,7 +308,7 @@
  //         ssize_t bytes_written = file_write(&file_ptr, &res, sizeof(res));
  //         if (bytes_written > 0)
  //         {
- //           printf("File size is %d.\nReservation table with data size %d has been updated\n", file_size, bytes_written);
+ //           //printf("File size is %d.\nReservation table with data size %d has been updated\n", file_size, bytes_written);
  //         }
  //         if (ret = file_syncfs(&file_ptr) < 0)
  //         {
@@ -326,7 +326,7 @@
  //       sleep(1);
  //     }
  //     // updated = false;
- //       // printf("the counter value is %d \n", count);
+ //       // //printf("the counter value is %d \n", count);
  
  //     if (count % 90 == 0)
  //     {
@@ -350,14 +350,14 @@
  //             }
  //             else
  //             {
- //               printf("Satellite Health ORB is getting data %d\n", satellite_health.rsv_cmd);
+ //               //printf("Satellite Health ORB is getting data %d\n", satellite_health.rsv_cmd);
  //               // if (count % 12 == 0)
  //               {
  //               }
- //               // printf("%d %d %d\n",satHealth.accl_x, satHealth.accl_y, satHealth.accl_z);
+ //               // //printf("%d %d %d\n",satHealth.accl_x, satHealth.accl_y, satHealth.accl_z);
  //             }
  
- //             // printf("Temperature: %0.02f \t", mag0.temperature);
+ //             // //printf("Temperature: %0.02f \t", mag0.temperature);
  //           }
  //         }
  //         // edited
@@ -409,10 +409,10 @@
  {
    int ret;
  
-   printf("[storage_manager] Starting task.\n");
+   //printf("[storage_manager] Starting task.\n");
    if (g_storage_manager_started)
    {
-     printf("[storage_manager] Task already started.\n");
+     //printf("[storage_manager] Task already started.\n");
      return EXIT_SUCCESS;
    }
  
@@ -422,7 +422,7 @@
    if (ret < 0)
    {
      int errcode = errno;
-     printf("[storage_manager] ERROR: Failed to start storage_manager_daemon: %d\n", errcode);
+     //printf("[storage_manager] ERROR: Failed to start storage_manager_daemon: %d\n", errcode);
      return EXIT_FAILURE;
    }
    ret = task_create("flash_operations", SCHED_PRIORITY_DEFAULT, 8078, flash_operations, NULL);
@@ -430,11 +430,11 @@
    if (ret < 0)
    {
      int errcode = errno;
-     printf("[storage_manager] ERROR: Failed to start flash_operations: %d\n", errcode);
+     //printf("[storage_manager] ERROR: Failed to start flash_operations: %d\n", errcode);
      return EXIT_FAILURE;
    }
  
-   printf("[storage_manager] storage_manager_daemon started\n");
+   //printf("[storage_manager] storage_manager_daemon started\n");
    return EXIT_SUCCESS;
  }
  
@@ -493,7 +493,7 @@
    pthread_mutex_lock(&main_flash_mutex);
      // if(strcpy(pathname, MFM_MAIN_STRPATH) == 0)
      { 
-       printf("the full path is :%s\n",pathname);
+       //printf("the full path is :%s\n",pathname);
        int fd1 = open_file_flash(&file_p, pathname, file_name_flag, O_RDWR);
        if (fd1 >= 0)
        {
@@ -533,12 +533,12 @@
    int fd = file_open(file_pointer, path, open_mode);
    if (fd < 0)
    {
-     // syslog(LOG_ERR, "Error opening file: %s\n", path);
+     syslog(LOG_ERR, "Error opening file: %s\n", path);
      return fd;
    }
    else
    {
-     syslog(LOG_INFO, "Opened file: %s ...\n", path);
+    //  syslog(LOG_INFO, "Opened file: %s ...\n", path);
    }
    return fd;
  }
@@ -566,16 +566,16 @@
          {
          case 0xca:
            truncate_text_file(command_ops.path); //TODO need to reform this
-           printf("-----Trucate text file called \n");
+           //printf("-----Trucate text file called \n");
            break;
          case 0x1d:
            // FLASH_OPERATION = true;
            // MISSION_STATUS.FLASH_OPERATION = true;
            temp_command_ops.address = command_ops.address;
            temp_command_ops.num_of_packets = command_ops.num_of_packets;
-           printf("***************************************************************\n");
-           printf("command_ops.address %d\n command_ops.num_of_packets %d\n", command_ops.address, command_ops.num_of_packets);
-           printf("***************************************************************\n");
+           //printf("***************************************************************\n");
+           //printf("command_ops.address %d\n command_ops.num_of_packets %d\n", command_ops.address, command_ops.num_of_packets);
+           //printf("***************************************************************\n");
            send_data_uorb(command_ops.path, command_ops.address, command_ops.num_of_packets, command_ops.pkt_type);
          }
        }
@@ -606,13 +606,13 @@
        fd = open_file_flash(&flp1, MFM_MAIN_STRPATH, filename[i], O_CREAT); 
        if (fd < 0)
        {
-         syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
        }
        file_close(&flp1);
        fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT); 
        if (fd < 0)
        {
-         syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
        }
        file_close(&flp1);
      }
@@ -620,13 +620,13 @@
        fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT); 
        if (fd < 0)
        {
-         syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
        }
        file_close(&flp1);
        fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT); 
        if (fd < 0)
        {
-         syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
        }
        file_close(&flp1);
      }
@@ -634,13 +634,13 @@
        fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT); 
        if (fd < 0)
        {
-         syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
        }
        file_close(&flp1);
        fd = open_file_flash(&flp1, SFM_MSN_STRPATH, filename[i], O_CREAT); 
        if (fd < 0)
        {
-         syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
        }
        file_close(&flp1);
      }
@@ -731,11 +731,11 @@
  
          for (int i = 1; i < n; i++)
          {
-             printf("Number of res command read is %d and temp is %d\n", i + 1, temp);
-             printf("_________________Sorted________________________\n");
-             printf("MCU id : %02x Cmd[0] :%02x , Cmd[1]:%02x ,Cmd[2]:%02x, Cmd[3]:%02x Time[0]:%02x Time[1]:%d executed:%d\n",
+             //printf("Number of res command read is %d and temp is %d\n", i + 1, temp);
+             //printf("_________________Sorted________________________\n");
+             printf("\nMCU id : %02x Cmd[0] :%02x , Cmd[1]:%02x ,Cmd[2]:%02x, Cmd[3]:%02x Time[0]:%02x Time[1]:%d executed:%d\n",
                     res_temp[i].mcu_id, res_temp[i].cmd[0], res_temp[i].cmd[1], res_temp[i].cmd[2], res_temp[i].cmd[3], res_temp[i].cmd[4], res_temp[i].cmd[5], res_temp[i].executed);
-             printf("__________________Sorted_______________________\n");
+             //printf("__________________Sorted_______________________\n");
          }
  
          if (n == 1)
@@ -801,12 +801,12 @@
                  if (read_bytes > 0) {
                      ssize_t written = file_write(&mfm_file_pointer, temp, read_bytes);
                      if (written != read_bytes) {
-                         printf("Error writing to MFM for %s\n", filename[i]);
+                         //printf("Error writing to MFM for %s\n", filename[i]);
                      } else {
-                         printf("Copied %d bytes from SFM to MFM for %s\n", written, filename[i]);
+                         //printf("Copied %d bytes from SFM to MFM for %s\n", written, filename[i]);
                      }
                  } else {
-                     printf("Error reading from SFM for %s\n", filename[i]);
+                     //printf("Error reading from SFM for %s\n", filename[i]);
                      break;
                  }
                  
@@ -824,12 +824,12 @@
                  if (read_bytes > 0) {
                      ssize_t written = file_write(&sfm_file_pointer, temp, read_bytes);
                      if (written != read_bytes) {
-                         printf("Error writing to SFM for %s\n", filename[i]);
+                         //printf("Error writing to SFM for %s\n", filename[i]);
                      } else {
-                         printf("Copied %d bytes from MFM to SFM for %s\n", written, filename[i]);
+                         //printf("Copied %d bytes from MFM to SFM for %s\n", written, filename[i]);
                      }
                  } else {
-                     printf("Error reading from MFM for %s\n", filename[i]);
+                     //printf("Error reading from MFM for %s\n", filename[i]);
                      break;
                  }
                  
@@ -854,7 +854,7 @@
  //     int fd_seek = file_read(&fp_seek, &seek_pointer, sizeof(struct SEEK_POINTER));
  //     if (fd_seek >= 0)
  //     {
- //       printf("\n----------------------------------------------------------\nSAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n----------------------------------------------------------\n",
+ //       //printf("\n----------------------------------------------------------\nSAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n----------------------------------------------------------\n",
  //              seek_pointer.SAT_HEALTH, seek_pointer.SAT_LOG, seek_pointer.CAM_RGB,
  //              seek_pointer.CAM_NIR, seek_pointer.EPDM, seek_pointer.ADCS);
  //     }
@@ -868,17 +868,15 @@
  
      if (open_file_flash(&fp, MFM_MAIN_STRPATH, "/seek_pointer.txt", O_RDONLY) >= 0) {
          if (file_read(&fp, &seek_pointer, sizeof(seek_pointer)) >= sizeof(seek_pointer)) {
-             printf("\n------------------- Seek Pointer -------------------\n");
-             printf("SAT_HEALTH: %d, SAT_LOG: %d, CAM_RGB: %d, CAM_NIR: %d, EPDM: %d, ADCS: %d\n",
-                    seek_pointer.SAT_HEALTH, seek_pointer.SAT_LOG, seek_pointer.CAM_RGB, 
-                    seek_pointer.CAM_NIR, seek_pointer.EPDM, seek_pointer.ADCS);
-             printf("---------------------------------------------------\n");
+             //printf("\n------------------- Seek Pointer -------------------\n");
+             //printf("SAT_HEALTH: %d, SAT_LOG: %d, CAM_RGB: %d, CAM_NIR: %d, EPDM: %d, ADCS: %d\n", seek_pointer.SAT_HEALTH, seek_pointer.SAT_LOG, seek_pointer.CAM_RGB,  seek_pointer.CAM_NIR, seek_pointer.EPDM, seek_pointer.ADCS);
+             //printf("---------------------------------------------------\n");
          } else {
-             printf("Error: Failed to read seek pointer file\n");
+             //printf("Error: Failed to read seek pointer file\n");
          }
          file_close(&fp);
      } else {
-         printf("Error: Failed to open seek pointer file\n");
+         //printf("Error: Failed to open seek pointer file\n");
      }
  }
  
@@ -901,12 +899,12 @@
    // }
    // if (fd_seek >= 0)
    // {
-   //   printf("The seek pointer file has opened\n");
+   //   //printf("The seek pointer file has opened\n");
    // }
    // // fd_seek = file_read(&fp_seek, &seek_pointer, sizeof(seek_pointer));
    // // if (fd_seek >= 0)
    // // {
-   // //   printf("SAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n",
+   // //   //printf("SAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n",
    // //          seek_pointer.SAT_HEALTH, seek_pointer.SAT_LOG, seek_pointer.CAM_RGB,
    // //          seek_pointer.CAM_NIR, seek_pointer.EPDM, seek_pointer.ADCS);
    // // }
@@ -932,7 +930,7 @@
                 flash.packet_number);
  
          int64_t size_of_file = file_seek(&fp, 0, SEEK_END);
-         printf("The size of file named %s is : %d\n", path, size_of_file);
+         //printf("The size of file named %s is : %d\n", path, size_of_file);
          uint8_t data[80] = {'\0'};
          if (fd >= 0)
          {
@@ -941,14 +939,14 @@
            {
              num_of_packets = 1;
            }
-           printf("the value of count seek pointer is %d %d\n", address);
+           //printf("the value of count seek pointer is %d %d\n", address);
            do
            {
              if (size_of_file > 0 && count <= size_of_file)
              {
                flash.timestamp = (uint64_t)time(NULL);
-               // printf("file has been opened with name %s\n", path);
-               // printf("\n----------------------------\n");
+               // //printf("file has been opened with name %s\n", path);
+               // //printf("\n----------------------------\n");
                pkt++;
                // TODO:read data at once and send it accordingly instead
  
@@ -958,13 +956,13 @@
                // flash.data = data;
                for (int i = 0; i < 80; i++)
                {
-                 // printf("%02x ", data[i]);
+                 // //printf("%02x ", data[i]);
                  flash.data[i] = data[i];
                }
                flash.packet_type = packet_type;
                flash.packet_number = pkt;
-               // printf("cc: %d num_of_pkt:%d   Packet number:%d\n",count,num_of_packets, flash.packet_number);
-               // printf("\n----------------------------\n");
+               // //printf("cc: %d num_of_pkt:%d   Packet number:%d\n",count,num_of_packets, flash.packet_number);
+               // //printf("\n----------------------------\n");
                count += 80;
  
                if (OK != orb_publish(ORB_ID(flash_operation), raw_afd, &flash))
@@ -983,7 +981,7 @@
                break;
              }
  
-             usleep(3500000);
+             usleep(3000000);
             //  sleep(2.5);//TODO Need to look on the packets so that it is not missed
            } while (num_of_packets > 0);
          }
@@ -1040,16 +1038,14 @@
                temp.ADCS = (uint32_t) count;
              }
              // ssize_t writeBytes = file_write(&fp, &temp, sizeof(struct SEEK_POINTER));
-             // printf()
+             // //printf()
              // if (writeBytes >= 0)
              {
-               printf("seek pointer updated\n");
-                printf("\n----------------------------------------------------------\nSAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n----------------------------------------------------------\n",
-               temp.SAT_HEALTH, temp.SAT_LOG, temp.CAM_RGB,
-               temp.CAM_NIR, temp.EPDM, temp.ADCS);
+               //printf("seek pointer updated\n");
+                //printf("\n----------------------------------------------------------\nSAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n----------------------------------------------------------\n",temp.SAT_HEALTH, temp.SAT_LOG, temp.CAM_RGB, temp.CAM_NIR, temp.EPDM, temp.ADCS);
              }
              // else{
-             //   printf("Seek operation updation failed\n");
+             //   //printf("Seek operation updation failed\n");
              // }
            }
          }
@@ -1092,7 +1088,7 @@
  //             } else if (strcmp(path, "/mnt/fs/mfm/mtd_mission/adcs.txt") == 0) {
  //                 temp.ADCS = count;
  //             } else {
- //                 printf("Error: Unknown path\n");
+ //                 //printf("Error: Unknown path\n");
  //                 file_close(&fp);
  //                 return; // Exit on unknown path
  //             }
@@ -1100,19 +1096,19 @@
  //             // Write the updated structure back to the file
  //             ssize_t writeBytes = file_write(&fp, &temp, sizeof(struct SEEK_POINTER));
  //             if (writeBytes >= sizeof(struct SEEK_POINTER)) {
- //                 printf("Seek pointer updated successfully\n");
- //                 printf("Updated values:\n");
- //                 printf("SAT_HEALTH=%d, SAT_LOG=%d, CAM_RGB=%d, CAM_NIR=%d, EPDM=%d, ADCS=%d\n",
+ //                 //printf("Seek pointer updated successfully\n");
+ //                 //printf("Updated values:\n");
+ //                 //printf("SAT_HEALTH=%d, SAT_LOG=%d, CAM_RGB=%d, CAM_NIR=%d, EPDM=%d, ADCS=%d\n",
  //                        temp.SAT_HEALTH, temp.SAT_LOG, temp.CAM_RGB, temp.CAM_NIR, temp.EPDM, temp.ADCS);
  //             } else {
- //                 printf("Error: Failed to write updated seek pointer\n");
+ //                 //printf("Error: Failed to write updated seek pointer\n");
  //             }
  //         } else {
- //             printf("Error: Failed to read seek pointer\n");
+ //             //printf("Error: Failed to read seek pointer\n");
  //         }
  //         file_close(&fp);
  //     } else {
- //         printf("Error: Failed to open seek_pointer file\n");
+ //         //printf("Error: Failed to open seek_pointer file\n");
  //     }
  // }
  void update_seek_pointer(const char *path, uint32_t address, uint32_t count, struct SEEK_POINTER seek_pointer) {
@@ -1121,7 +1117,7 @@
  
      int fd = file_open(&fp, "/mnt/fs/mfm/mtd_mainstorage/seek_pointer.txt", O_RDWR);
      if (fd < 0) {
-         printf("Error: Failed to open seek pointer file\n");
+         //printf("Error: Failed to open seek pointer file\n");
          return;
      }
  
@@ -1148,7 +1144,7 @@
      if (file_write(&fp, &seek_pointer, sizeof(seek_pointer)) < 0) {
          printf("Error: Failed to update seek pointer\n");
      } else {
-         printf("Seek pointer updated successfully\n");
+         //printf("Seek pointer updated successfully\n");
          print_seek_pointer();
      }
  
@@ -1177,12 +1173,12 @@
  //   }
  //   if (fd_seek >= 0)
  //   {
- //     printf("The seek pointer file has opened\n");
+ //     //printf("The seek pointer file has opened\n");
  //   }
  //   fd_seek = file_read(&fp_seek, &seek_pointer, sizeof(seek_pointer));
  //   if (fd_seek >= 0)
  //   {
- //     printf("SAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n",
+ //     //printf("SAT_HEALTH:%d\n SAT_LOG:%d\n CAM_RGB:%d\n CAM_NIR:%d\n EPDM:%d\n ADCS:%d\n",
  //            seek_pointer.SAT_HEALTH, seek_pointer.SAT_LOG, seek_pointer.CAM_RGB,
  //            seek_pointer.CAM_NIR, seek_pointer.EPDM, seek_pointer.ADCS);
  //   }
@@ -1197,14 +1193,14 @@
  //     }
  //     else
  //     {
- //       printf("\nData sent :\nTimestamp : %d \nPacket Type:%d \nPacket Number:%d \n",
+ //       //printf("\nData sent :\nTimestamp : %d \nPacket Type:%d \nPacket Number:%d \n",
  //              flash.timestamp,
  //              flash.packet_type,
  //              flash.packet_number);
  //       struct file fp;
  //       int fd = file_open(&fp, path, O_RDONLY);
  //       int64_t size_of_file = file_seek(&fp, 0, SEEK_END);
- //       printf("The size of file named %s is : %d\n", path, size_of_file);
+ //       //printf("The size of file named %s is : %d\n", path, size_of_file);
  //       uint8_t data[80] = {'\0'};
  //       if (fd >= 0)
  //       {
@@ -1262,7 +1258,7 @@
  //             temp.ADCS += count;
  //           if (file_write(&fp, &temp, sizeof(struct SEEK_POINTER)) >= 0)
  //           {
- //             printf("seek pointer updated\n");
+ //             //printf("seek pointer updated\n");
  //           }
  //         }
  //       }

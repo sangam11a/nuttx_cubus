@@ -333,18 +333,18 @@ int read_int_adc1()
    * samples that we collect before returning.  Otherwise, we never return
    */
 
-  // printf("adc_main: g_adcstate.count: %d\n", g_adcstate1.count);
+  // //printf("adc_main: g_adcstate.count: %d\n", g_adcstate1.count);
 
   // /* Open the ADC device for reading */
 
-  // printf("adc_main: Hardware initialized. Opening the ADC device: %s\n",
+  // //printf("adc_main: Hardware initialized. Opening the ADC device: %s\n",
   //        g_adcstate1.devpath);
 
   /* Opening internal ADC1 */
   adc1_config.fd = open(CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_DEVPATH, O_RDONLY);
   if (adc1_config.fd < 0)
   {
-    // printf("adc_main: open %s failed: %d\n", g_adcstate1.devpath, errno);
+    // //printf("adc_main: open %s failed: %d\n", g_adcstate1.devpath, errno);
     adc1_config.errval = 2;
     goto errout;
   }
@@ -374,7 +374,7 @@ int read_int_adc1()
     if (ret < 0)
     {
       int errcode = errno;
-      printf("adc_main: ANIOC_TRIGGER ioctl failed: %d\n", errcode);
+      //printf("adc_main: ANIOC_TRIGGER ioctl failed: %d\n", errcode);
     }
 #endif
 
@@ -383,7 +383,7 @@ int read_int_adc1()
     adc1_config.readsize = CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE * sizeof(struct adc_msg_s);
     adc1_config.nbytes = read(adc1_config.fd, int_adc1_sample, adc1_config.readsize);
 
-    // printf("Readsize: %d \n nbytes: %d\n CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : %d \n ADCSTATE READCOUNT: %d \r\n", adc1_config.readsize, adc1_config.nbytes, CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE, g_adcstate1.count);
+    // //printf("Readsize: %d \n nbytes: %d\n CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : %d \n ADCSTATE READCOUNT: %d \r\n", adc1_config.readsize, adc1_config.nbytes, CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE, g_adcstate1.count);
 
     /* Handle unexpected return values */
     if (adc1_config.nbytes < 0)
@@ -391,17 +391,16 @@ int read_int_adc1()
       adc1_config.errval = errno;
       if (adc1_config.errval != EINTR)
       {
-        printf("adc_main: read %s failed: %d\n",
-               g_adcstate1.devpath, adc1_config.errval);
+        //printf("adc_main: read %s failed: %d\n", g_adcstate1.devpath, adc1_config.errval);
         adc1_config.errval = 3;
         goto errout_with_dev;
       }
 
-      printf("adc_main: Interrupted read...\n");
+      //printf("adc_main: Interrupted read...\n");
     }
     else if (adc1_config.nbytes == 0)
     {
-      printf("adc_main: No data read, Ignoring\n");
+      //printf("adc_main: No data read, Ignoring\n");
     }
 
     /* Print the sample data on successful return */
@@ -412,14 +411,14 @@ int read_int_adc1()
       if (nsamples * sizeof(struct adc_msg_s) != adc1_config.nbytes)
       {
         // I_ADC1_RAW[]
-        // printf("adc_main: read size=%ld is not a multiple of "
+        // //printf("adc_main: read size=%ld is not a multiple of "
         //        "sample size=%d, Ignoring\n",
         //        (long)adc1_config.nbytes, sizeof(struct adc_msg_s));
       }
       else
       {
         // Print int adc values
-        // printf("\nNumber of Samples: %d\n",nsamples);
+        // //printf("\nNumber of Samples: %d\n",nsamples);
         float chan;
         memset(averageRaw, '\0', sizeof(averageRaw));
         for (int i = 0; i < nsamples; i++)
@@ -429,11 +428,11 @@ int read_int_adc1()
           {
             averageRaw[i] += int_adc1_sample[i].am_data;
             // if(j%100 ==0)
-            // printf("%d: channel: %d value: %" PRId32 "",
+            // //printf("%d: channel: %d value: %" PRId32 "",
             //      i, int_adc1_sample[i].am_channel, int_adc1_sample[i].am_data);
           }
           averageRaw[i] /= ADC_MAX_LOOP;
-          // printf("%d: channel: %d value: %" PRId32 " \n",
+          // //printf("%d: channel: %d value: %" PRId32 " \n",
           //        i, int_adc1_sample[i].am_channel, averageRaw[i]);
         }
         // sat_health.sol_p2_c = (int16_t)int_adc1_sample[15].am_data;
@@ -470,7 +469,7 @@ errout_with_dev:
   close(adc1_config.fd);
 
 errout:
-  printf("Terminating!\n");
+  //printf("Terminating!\n");
   fflush(stdout);
   close(adc1_config.fd);
   return adc1_config.errval;
@@ -509,18 +508,18 @@ int read_int_adc3()
    * samples that we collect before returning.  Otherwise, we never return
    */
 
-  // printf("adc_main: g_adcstate.count: %d\n", g_adcstate3.count);
+  // //printf("adc_main: g_adcstate.count: %d\n", g_adcstate3.count);
 
   // /* Open the ADC device for reading */
 
-  // printf("adc_main: Hardware initialized. Opening the ADC device: %s\n",
+  // //printf("adc_main: Hardware initialized. Opening the ADC device: %s\n",
   //        g_adcstate3.devpath);
 
   /* Opening internal ADC1 */
   adc3_config.fd = open("/dev/adc2", O_RDONLY);
   if (adc3_config.fd < 0)
   {
-    printf("adc_main: open %s failed: %d\n", g_adcstate3.devpath, errno);
+    //printf("adc_main: open %s failed: %d\n", g_adcstate3.devpath, errno);
     adc3_config.errval = 2;
     goto errout;
   }
@@ -550,7 +549,7 @@ int read_int_adc3()
     if (ret < 0)
     {
       int errcode = errno;
-      printf("adc_main: ANIOC_TRIGGER ioctl failed: %d\n", errcode);
+      //printf("adc_main: ANIOC_TRIGGER ioctl failed: %d\n", errcode);
     }
 #endif
 
@@ -559,7 +558,7 @@ int read_int_adc3()
     adc3_config.readsize = CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE * sizeof(struct adc_msg_s);
     adc3_config.nbytes = read(adc3_config.fd, int_adc3_sample, adc3_config.readsize);
 
-    // printf("Readsize: %d \n nbytes: %d\n CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : %d \n ADCSTATE READCOUNT: %d \r\n", adc3_config.readsize, adc3_config.nbytes, CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE, g_adcstate3.count);
+    // //printf("Readsize: %d \n nbytes: %d\n CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : %d \n ADCSTATE READCOUNT: %d \r\n", adc3_config.readsize, adc3_config.nbytes, CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE, g_adcstate3.count);
 
     /* Handle unexpected return values */
     if (adc3_config.nbytes < 0)
@@ -567,17 +566,16 @@ int read_int_adc3()
       adc3_config.errval = errno;
       if (adc3_config.errval != EINTR)
       {
-        printf("adc_main: read %s failed: %d\n",
-               g_adcstate3.devpath, adc3_config.errval);
+        //printf("adc_main: read %s failed: %d\n",  g_adcstate3.devpath, adc3_config.errval);
         adc3_config.errval = 3;
         goto errout_with_dev;
       }
 
-      printf("adc_main: Interrupted read...\n");
+      //printf("adc_main: Interrupted read...\n");
     }
     else if (adc3_config.nbytes == 0)
     {
-      printf("adc_main: No data read, Ignoring\n");
+      //printf("adc_main: No data read, Ignoring\n");
     }
 
     /* Print the sample data on successful return */
@@ -586,16 +584,16 @@ int read_int_adc3()
       int nsamples = adc3_config.nbytes / sizeof(struct adc_msg_s);
       if (nsamples * sizeof(struct adc_msg_s) != adc3_config.nbytes)
       {
-        // printf("adc_main: read size=%ld is not a multiple of "
+        // //printf("adc_main: read size=%ld is not a multiple of "
         //        "sample size=%d, Ignoring\n",
         //        (long)adc3_config.nbytes, sizeof(struct adc_msg_s));
       }
       else
       {
-        // printf("Sample:\n");
+        // //printf("Sample:\n");
         // for (int i = 0; i < nsamples; i++)
         // {
-        //   printf("%d: channel: %d value: %" PRId32 "\n",
+        //   //printf("%d: channel: %d value: %" PRId32 "\n",
         //          i, int_adc3_sample[i].am_channel, int_adc3_sample[i].am_data);
         // }
       }
@@ -615,7 +613,7 @@ errout_with_dev:
   close(adc3_config.fd);
 
 errout:
-  printf("Terminating!\n");
+  //printf("Terminating!\n");
   fflush(stdout);
   close(adc3_config.fd);
   return adc3_config.errval;
@@ -633,21 +631,21 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
   fd = open(COM_UART, O_RDWR);
   if (fd < 0)
   {
-    printf("error opening %s\n", dev_path);
+    //printf("error opening %s\n", dev_path);
     return fd;
   }
   else
   {
 
-    printf("Turning on  4V dcdc line..\n");
+    //printf("Turning on  4V dcdc line..\n");
     gpio_write(GPIO_DCDC_4V_EN, 1);
-    printf("Turning on COM 4V line..\n");
+    //printf("Turning on COM 4V line..\n");
     gpio_write(GPIO_COM_4V_EN, 1);
-    printf("Opening uart dev path : %s\n", dev_path);
+    //printf("Opening uart dev path : %s\n", dev_path);
     wr1 = write(fd, data, size);
     if (wr1 < 0)
     {
-      printf("Unable to write data\n");
+      //printf("Unable to write data\n");
       return wr1;
     }
     else
@@ -655,15 +653,15 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
       wr1 = write(fd, data, size);
     }
 
-    // printf("\ndata is %\n", wr1);
+    // //printf("\ndata is %\n", wr1);
     for (int i = 0; i < size; i++)
     {
       {
-        printf("%02x ", data[i]);
+        //printf("%02x ", data[i]);
       }
     }
     sleep(1);
-    printf("\nTurning off  4v DCDC line..\n");
+    //printf("\nTurning off  4v DCDC line..\n");
     int x = 0;
     while (x < 200000)
     {
@@ -672,13 +670,13 @@ int send_data_uart(char *dev_path, uint8_t *data, uint16_t size)
     }
 
     gpio_write(GPIO_DCDC_4V_EN, 0);
-    // printf("Turning off COM 4V line..\n");
+    // //printf("Turning off COM 4V line..\n");
     gpio_write(GPIO_COM_4V_EN, 0);
     ioctl(fd, TCFLSH, 2);
-    printf("flused tx rx buffer\n");
+    //printf("flused tx rx buffer\n");
     ioctl(fd, TCDRN, NULL);
-    printf("drained tx rx buffer\n");
-    printf("\n%d bytes written\nwdog refreshed\n", wr1);
+    //printf("drained tx rx buffer\n");
+    //printf("\n%d bytes written\nwdog refreshed\n", wr1);
     // pet_counter = 0; // TODO rethink on this later internal wdog
   }
   close(fd);
@@ -697,7 +695,7 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
   uint8_t HEADER, MCU_ID;
 
   uint8_t ack[85] = {0x53, 0xac, 0x04, 0x01, 0x62, 0x63, 0x7e, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x70, 0x71, 0x72, 0x1e, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x80, 0x7e};
-  syslog(LOG_DEBUG, "waiting for telecommands from COM\n");
+  syslog(LOG_DEBUG, "_______________________________________\nwaiting for telecommands from COM\n");
   int ret;
   // ret = 1;
   // TODO remove the comment line below and comment the upper line to int ret
@@ -719,7 +717,7 @@ int receive_telecommand_rx(uint8_t *COM_RX_DATA)
       parse_command(COM_RX_DATA);
 
       uint8_t commands[COM_DATA_SIZE] = {11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 0x01, 0x01, 0xca, 0xd1, 0xf3, 0, 0, 0, 0, 0, 0, 00, 0, 0};
-      printf("\n-------------parse command starting-------------\n");
+      //printf("\n-------------parse command starting-------------\n");
     }
 
     return 0; // todo remove this part
@@ -752,7 +750,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
   syslog(LOG_DEBUG, "command received is :");
   for (int i = 0; i < COM_DATA_SIZE; i++)
   {
-    printf("%02X ", COM_RX_DATA[i]);
+    //printf("%02X ", COM_RX_DATA[i]);
   }
   ack[BEACON_DATA_SIZE - 2] = 0x7e;
   ack[BEACON_DATA_SIZE - 1] = 0x7e;
@@ -804,9 +802,9 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
     printf("\n--------------------------------\n---------------------------------\nDigipeater msg is : \n");
     for (int i = 0; i < COM_RX_DATA[2]; i++)
     {
-      printf("%02x ", COM_RX_DATA[i + 22]);
+      //printf("%02x ", COM_RX_DATA[i + 22]);
     }
-    printf("\n---------\n");
+    //printf("\n---------\n");
     // COM_RX_DATA = 0x7e;
     uint8_t digipeater_data[86] = {'\0'};
     struct file file_ptr;
@@ -834,8 +832,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
     }
     return;
   }
-
-
+  
   else if (COM_RX_DATA[0] == 0x72)
   {
     syslog(LOG_DEBUG, "parse command starting\n");
@@ -1138,7 +1135,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
 
               // if (cmd_fd >= 0)
               // {
-              //   printf("THe command uorb advertise has been opened\n");
+              //   //printf("THe command uorb advertise has been opened\n");
               //   int ret = orb_publish(ORB_ID(command), &command_uorb, sizeof(struct command));
               //   if (ret >= 0)
               //   {
@@ -1351,9 +1348,9 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
         uint16_t t = 0x00;
         int adc_instance = 0;
         t = (uint16_t)cmds[3] << 8 | cmds[4];
-        printf("Reservation command received with time:%d minutes", t);
+        //printf("Reservation command received with time:%d minutes", t);
         printf("The command is %02x %02x %02x\n", cmds[0], cmds[1], cmds[2]);
-        if (res.mcu_id >= 3 && res.mcu_id <= 5)
+        if (res.mcu_id >= 3 && res.mcu_id <= 5 && t <= 35000)
         {
           sat_health.rsv_flag += 1;
           critic_flags.RSV_FLAG += 1;
@@ -1435,7 +1432,7 @@ static int COM_TASK(int argc, char *argv[])
     else
     {
 
-      printf("\nThe received timestamp is : %d\n", time1);
+      //printf("\nThe received timestamp is : %d\n", time1);
       // set_time(time1);
     }
     // wdog_fd = open(DEVNAME, O_RDONLY);
@@ -1592,7 +1589,7 @@ int handshake_COM(uint8_t *ack)
   fd = open(COM_UART, O_RDWR);
   if (fd < 0)
   {
-    printf("error opening %s\n", COM_UART);
+    //printf("error opening %s\n", COM_UART);
     usleep(PRINT_DELAY);
     return -1;
   }
@@ -1600,38 +1597,39 @@ int handshake_COM(uint8_t *ack)
   int wr1 = write(fd, data, ACK_DATA_SIZE); // writing handshake data
   if (wr1 < 0)
   {
-    printf("Unable to send data through %d UART", COM_UART);
+    //printf("Unable to send data through %d UART", COM_UART);
     usleep(PRINT_DELAY);
     return -1;
   }
-  // printf("\n%d bytes written\n", wr1);
+  //printf("\n%d bytes written\n", wr1);
   usleep(PRINT_DELAY);
   // ret = read(fd, data1, 10);   //try reading data from UART at once as well
   for (i = 0; i < ACK_DATA_SIZE; i++)
   {
     ret = read(fd, &data1[i], 1);
   }
-  printf("data received from %s \n", COM_UART);
+  //printf("data received from %s \n", COM_UART);
   usleep(PRINT_DELAY);
   for (int i = 0; i < ACK_DATA_SIZE; i++)
   {
     printf(" %x ", data1[i]);
   }
-  printf("\n");
+  //printf("\n");
   usleep(PRINT_DELAY);
   if (data[0] == data1[0] && data[ACK_DATA_SIZE - 2] == data1[ACK_DATA_SIZE - 2])
   {
     printf("\n******Acknowledgement received******\n");
     usleep(PRINT_DELAY);
   }
-  // printf("handshake complete\n");
+  //printf("handshake complete\n");
+  //printf("\n");
   ioctl(fd, TCFLSH, 2);
   ioctl(fd, TCDRN, NULL);
-  // printf("flused tx rx buffer\n");
+  //printf("flused tx rx buffer\n");
   if (close(fd) < 0)
   {
     close(fd);
-    printf("Failed to close COM UART: %s\n", strerror(errno));
+    //printf("Failed to close COM UART: %s\n", strerror(errno));
   }
   sleep(1);
   return 0;
@@ -1655,7 +1653,7 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
   {
   case 0:
     strcpy(devpath, COM_UART);
-    printf("Handshake operation for COM started");
+    //printf("Handshake operation for COM started");
     break;
   case 1:
     strcpy(devpath, ADCS_UART);
@@ -1677,13 +1675,13 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
   for (attempt = 0; attempt < HANDSHAKE_ATTEMPTS; attempt++)
   {
     pet_counter = 0;
-    printf("Opening UART dev path: %s\n", devpath);
+    //printf("Opening UART dev path: %s\n", devpath);
     usleep(PRINT_DELAY);
 
     fd = open(devpath, O_RDWR | O_NONBLOCK); // Open in non-blocking mode
     if (fd < 0)
     {
-      printf("Error opening %s\n", devpath);
+      //printf("Error opening %s\n", devpath);
       usleep(PRINT_DELAY);
       return -1;
     }
@@ -1692,18 +1690,18 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
     ret = write(fd, ack, 7);
     if (ret < 0)
     {
-      printf("Error writing to %s\n", devpath);
+      //printf("Error writing to %s\n", devpath);
       close(fd);
       return -1;
     }
 
-    printf("6 bytes written\n");
+    //printf("6 bytes written\n");
     // for(int i=0;i<6;i++){
-    //   printf("%02x ",ack[i]);
+    //   //printf("%02x ",ack[i]);
     // }
     usleep(500 * 1000); // 50 milli seconds delay
 
-    printf("\n");
+    //printf("\n");
     // Reading data from UART
     FD_ZERO(&read_fds);
     FD_SET(fd, &read_fds);
@@ -1716,7 +1714,7 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
       ret = read(fd, data1, sizeof(data1));
       if (ret < 0)
       {
-        printf("Error reading from %s\n", devpath);
+        //printf("Error reading from %s\n", devpath);
         close(fd);
         return -1;
       }
@@ -1734,18 +1732,18 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
       {
         printf("\n******Acknowledgement received******\n");
         usleep(PRINT_DELAY);
-        printf("Handshake complete\n");
+        //printf("Handshake complete\n");
         usleep(PRINT_DELAY);
         ioctl(fd, TCFLSH, 2);
         ioctl(fd, TCDRN, NULL);
-        printf("Flushed TX/RX buffer\n");
+        //printf("Flushed TX/RX buffer\n");
         close(fd);
         return 0;
       }
     }
     else
     {
-      printf("No data received or select timeout.\n");
+      //printf("No data received or select timeout.\n");
     }
     ioctl(fd, TCFLSH, 2);
     ioctl(fd, TCDRN, NULL);
@@ -1777,7 +1775,7 @@ int gpio_write(uint32_t pin, uint8_t mode)
   gpio_numval.gpio_val = mode;
   if (gpio_numval.gpio_val > 1 || gpio_numval.gpio_num < 0)
   {
-    // syslog(LOG_ERR, "Undefined GPIO pin or set mode selected...\n");
+    syslog(LOG_ERR, "Undefined GPIO pin or set mode selected...\n");
     return -2;
   }
   int ret = write(fd, (const void *)&gpio_numval, sizeof(gpio_config_s));
@@ -1798,11 +1796,11 @@ int receive_data_uart(char *dev_path, uint8_t *data, uint16_t size)
   fd = open_uart(COM_UART); // open(dev_path, O_RDONLY);
   if (fd < 0)
   {
-    printf("Unable to open %s\n", dev_path);
+    //printf("Unable to open %s\n", dev_path);
     return fd;
   }
 
-  printf("\n---------Satellite waiting for command-------------------\nsize of data to receive: %d\n", size);
+  //printf("\n---------Satellite waiting for command-------------------\nsize of data to receive: %d\n", size);
   // ret = read(fd, data, sizeof(data)); // try receiving data without byte by byte method
   for (int i = 0; i < size; i++)
   {
@@ -1810,7 +1808,7 @@ int receive_data_uart(char *dev_path, uint8_t *data, uint16_t size)
   }
   if (ret < 0)
   {
-    printf("Data not received from %s\n", dev_path);
+    //printf("Data not received from %s\n", dev_path);
     return ret;
   }
   else
@@ -1824,22 +1822,22 @@ int receive_data_uart(char *dev_path, uint8_t *data, uint16_t size)
     }
     else
     {
-      printf("Command received from %s\n", dev_path);
+      //printf("Command received from %s\n", dev_path);
       for (int i = 0; i < size; i++)
       {
-        printf("%x ", data[i]);
+        //printf("%x ", data[i]);
       }
     }
   }
-  printf("\n");
+  //printf("\n");
   ioctl(fd, TCFLSH, 2);
   ioctl(fd, TCDRN, NULL);
-  printf("\ndrained and flushed tx rx buffer\n");
+  //printf("\ndrained and flushed tx rx buffer\n");
   // if (close(fd) < 0)
   // {
   //   if (close(fd) < 0)
   //   {
-  //     printf("Failed to close COM UART: %s\n", strerror(errno));
+  //     //printf("Failed to close COM UART: %s\n", strerror(errno));
   //   }
   // }
   close_uart(fd);
@@ -2108,7 +2106,7 @@ void truncate_text_file(struct FILE_OPERATIONS *file_operations)
   }
   if (close(fd) < 0)
   {
-    printf("Failed to close UART: %s\n", strerror(errno));
+    //printf("Failed to close UART: %s\n", strerror(errno));
     close(fd);
   }
   // file_close(&truncate_ptr);check_flag_data
@@ -2141,7 +2139,7 @@ void truncate_text_file(struct FILE_OPERATIONS *file_operations)
     }
     if (close(fd) < 0)
     {
-      printf("Failed to close UART: %s\n", strerror(errno));
+      //printf("Failed to close UART: %s\n", strerror(errno));
       close(fd);
     }
   }
@@ -2152,7 +2150,7 @@ void truncate_text_file(struct FILE_OPERATIONS *file_operations)
 // Storage_manager app
 void track_read_seek_pointer(struct FILE_OPERATIONS *file_pointer, int8_t seek_pointer[16])
 {
-  printf("track read seek pointer called \n");
+  //printf("track read seek pointer called \n");
   // SEEK_POINTER seek_pointer;
   int fd, index = 0;
   struct file fptr;
@@ -2199,7 +2197,7 @@ void track_read_seek_pointer(struct FILE_OPERATIONS *file_pointer, int8_t seek_p
 // STORAGE manager app
 void download_file_from_flash(struct FILE_OPERATIONS *file_operations, uint8_t *data_retrieved, uint8_t size_of_buffer)
 {
-  // printf("Sizzeof data-retrieved is %d %d\n", sizeof(data_retrieved1), strlen(data_retrieved1));
+  // //printf("Sizzeof data-retrieved is %d %d\n", sizeof(data_retrieved1), strlen(data_retrieved1));
   struct file file_ptr;
   int fd = file_open(&file_ptr, file_operations->filepath, O_RDONLY);
   if (fd < 0)
@@ -2215,18 +2213,18 @@ void download_file_from_flash(struct FILE_OPERATIONS *file_operations, uint8_t *
     uint16_t number_of_packets = file_operations->number_of_packets[0] << 8 | file_operations->number_of_packets[1] & 0xff;
     ssize_t read_bytes;
     int size_of_file = file_seek(&file_ptr, 0, SEEK_END);
-    printf("---------------------------------------\n");
-    printf("---------------------------------------\n");
-    printf("Address is %d\n", address);
-    printf("Number of packets is %d\n", number_of_packets);
-    printf("TEXT file is %d", file_operations->select_file);
+    //printf("---------------------------------------\n");
+    //printf("---------------------------------------\n");
+    //printf("Address is %d\n", address);
+    //printf("Number of packets is %d\n", number_of_packets);
+    //printf("TEXT file is %d", file_operations->select_file);
     // number_of_packets =0;
 
-    printf("---------------------------------------\n");
-    printf("---------------------------------------\n");
+    //printf("---------------------------------------\n");
+    //printf("---------------------------------------\n");
 
     int off; //= file_seek(&file_ptr, address, SEEK_SET);
-    printf("\nSize of file is %d %d\n", size_of_file, address);
+    //printf("\nSize of file is %d %d\n", size_of_file, address);
     uint8_t update_address = 0;
     uint32_t readBytes2;
     if (address == 0)
@@ -2266,12 +2264,12 @@ void download_file_from_flash(struct FILE_OPERATIONS *file_operations, uint8_t *
         {
           syslog(LOG_SYSLOG, "Data retrieved from the flash address %d\n", address);
 
-          printf("\n--------------------**************Read size = %zd\n", read_bytes);
-          printf("\n\n--------------------------Data read from flash pkt no :%d  ----\n", loop1 + 1);
+          //printf("\n--------------------**************Read size = %zd\n", read_bytes);
+          //printf("\n\n--------------------------Data read from flash pkt no :%d  ----\n", loop1 + 1);
           for (int j = 0; j < size_of_buffer; j++)
           {
             flash_data[j + 4] = data_retrieved[j];
-            printf("%02x ", data_retrieved[j]); // Print in hexadecimal format
+            //printf("%02x ", data_retrieved[j]); // Print in hexadecimal format
           }
           loop1 += 1;
           flash_data[0] = 0x53;
@@ -2290,7 +2288,7 @@ void download_file_from_flash(struct FILE_OPERATIONS *file_operations, uint8_t *
             flash_data[size_of_file - 1] = '\0';
           }
 
-          // printf("data sent is %s \n", flash_data);
+          // //printf("data sent is %s \n", flash_data);
           send_flash_data(flash_data);
           if (number_of_packets > 0)
             number_of_packets -= 1;
@@ -2324,12 +2322,12 @@ void download_file_from_flash(struct FILE_OPERATIONS *file_operations, uint8_t *
   }
   file_close(&file_ptr);
   // data_retrieved[read_bytes]= '\0';
-  // printf("\n\n--------------------------Data received----\n");
+  // //printf("\n\n--------------------------Data received----\n");
   // for (int j = 0; j < sizeof(data_retrieved); j++)
   // {
-  //   printf("%02x|%c ", data_retrieved[j],data_retrieved1[j]); // Print in hexadecimal format
+  //   //printf("%02x|%c ", data_retrieved[j],data_retrieved1[j]); // Print in hexadecimal format
   // }
-  // printf("\n--------------------**************Size = %zu\n", sizeof(data_retrieved));
+  // //printf("\n--------------------**************Size = %zu\n", sizeof(data_retrieved));
 }
 
 /*
@@ -2353,31 +2351,28 @@ number of packets: may be DNC(0x00,0x00) or number of packets in 2 bytes.
 void perform_file_operations(struct FILE_OPERATIONS *file_operations)
 {
   int data_retrieved[122] = {'\0'};
-  printf("*********************perform file operations has been called******\n");
+  //printf("*********************perform file operations has been called******\n");
 
   switch (file_operations->cmd)
   {
   case 0xca:
     truncate_text_file(file_operations);
-    printf("-----Trucate text file called \n");
+    //printf("-----Trucate text file called \n");
     break;
   case 0x1d:
     FLASH_OPERATION = true;
     MISSION_STATUS.FLASH_OPERATION = true;
-    printf("Turning on  4v dcdc line..\n");
+    //printf("Turning on  4v dcdc line..\n");
     gpio_write(GPIO_DCDC_4V_EN, 1);
-    printf("Turning on COM 4V line..\n");
+    //printf("Turning on COM 4V line..\n");
     gpio_write(GPIO_COM_4V_EN, 1);
     download_file_from_flash(file_operations, data_retrieved, SIZE_OF_DATA_DOWNLOAD);
-    printf("*****Download command received**************\nsize:%d\n***********************\ncmd : %d, select_file:%d, select_flash: %d, rsv_table:%d, filepath:%s,address :%d %d %d %d, number_of packets:%d %d\n",
-           sizeof(data_retrieved), file_operations->cmd, file_operations->select_flash, file_operations->select_file, file_operations->rsv_table[1], file_operations->rsv_table[0], file_operations->filepath,
-           file_operations->address[3], file_operations->address[2], file_operations->address[1], file_operations->address[0],
-           file_operations->number_of_packets[3], file_operations->number_of_packets[2], file_operations->number_of_packets[1], file_operations->number_of_packets[0]);
+    //printf("*****Download command received**************\nsize:%d\n***********************\ncmd : %d, select_file:%d, select_flash: %d, rsv_table:%d, filepath:%s,address :%d %d %d %d, number_of packets:%d %d\n", sizeof(data_retrieved), file_operations->cmd, file_operations->select_flash, file_operations->select_file, file_operations->rsv_table[1], file_operations->rsv_table[0], file_operations->filepath, file_operations->address[3], file_operations->address[2], file_operations->address[1], file_operations->address[0], file_operations->number_of_packets[3], file_operations->number_of_packets[2], file_operations->number_of_packets[1], file_operations->number_of_packets[0]);
 
-    printf("-------Data download function has been called\n");
-    printf("\nTurning off  4v dcdc line..\n");
+    //printf("-------Data download function has been called\n");
+    //printf("\nTurning off  4v dcdc line..\n");
     gpio_write(GPIO_DCDC_4V_EN, 0);
-    printf("\nTurning off COM 4V line..\n");
+    //printf("\nTurning off COM 4V line..\n");
     gpio_write(GPIO_COM_4V_EN, 0);
     MISSION_STATUS.FLASH_OPERATION = false;
     FLASH_OPERATION = false;
@@ -2385,7 +2380,7 @@ void perform_file_operations(struct FILE_OPERATIONS *file_operations)
   default:
     break;
   }
-  printf("\n**************----\nhey filepath is %s\n***********\n", file_operations->filepath);
+  //printf("\n**************----\nhey filepath is %s\n***********\n", file_operations->filepath);
 }
 
 /****************************************************************************
@@ -2428,7 +2423,7 @@ Declaring structure necessary for collecting HK data
 // }
 void alarm_handler(int sig)
 {
-  printf("Alarm triggered!\n");
+  //printf("Alarm triggered!\n");
   critic_flags.RST_COUNT = critic_flags.RST_COUNT + 1;
   // store_flag_data(1,&critic_flags);
   save_critics_flags(&critic_flags);
@@ -2470,7 +2465,7 @@ void rtc_alarm_func(uint16_t time)
 
 void global_reset()
 {
-  printf("\n******Global reset task has started*****\n");
+  //printf("\n******Global reset task has started*****\n");
   // for (;;)
   bool mode = true;
   for (;;)
@@ -2501,7 +2496,7 @@ int create_task(const char *name, int priority, int stack_size, main_t entry)
     {
       return retval;
     }
-    printf("Failed to create %s task. Retry %d/%d\n", name, i + 1, MAX_RETRY_COUNT);
+    //printf("Failed to create %s task. Retry %d/%d\n", name, i + 1, MAX_RETRY_COUNT);
     sleep(1); // Wait before retrying
   }
   return -1;
@@ -2530,7 +2525,7 @@ int main(int argc, FAR char *argv[])
   //   // save_64_bit();
 
   //   // int r = atoi(argv[2]);
-  //   // printf("The data is %d\n",r);
+  //   // //printf("The data is %d\n",r);
   //   // clear_int_flag();
 
   //   // flash_read_operation_uorb();
@@ -2551,16 +2546,16 @@ int main(int argc, FAR char *argv[])
   //     // ptr = read_pointer;
   //     // memcpy(ptr, read_pointer, sizeof(read_pointer));
   //     memcpy(ptr, &read_pointer, 94);
-  //     printf("___________________________________________________________________________________________________\n ");
+  //     //printf("___________________________________________________________________________________________________\n ");
 
   //     for (int i = 0; i < 94; i++)
   //     {
-  //       printf("%d ", ptr[i]);
+  //       //printf("%d ", ptr[i]);
   //     }
 
-  //     printf("___________________________________________________________________________________________________\n ");
+  //     //printf("___________________________________________________________________________________________________\n ");
 
-  //     printf("File size read: %zd bytes\n", t);
+  //     //printf("File size read: %zd bytes\n", t);
 
   //     // Close the file
   //     file_close(&fl1);
@@ -2592,7 +2587,7 @@ int main(int argc, FAR char *argv[])
   //          ((int32_t)temp_var[3]);
 
   //   // Print the recovered value
-  //   printf("Recovered value is %d\n", temp);
+  //   //printf("Recovered value is %d\n", temp);
   // }
 
   /*TODO : REMOVE LATER Independent testing*/
@@ -2605,16 +2600,16 @@ int main(int argc, FAR char *argv[])
     }
     if (critic_flags.ANT_DEP_STAT != DEPLOYED)
     {
-      printf("antenna not deployed\n");
+      //printf("antenna not deployed\n");
     }
     else
     {
-      printf("antenna already deployed\n");
+      //printf("antenna already deployed\n");
     }
-    printf("************************************************\n");
+    //printf("************************************************\n");
     printf("***********S2S commander app************\n");
 
-    // printf("********ANtenna deployement starting************\n");
+    // //printf("********ANtenna deployement starting************\n");
 
     bool g_watchdog_task_started = false;
     bool g_reset_task_started = false;
@@ -2711,10 +2706,10 @@ int main(int argc, FAR char *argv[])
           }
           else
           {
-            printf("Unable to create ADC_TASK_APP task\n");
+            //printf("Unable to create ADC_TASK_APP task\n");
           }
         }
-        printf("************************************************\n");
+        //printf("************************************************\n");
       }
     }
   }
@@ -2738,7 +2733,7 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
   {
 
   case 1:
-    printf("turning ADCS mission state: %d\n", state);
+    //printf("turning ADCS mission state: %d\n", state);
     gpio_write(GPIO_MSN1_EM_EN, state);
     sleep(1);
     gpio_write(GPIO_MSN_5V_EN, state);
@@ -2747,7 +2742,7 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
     MISSION_STATUS.ADCS_MISSION = state;
     break;
   case 2:
-    printf("Turning CAM mission state: %d\n", state);
+    //printf("Turning CAM mission state: %d\n", state);
     sleep(1);
     gpio_write(GPIO_MSN2_EN, state);
     gpio_write(GPIO_MSN_5V_EN, state);
@@ -2755,13 +2750,13 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
     MISSION_STATUS.CAM_MISSION = state;
     break;
   case 3:
-    printf("Turning EPDM mission state: %d\n", state);
+    //printf("Turning EPDM mission state: %d\n", state);
     gpio_write(GPIO_MSN3_EN, state);
     MISSION_STATUS.EPDM_MISSION = state;
     sleep(1);
     break;
   default:
-    printf("Wrong subsystem selected\n");
+    //printf("Wrong subsystem selected\n");
     break;
   }
 
@@ -2783,9 +2778,9 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
 // //COM
 void send_flash_data(uint8_t *beacon_data)
 {
-  printf("Turning on 4v dcdc line..\n");
+  //printf("Turning on 4v dcdc line..\n");
   gpio_write(GPIO_DCDC_4V_EN, 1);
-  printf("Turning on COM 4V line..\n");
+  //printf("Turning on COM 4V line..\n");
   gpio_write(GPIO_COM_4V_EN, 1);
   // pthread_mutex_lock(&uart_mutex);
 
@@ -2793,7 +2788,7 @@ void send_flash_data(uint8_t *beacon_data)
   int ret2;
   if (fd < 0)
   {
-    printf("unable to open: %s\n", COM_UART);
+    //printf("unable to open: %s\n", COM_UART);
     return -1;
   }
   else
@@ -2804,7 +2799,7 @@ void send_flash_data(uint8_t *beacon_data)
     usleep(10000);
     if (ret < 0)
     {
-      printf("unable to send data\n");
+      //printf("unable to send data\n");
       for (int i = 0; i < BEACON_DATA_SIZE - 1; i++)
       {
         ret = write(fd, &beacon_data[i], 1);
@@ -2813,7 +2808,7 @@ void send_flash_data(uint8_t *beacon_data)
       }
       if (ret < 0)
       {
-        printf("Unable to send data through byte method..\n");
+        //printf("Unable to send data through byte method..\n");
         return -1;
       }
       ret2 = read(fd, ack_com, sizeof(ack_com));
@@ -2824,14 +2819,15 @@ void send_flash_data(uint8_t *beacon_data)
 
       if (ret2 >= 0)
       {
-        printf("Flash data sent to COM successfully\n");
-        printf("data is:::::::: %s\n", beacon_data);
+        printf("--------------------------------------Data sent-------------------------------- %s\n", beacon_data);
         for (int i = 0; i < BEACON_DATA_SIZE; i++)
         {
-          // ret = write(fd, &beacon_data[i], 1);
+          ret = write(fd, &beacon_data[i], 1);
           printf("%02x ", beacon_data[i]);
-          // usleep(1000);
+          usleep(1000);
         }
+        printf("Flash data sent to COM successfully\n");
+
       }
       else
       {
@@ -2839,7 +2835,7 @@ void send_flash_data(uint8_t *beacon_data)
         usleep(10000);
         if (ret < 0)
         {
-          printf("unable to send data\n");
+          //printf("unable to send data\n");
           for (int i = 0; i < BEACON_DATA_SIZE; i++)
           {
             ret = write(fd, &beacon_data[i], 1);
@@ -2847,7 +2843,7 @@ void send_flash_data(uint8_t *beacon_data)
           }
           if (ret < 0)
           {
-            printf("Unable to send data through byte method..\n");
+            //printf("Unable to send data through byte method..\n");
             return -1;
           }
         }
@@ -2855,9 +2851,9 @@ void send_flash_data(uint8_t *beacon_data)
     }
   }
   sleep(1);
-  printf("\nTurning off 4v dcdc line..\n");
+  //printf("\nTurning off 4v dcdc line..\n");
   gpio_write(GPIO_DCDC_4V_EN, 0);
-  printf("\nTurning off COM 4V line..\n");
+  //printf("\nTurning off COM 4V line..\n");
   gpio_write(GPIO_COM_4V_EN, 0);
   close(fd);
   // pthread_mutex_unlock(&uart_mutex);
@@ -2898,7 +2894,7 @@ int send_beacon_data()
         print_beacon_b();
         break;
       default:
-        printf("wrong case selected\n");
+        //printf("wrong case selected\n");
         return -1;
         break;
       }
@@ -2908,7 +2904,7 @@ int send_beacon_data()
       beacon_data[85] = '\0';
       int fd;
 
-      printf("beacon data size %d\n", sizeof(beacon_data));
+      //printf("beacon data size %d\n", sizeof(beacon_data));
       send_data_uart(COM_UART, beacon_data, sizeof(beacon_data));
       uint8_t x[43], ret2;
       save_64_bit();
@@ -2924,10 +2920,10 @@ int send_beacon_data()
         printf("\n-------------beacon 2 sent-------------\n");
         digipeating = 1;
       }
-      // printf("Beacon Type %d sequence complete\n", beacon_type);
+      // //printf("Beacon Type %d sequence complete\n", beacon_type);
       // print_seek_pointer();
       beacon_type = !beacon_type;
-      // print_satellite_health_data(&sat_health);
+      print_satellite_health_data(&sat_health);
       toggle_wdg();
       store_flag_data(&critic_flags, timer);
 
@@ -2977,7 +2973,7 @@ void Antenna_Deployment(int argc, char *argv[])
       gpio_write(GPIO_UNREG_EN, false);
       gpio_write(GPIO_BURNER_EN, false);
       sleep(10);
-      printf("%d Antenna deployment sequence completed\n", j);
+      printf("%d Antenna deployment sequence completed\n\n", j);
     }
 
     // critic_flags.ANT_DEP_STAT = DEPLOYED;
@@ -3005,7 +3001,7 @@ void Antenna_Deployment(int argc, char *argv[])
 
     sat_health.ant_dep_stat = critic_flags.ANT_DEP_STAT;
     sat_health.ul_state = critic_flags.UL_STATE;
-    printf("Updated flag data...\n");
+    //printf("Updated flag data...\n");
   }
   rd_flags_int.RST_COUNT += 1;
   critic_flags.RST_COUNT += 1;
@@ -3016,111 +3012,6 @@ void Antenna_Deployment(int argc, char *argv[])
   load_critics_flags(&rd_flags_int);
   // print_critical_flag_data(&rd_flags_int);
 }
-
-// void adcs_operation(uint8_t mode)
-// {
-//   if (MISSION_STATUS.ADCS_MISSION == false && MISSION_STATUS.EPDM_MISSION == false && MISSION_STATUS.CAM_MISSION == false)
-//   {
-//     MISSION_STATUS.FLASH_OPERATION == false;
-//     MISSION_STATUS.ADCS_MISSION = true;
-//     sat_health.msn_flag = 0x21;
-//     struct file file_pointer, file_pointer2;
-
-//     int fd = file_open(&file_pointer, "/mnt/fs/sfm/mtd_mainstorage/adcs.txt", O_RDONLY);
-//     uint32_t initial_count;
-//     if (fd >= 0)
-//       initial_count = file_seek(&file_pointer, 0, SEEK_END);
-//     file_close(&file_pointer);
-
-//     int hand;
-//     // turn_msn_on_off(1, 0);
-//     sleep(1);
-//     turn_msn_on_off(1, 1);
-//     sleep(1);
-//     uint8_t data2[7] = {0x53, 0x0a, 0x0d, 0x0c, 0x01, 0x7e};
-//     data2[4] = mode;
-//     pet_counter = 0;
-
-//     // do
-//     // {
-//     //   hand = handshake_MSN_ADCS(1, data);
-//     //   // hand = handshake_MSN(2, data);
-
-//     // } while (hand < 0);
-//     hand = 0;
-//     uint8_t ret;
-//     pet_counter = 0;
-
-//     sleep(1);
-
-//     do
-//     {
-//       hand = handshake_MSN_ADCS(1, data2);
-//     } while (hand < 0);
-//     // sleep(2);
-//     int p = 0;
-//     uint8_t data3, data4;
-//     uint32_t counter1 = 0;
-//     uint8_t cam[1200] = {'\0'};
-//     // memset(cam,'\0',sizeof(cam));
-//     printf("**************Starting data receive*************\n");
-//     int fd2 = open(ADCS_UART, O_RDONLY);
-//     int t;
-
-//     while (1)
-//     {
-//       data4 = data3;
-//       ret = read(fd2, &data3, 1);
-//       printf("%02x ", data3);
-//       if (counter1 % 180 == 0)
-//       {
-//         printf("\n");
-//         pet_counter = 0;
-//       }
-//       cam[counter1] = data3;
-//       if (data4 == 0xff && data3 == 0xd9)
-//       {
-//         printf("%02x ", data3);
-
-//         pet_counter = 0;
-//         break;
-//       }
-//       // if (counter1 > t*6)
-//       //   break;
-//       // if(data4== 0xff);
-//       counter1++;
-//       // break;
-//     }
-//     // cam[counter1]='\0';
-//     close(fd2);
-//     pet_counter = 0;
-//     sleep(1);
-//     turn_msn_on_off(1, 0);
-//     MISSION_STATUS.ADCS_MISSION = false;
-//     MISSION_STATUS.FLASH_OPERATION = false;
-//     sat_health.msn_flag = 0x11;
-//     usleep(10000);
-//     syslog(LOG_DEBUG, "T0tal data received %d\n ADCS operation success\n", counter1);
-//     sleep(1);
-//     cam[counter1++] = 0xff;
-//     cam[counter1++] = 0xd9;
-//     cam[counter1++] = '\0';
-//     sleep(1);
-//     mission_data("/mtd_mainstorage/adcs.txt", &cam, counter1);
-//     mission_data("/mtd_mission/adcs.txt", &cam, counter1);
-//     // fd = file_open(&file_pointer, "/mnt/fs/mfm/mtd_mainstorage/adcs.txt", O_CREAT | O_RDWR | O_APPEND);
-//     // file_write(&file_pointer, cam, strlen(cam));
-//     // file_close(&file_pointer);
-//     // close(fd);
-//     // fd = file_open(&file_pointer, "/mnt/fs/mfm/mtd_mission/adcs.txt", O_CREAT | O_RDWR | O_APPEND);
-//     // file_write(&file_pointer, cam, strlen(cam));
-//     // file_close(&file_pointer);
-//     // close(fd);
-//     uint8_t ack[85] = {0x53, 0xac, 0x04, 0x01, 0x05, 0x05, 0x7e, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x70, 0x71, 0x72, 0x1e, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x80, 0x7e};
-//     sleep(1);
-//     send_data_uart(COM_UART, ack, sizeof(ack));
-//   }
-// }
 
 void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 {
@@ -3148,7 +3039,6 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   uint8_t data_received[35002]; // = (uint8_t *)malloc(BUFFER_SIZE);
   if (!data_received)
   {
-    printf("Memory allocation failed!\n");
     return;
   }
 
@@ -3170,13 +3060,12 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   case 3:
     printf("\n________EPDM MISSION OPERATION SELECTED________\n");
     MISSION_STATUS.EPDM_MISSION = true;
-    strcpy(file_name, "/epdmNew.txt");
+    strcpy(file_name, "/epdm.txt");
     strcpy(dev_path, EPDM_UART);
     fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
     break;
   default:
     printf("Invalid mission type\n");
-    free(data_received);
     return;
   }
 
@@ -3197,7 +3086,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 
   if (hand < 0)
   {
-    printf("Handshake failed\n");
+    //printf("Handshake failed\n");
     // free(data_received);
     turn_msn_on_off(mission, 0);
     return;
@@ -3206,8 +3095,8 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   int fd2 = open(dev_path, O_RDWR);
   if (fd2 < 0)
   {
-    printf("Failed to open device: %s\n", dev_path);
-    free(data_received);
+    //printf("Failed to open device: %s\n", dev_path);
+    // free(data_received);
     turn_msn_on_off(mission, 0);
     return;
   }
@@ -3244,7 +3133,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
           {
             if (file_write(&file_pointer, data_received, counter) > 10)
             {
-              printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
+              printf("\nData has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
             }
             memset(data_received, '\0', sizeof(data_received));
           }
@@ -3260,7 +3149,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
       }
       else
       {
-        printf("Buffer overflow prevented!\n");
+        //printf("Buffer overflow prevented!\n");
         break;
       }
       counter++;
@@ -3310,9 +3199,12 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
                 else
                 {
                   if (strcmp(file_name, "/cam_rgb.txt") == 0)
+                  {
                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_rgb");
-                  else
+                  }
+                  else{
                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_nir");
+                  }
                 }
                 struct file msn_flag_pointer;
                 int fd_log = open_file_flash(&msn_flag_pointer, MFM_MSN_STRPATH, log_path, O_CREAT | O_RDWR | O_APPEND);
@@ -3395,7 +3287,7 @@ void int_adc1_data_convert(float *temp_buff)
 
   // Calculate ADC_SUP using a specific channel's average raw value
   float ADC_SUP = 1.2 * 4095 / averageRaw[11];
-  // printf("ADC i=11 value is %d & ADC_SUP is %f\n", averageRaw[11], ADC_SUP);
+  // //printf("ADC i=11 value is %d & ADC_SUP is %f\n", averageRaw[11], ADC_SUP);
   memset(temp_buff, '\0', sizeof(temp_buff));
   // Iterate through the ADC channels to convert raw data to voltage and current
   for (int i = 0; i < CONFIG_CUSTOM_APPS_CUBUS_INT_ADC1_GROUPSIZE; i++)
@@ -3408,7 +3300,7 @@ void int_adc1_data_convert(float *temp_buff)
     {
       // Battery voltage conversion (specific calculation for channel 4)
       temp_buff[i] = (int_adc1_v[i] * (1100 + 931)) / 931;
-      // printf("***********\nBatt voltage: temp_buff[%d] %f******\n", i, temp_buff[i]);
+      // //printf("***********\nBatt voltage: temp_buff[%d] %f******\n", i, temp_buff[i]);
     }
     else if (int_adc1_sample[i].am_channel == 0 || int_adc1_sample[i].am_channel == 9 || int_adc1_sample[i].am_channel == 12)
     {
@@ -3427,14 +3319,14 @@ void int_adc1_data_convert(float *temp_buff)
     // Print the converted values for debugging
     // if (int_adc1_sample[i].am_channel == 18)  // ADC_CHANNEL_18
     //   {
-    //       printf("Temperature Sensor Raw Value: %d\n", int_adc1_sample[i].am_data);
+    //       //printf("Temperature Sensor Raw Value: %d\n", int_adc1_sample[i].am_data);
     //   }
 
-    // printf("Channel no:%d Voltage: %f  Current: %f\n", int_adc1_sample[i].am_channel, int_adc1_v[i], int_adc1_c[i]);
-    // printf("Raw Data: %d \n",);
-    // printf("Channel no:%d Raw Data: %d Voltage: %f  Current: %f\n", int_adc1_sample[i].am_channel,int_adc1_sample[i].am_data, int_adc1_v[i], int_adc1_c[i]);
+    // //printf("Channel no:%d Voltage: %f  Current: %f\n", int_adc1_sample[i].am_channel, int_adc1_v[i], int_adc1_c[i]);
+    // //printf("Raw Data: %d \n",);
+    // //printf("Channel no:%d Raw Data: %d Voltage: %f  Current: %f\n", int_adc1_sample[i].am_channel,int_adc1_sample[i].am_data, int_adc1_v[i], int_adc1_c[i]);
   }
-  // printf("\n****************************************************************************\n");
+  // //printf("\n****************************************************************************\n");
   sleep(5);
 }
 
@@ -3457,7 +3349,7 @@ void int_adc3_data_convert(float *temp_buff_1)
   {
     temp_buff_1[i] = (float)int_adc3_sample[i].am_data * 3.3 / 4095;
     temp_buff_1[i] = (float)(temp_buff_1[i] / (2 * RES_LMP8640 * GAIN_LMP8640)) * 1000;
-    // printf("THe value of adc3_data is %f\n", temp_buff_1[i]);
+    // //printf("THe value of adc3_data is %f\n", temp_buff_1[i]);
   }
 }
 #endif
@@ -3563,10 +3455,10 @@ int ads7953_receiver(int argc, FAR char *argv[])
 
   while (1)
   {
-    // printf("----------------------------------------\n");
-    // printf("Polling\n");
+    // //printf("----------------------------------------\n");
+    // //printf("Polling\n");
 
-    // printf("----------------------------------------\n");
+    // //printf("----------------------------------------\n");
 
     // Poll for new data
     int poll_ret = poll(fds, 3, 1000);
@@ -3574,12 +3466,16 @@ int ads7953_receiver(int argc, FAR char *argv[])
     if (poll_ret == 0)
     {
       printf("Poll timeout\n");
+      gpio_write(GPIO_GBL_RST, 1);
+
       continue;
     }
 
     if (poll_ret < 0)
     {
       printf("Poll error: %d\n", errno);
+      gpio_write(GPIO_GBL_RST, 1);
+      
       continue;
     }
 
@@ -3621,17 +3517,17 @@ int ads7953_receiver(int argc, FAR char *argv[])
 
       // int16_t ant_temp_out;
 
-      // printf("sat_temp_msg:\n");
-      // printf("********************************************\n");
-      // printf("  timestamp: %" PRIu64 " | ", temp_msg.timestamp);
-      // printf("  batt_temp: %.4f \n ", temp_msg.batt_temp);
-      // printf("  temp_bpb: %.4f \n ", temp_msg.temp_bpb);
-      // printf("  temp_ant: %.4f \n", temp_msg.temp_ant);
-      // printf("  temp_z_pos: %.4f\n", temp_msg.temp_z_pos);
-      // printf("  temp_5: %.4f\n", temp_msg.temp_5);
-      // printf("  temp_4: %.4f\n", temp_msg.temp_4);
-      // printf("  temp_3: %.4f\n", temp_msg.temp_3);
-      // printf("  temp_2: %.4f\n", temp_msg.temp_2);
+      // //printf("sat_temp_msg:\n");
+      // //printf("********************************************\n");
+      // //printf("  timestamp: %" PRIu64 " | ", temp_msg.timestamp);
+      // //printf("  batt_temp: %.4f \n ", temp_msg.batt_temp);
+      // //printf("  temp_bpb: %.4f \n ", temp_msg.temp_bpb);
+      // //printf("  temp_ant: %.4f \n", temp_msg.temp_ant);
+      // //printf("  temp_z_pos: %.4f\n", temp_msg.temp_z_pos);
+      // //printf("  temp_5: %.4f\n", temp_msg.temp_5);
+      // //printf("  temp_4: %.4f\n", temp_msg.temp_4);
+      // //printf("  temp_3: %.4f\n", temp_msg.temp_3);
+      // //printf("  temp_2: %.4f\n", temp_msg.temp_2);
     }
 
     // Check for sat_volts_msg updates
@@ -3646,15 +3542,15 @@ int ads7953_receiver(int argc, FAR char *argv[])
       sat_health.sol_p5_v = (int16_t)(1000 * volts_msg.volt_sp5);
       sat_health.sol_t_v = (int16_t)(1000 * volts_msg.volt_SolT);
       sat_health.raw_v = (int16_t)(1000 * volts_msg.volt_raw);
-      // printf("sat_volts_msg:\n");
-      // printf("  timestamp: %" PRIu64 "\n", volts_msg.timestamp);
-      // printf("  volt_SolT: %.4f V\n", volts_msg.volt_SolT);
-      // printf("  volt_raw: %.4f V\n", volts_msg.volt_raw);
-      // printf("  volt_sp5: %.4f V\n", volts_msg.volt_sp5);
-      // printf("  volt_sp4: %.4f V\n", volts_msg.volt_sp4);
-      // printf("  volt_sp3: %.4f V\n", volts_msg.volt_sp3);
-      // printf("  volt_sp1: %.4f V\n", volts_msg.volt_sp1);
-      // printf("  volt_sp2: %.4f V\n", volts_msg.volt_sp2);
+      // //printf("sat_volts_msg:\n");
+      // //printf("  timestamp: %" PRIu64 "\n", volts_msg.timestamp);
+      // //printf("  volt_SolT: %.4f V\n", volts_msg.volt_SolT);
+      // //printf("  volt_raw: %.4f V\n", volts_msg.volt_raw);
+      // //printf("  volt_sp5: %.4f V\n", volts_msg.volt_sp5);
+      // //printf("  volt_sp4: %.4f V\n", volts_msg.volt_sp4);
+      // //printf("  volt_sp3: %.4f V\n", volts_msg.volt_sp3);
+      // //printf("  volt_sp1: %.4f V\n", volts_msg.volt_sp1);
+      // //printf("  volt_sp2: %.4f V\n", volts_msg.volt_sp2);
     }
 
     // usleep(500000);
@@ -3819,54 +3715,54 @@ void subscribe_and_retrieve_data(void)
 }
 void print_beacon_a()
 {
-  printf("-------------------------------------------------------\nHEAD: 0x%02X\n", s2s_beacon_type_a.HEAD);
-  printf("TYPE: %d\n", s2s_beacon_type_a.TYPE);
-  printf("TIM_DAY: %d\n", s2s_beacon_type_a.TIM_DAY);
-  printf("TIM_HOUR: %d\n", s2s_beacon_type_a.TIM_HOUR);
-  printf("BAT_V: %d\n", s2s_beacon_type_a.BAT_V);
-  printf("BAT_C: %d\n", s2s_beacon_type_a.BAT_C);
-  printf("BAT_T: %d\n", s2s_beacon_type_a.BAT_T);
-  printf("RAW_C: %d\n", s2s_beacon_type_a.RAW_C);
-  printf("SOL_TOT_V: %d\n", s2s_beacon_type_a.SOL_TOT_V);
-  printf("SOL_TOT_C: %d\n", s2s_beacon_type_a.SOL_TOT_C);
-  printf("-------------------------------------------------------\n");
+  //printf("-------------------------------------------------------\nHEAD: 0x%02X\n", s2s_beacon_type_a.HEAD);
+  //printf("TYPE: %d\n", s2s_beacon_type_a.TYPE);
+  //printf("TIM_DAY: %d\n", s2s_beacon_type_a.TIM_DAY);
+  //printf("TIM_HOUR: %d\n", s2s_beacon_type_a.TIM_HOUR);
+  //printf("BAT_V: %d\n", s2s_beacon_type_a.BAT_V);
+  //printf("BAT_C: %d\n", s2s_beacon_type_a.BAT_C);
+  //printf("BAT_T: %d\n", s2s_beacon_type_a.BAT_T);
+  //printf("RAW_C: %d\n", s2s_beacon_type_a.RAW_C);
+  //printf("SOL_TOT_V: %d\n", s2s_beacon_type_a.SOL_TOT_V);
+  //printf("SOL_TOT_C: %d\n", s2s_beacon_type_a.SOL_TOT_C);
+  //printf("-------------------------------------------------------\n");
 }
 void print_beacon_b()
 {
-  printf("---- Beacon B Data ----\n");
-  printf("HEAD: 0x%02X\n", s2s_beacon_type_b.HEAD);
-  printf("TYPE: 0x%02X\n", s2s_beacon_type_b.TYPE);
-  printf("TIM_DAY: 0x%02X\n", s2s_beacon_type_b.TIM_DAY);
+  //printf("---- Beacon B Data ----\n");
+  //printf("HEAD: 0x%02X\n", s2s_beacon_type_b.HEAD);
+  //printf("TYPE: 0x%02X\n", s2s_beacon_type_b.TYPE);
+  //printf("TIM_DAY: 0x%02X\n", s2s_beacon_type_b.TIM_DAY);
 
-  printf("\nSolar Panel Voltages:\n");
-  printf("  SOL_P1_V: %d mV\n", s2s_beacon_type_b.SOL_P1_V);
-  printf("  SOL_P2_V: %d mV\n", s2s_beacon_type_b.SOL_P2_V);
-  printf("  SOL_P3_V: %d mV\n", s2s_beacon_type_b.SOL_P3_V);
-  printf("  SOL_P4_V: %d mV\n", s2s_beacon_type_b.SOL_P4_V);
+  //printf("\nSolar Panel Voltages:\n");
+  //printf("  SOL_P1_V: %d mV\n", s2s_beacon_type_b.SOL_P1_V);
+  //printf("  SOL_P2_V: %d mV\n", s2s_beacon_type_b.SOL_P2_V);
+  //printf("  SOL_P3_V: %d mV\n", s2s_beacon_type_b.SOL_P3_V);
+  //printf("  SOL_P4_V: %d mV\n", s2s_beacon_type_b.SOL_P4_V);
 
-  printf("\nSolar Panel Currents:\n");
-  printf("  SOL_P1_C: %d mA\n", s2s_beacon_type_b.SOL_P1_C);
-  printf("  SOL_P2_C: %d mA\n", s2s_beacon_type_b.SOL_P2_C);
-  printf("  SOL_P3_C: %d mA\n", s2s_beacon_type_b.SOL_P3_C);
-  printf("  SOL_P4_C: %d mA\n", s2s_beacon_type_b.SOL_P4_C);
+  //printf("\nSolar Panel Currents:\n");
+  //printf("  SOL_P1_C: %d mA\n", s2s_beacon_type_b.SOL_P1_C);
+  //printf("  SOL_P2_C: %d mA\n", s2s_beacon_type_b.SOL_P2_C);
+  //printf("  SOL_P3_C: %d mA\n", s2s_beacon_type_b.SOL_P3_C);
+  //printf("  SOL_P4_C: %d mA\n", s2s_beacon_type_b.SOL_P4_C);
 
-  printf("\nGyroscope Data (in deg/s * 100):\n");
-  printf("  GYRO_X: %d deg/s\n", (s2s_beacon_type_b.GYRO_X));
-  printf("  GYRO_Y: %d deg/s\n", (s2s_beacon_type_b.GYRO_Y));
-  printf("  GYRO_Z: %d deg/s\n", (s2s_beacon_type_b.GYRO_Z));
+  //printf("\nGyroscope Data (in deg/s * 100):\n");
+  //printf("  GYRO_X: %d deg/s\n", (s2s_beacon_type_b.GYRO_X));
+  //printf("  GYRO_Y: %d deg/s\n", (s2s_beacon_type_b.GYRO_Y));
+  //printf("  GYRO_Z: %d deg/s\n", (s2s_beacon_type_b.GYRO_Z));
 
-  printf("\nAccelerometer Data (in m/s^2 * 100):\n");
-  printf("  ACCL_X: %d\n", (s2s_beacon_type_b.ACCL_X));
-  printf("  ACCL_Y: %d\n", (s2s_beacon_type_b.ACCL_Y));
-  printf("  ACCL_Z: %d\n", (s2s_beacon_type_b.ACCL_Z));
+  //printf("\nAccelerometer Data (in m/s^2 * 100):\n");
+  //printf("  ACCL_X: %d\n", (s2s_beacon_type_b.ACCL_X));
+  //printf("  ACCL_Y: %d\n", (s2s_beacon_type_b.ACCL_Y));
+  //printf("  ACCL_Z: %d\n", (s2s_beacon_type_b.ACCL_Z));
 
-  printf("\nMagnetometer Data (in uT):\n");
-  printf("  MAG_X: %d uT\n", (s2s_beacon_type_b.MAG_X));
-  printf("  MAG_Y: %d uT\n", (s2s_beacon_type_b.MAG_Y));
-  printf("  MAG_Z: %d uT\n", (s2s_beacon_type_b.MAG_Z));
+  //printf("\nMagnetometer Data (in uT):\n");
+  //printf("  MAG_X: %d uT\n", (s2s_beacon_type_b.MAG_X));
+  //printf("  MAG_Y: %d uT\n", (s2s_beacon_type_b.MAG_Y));
+  //printf("  MAG_Z: %d uT\n", (s2s_beacon_type_b.MAG_Z));
 
-  printf("\nChecksum CRC: 0x%02X\n", s2s_beacon_type_b.CHK_CRC);
-  printf("------------------------\n");
+  //printf("\nChecksum CRC: 0x%02X\n", s2s_beacon_type_b.CHK_CRC);
+  //printf("------------------------\n");
 }
 
 void handle_reservation_command(int fd_reservation, struct reservation_command res)
@@ -3911,9 +3807,9 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
       RSV_CMD[17] != 0x00 && RSV_CMD[18] != 0x00 &&
       timer >= TO_EXECUTE.latest_time + timer_counter)
   {
-    printf("----------------------------------------------------\n");
-    printf("Time elapsed %d time remaining %d\n", timer, TO_EXECUTE.latest_time + timer_counter);
-    printf("----------------------------------------------------\n");
+    //printf("----------------------------------------------------\n");
+    //printf("Time elapsed %d time remaining %d\n", timer, TO_EXECUTE.latest_time + timer_counter);
+    //printf("----------------------------------------------------\n");
 
     parse_command(&RSV_CMD);
     memset(&TO_EXECUTE, 0, sizeof(TO_EXECUTE));
@@ -3928,7 +3824,7 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
     int fd = open_file_flash(&file_ptr, MFM_MAIN_STRPATH, "/reservation_command.txt", O_RDONLY);
     if (fd < 0)
     {
-      printf("Error: Failed to open reservation command file\n");
+      //printf("Error: Failed to open reservation command file\n");
       // return;
     }
     else
@@ -3972,7 +3868,7 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
       }
       else
       {
-        printf("Error: Failed to open file for writing\n");
+        //printf("Error: Failed to open file for writing\n");
       }
       if (critic_flags.RSV_FLAG > 0)
       {
@@ -4009,7 +3905,7 @@ void set_time(uint32_t received_timestamp)
   // Format and print the time
   char buffer[80];
   strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm_info);
-  printf("Current time: %s\n", buffer);
+  //printf("Current time: %s\n", buffer);
 }
 
 void save_64_bit()
@@ -4023,7 +3919,7 @@ void save_64_bit()
     int tt = file_write(&file1, &test, sizeof(test));
     if (tt > 0)
     {
-      printf("The time data has been updated accprdingly. %d\n", tt);
+      //printf("The time data has been updated accprdingly. %d\n", tt);
     }
     file_close(&file1);
   }
@@ -4038,7 +3934,7 @@ uint64_t get_time_data()
   if (t >= 0)
   {
     file_read(&file1, &test, sizeof(test));
-    printf("the latest size is %d data is %d\n", t, test);
+    //printf("the latest size is %d data is %d\n", t, test);
     return test;
   }
   file_close(&file1);
@@ -4067,8 +3963,8 @@ void flash_read_operation_uorb()
       else
       {
         // syslog(LOG_DEBUG, "Reservation Command Orb Published\n");
-        // printf("----Sent data : %d %d %d %d\n", command_uorb.timestamp, command_uorb.command, command_uorb.packet_number, command_uorb.num_of_packets);
-        // printf("\nData sent :\nTimestamp : %d \nPath: %s \nAddress:%d \nCommand:%d \nPacket_type:%d \n",
+        // //printf("----Sent data : %d %d %d %d\n", command_uorb.timestamp, command_uorb.command, command_uorb.packet_number, command_uorb.num_of_packets);
+        // //printf("\nData sent :\nTimestamp : %d \nPath: %s \nAddress:%d \nCommand:%d \nPacket_type:%d \n",
         //        command_uorb.timestamp,
         //        command_uorb.path,
         //        command_uorb.command,
@@ -4098,8 +3994,7 @@ void flash_operation_data(uint16_t loop)
       orb_copy(ORB_ID(flash_operation), flash_fd, &flash);
 
       // Print the received flash operation data
-      printf("\nUORB DATA\nTimestamp: %llu \nPacket_Type: %d\nPacket Number: %d\n",
-             flash.timestamp, flash.packet_type, flash.packet_number);
+      //printf("\nUORB DATA\nTimestamp: %llu \nPacket_Type: %d\nPacket Number: %d\n", flash.timestamp, flash.packet_type, flash.packet_number);
       if (count < 0)
       {
         count++;
@@ -4107,7 +4002,7 @@ void flash_operation_data(uint16_t loop)
       }
       for (int i = 0; i < 80; i++)
       {
-        // printf("%02x ", flash.data[i]);
+        // //printf("%02x ", flash.data[i]);
         beacon_data[i + 4] = flash.data[i];
       }
       beacon_data[0] = 83;
@@ -4117,7 +4012,7 @@ void flash_operation_data(uint16_t loop)
       beacon_data[BEACON_DATA_SIZE - 2] = 0x7e;
       beacon_data[BEACON_DATA_SIZE - 1] = '\0';
       send_flash_data(beacon_data);
-      printf("\n------------------------------------\n");
+      //printf("\n------------------------------------\n");
 
       loop--;
       start_time = time(NULL);
@@ -4125,14 +4020,14 @@ void flash_operation_data(uint16_t loop)
     stop_time = time(NULL);
 
     sleep(1);
-    // usleep(1000000);
+    // usleep(100000);
     FLASH_UORB_RESPONDING = true;
-    if (stop_time - start_time > 3)
+    if (stop_time - start_time > 2)
     {
       FLASH_UORB_RESPONDING = false;
       break;
     }
-    // printf("the value of counter is %d\n",loop);
+    // //printf("the value of counter is %d\n",loop);
   } while (loop >= 0 && loop < 65505);
 
   orb_unsubscribe(flash_fd);
@@ -4160,7 +4055,7 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
     int fd = open_file_flash(&fptr, MFM_MAIN_STRPATH, "/reservation_command.txt", O_RDONLY);
     if (fd < 0)
     {
-      printf("Error: Failed to open reservation command file\n");
+      //printf("Error: Failed to open reservation command file\n");
       memset(res, 0, sizeof(struct reservation_command));
       // *timer = 0;
       // pthread_mutex_unlock(&main_flash_mutex);
@@ -4171,7 +4066,7 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
       uint32_t temp_time = 0;
 
       uint32_t file_size = file_seek(&fptr, 0, SEEK_END);
-      printf("The file_size is %d\n", file_size);
+      //printf("The file_size is %d\n", file_size);
 
       if (file_size == 0 || file_size < sizeof(struct reservation_command))
       {
@@ -4184,8 +4079,7 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
         file_read(&fptr, res, sizeof(struct reservation_command));
         res->latest_time = ((uint32_t)res->cmd[3] << 8 | res->cmd[4]) * 60;
         // if(timer_status == false)
-        printf("Read the data as: MCU ID: %02x, CMD: %02x %02x %02x %02x %02x %d\n",
-               res->mcu_id, res->cmd[0], res->cmd[1], res->cmd[2], res->cmd[3], res->cmd[4], res->latest_time);
+        //printf("Read the data as: MCU ID: %02x, CMD: %02x %02x %02x %02x %02x %d\n", res->mcu_id, res->cmd[0], res->cmd[1], res->cmd[2], res->cmd[3], res->cmd[4], res->latest_time);
         // *timer = 0; // Reset the timer
         if (timer_status == false)
         {

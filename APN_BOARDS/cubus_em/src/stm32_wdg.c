@@ -23,12 +23,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-// #include <sys/types.h>
-// #include <errno.h>
-// #include <debug.h>
 #include <nuttx/board.h>
-// #include <syslog.h>
 #include <nuttx/kthread.h> 
 
 #include "stm32f427a.h"
@@ -81,7 +76,7 @@ void wdt_toggle_task(void *arg)
     gpio_state = !gpio_state;
     // leave_critical_section(flags);
     start_time++;
-    usleep(870000);
+    usleep(600000);
     // sleep(1);
     // if(start_time/2 >= end_time){
     //   while(1){
@@ -111,13 +106,9 @@ int toggle_wdg(){
 int stm32_wdg_setup(void)
 {
   stm32_configgpio(GPIO_WD_WDI);
-
   stm32_gpiowrite(GPIO_WD_WDI, true);
   usleep(10000);
   stm32_gpiowrite(GPIO_WD_WDI, false);
-  // syslog(LOG_DEBUG,"GPio setup");
-
-
   if (wdog_task_started == false)
   {
     // pid_t pid = task_create("[WDT_toggle_task]", 1, 904, wdt_toggle_task, NULL);
