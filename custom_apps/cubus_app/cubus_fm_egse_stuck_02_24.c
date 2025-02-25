@@ -1405,12 +1405,12 @@ static int COM_TASK(int argc, char *argv[])
   uint8_t rx_data[COM_RX_CMD_SIZE] = {'\0'};
   gpio_write(GPIO_3V3_COM_EN, 0);
   gpio_write(GPIO_3V3_COM_EN, false); // Disable COM systems
-  sleep(1);
+  sleep(2);
   syslog(LOG_DEBUG, "***************************Turning on COM MSN...***************************\n");
   gpio_write(GPIO_3V3_COM_EN, 1);
   sleep(1);
   gpio_write(GPIO_3V3_COM_EN, true); // Enable COM systems
-  sleep(1);
+  sleep(2);
   // ret = handshake_COM(data); // tx rx data is flushed before closing the file
   ret = handshake_MSN(0, data); // tx rx data is flushed before closing the file
 
@@ -1568,6 +1568,7 @@ void send_beacon(int argc, char *argv)
       send_beacon_data(); // TODO uncomment this
       // pet_counter = 0;    // TODO remove this after uncommenting above
       count_beacon = 0;
+      // gpio_write(GPIO_3V3_COM_EN, 0); // Disable COM systems
     }
     count_beacon += 90;
     timer += 90;
@@ -2127,27 +2128,6 @@ void truncate_text_file(struct FILE_OPERATIONS *file_operations)
   {
     strcpy(same_file_logs, "/mnt/fs/mfm/mtd_mission/adcs_logs.txt");
   }
-
-  else if (strcmp(file_path, "/mnt/fs/sfm/mtd_mission/epdm.txt") == 0)
-  {
-    strcpy(same_file_logs, "/mnt/fs/sfm/mtd_mission/epdm_logs.txt");
-  }
-  else if (strcmp(file_path, "/mnt/fs/mfm/mtd_mainstorage/epdm.txt") == 0)
-  {
-    strcpy(same_file_logs, "/mnt/fs/mfm/mtd_mainstorage/epdm_logs.txt");
-  }
-  else if (strcmp(file_path, "/mnt/fs/sfm/mtd_mission/cam_nir.txt") == 0)
-  {
-    strcpy(same_file_logs, "/mnt/fs/sfm/mtd_mission/cam_nir_logs.txt");
-  }
-  else if (strcmp(file_path, "/mnt/fs/sfm/mtd_mission/cam_rgb.txt") == 0)
-  {
-    strcpy(same_file_logs, "/mnt/fs/sfm/mtd_mission/cam_rgb_logs.txt");
-  }
-  else if (strcmp(file_path, "/mnt/fs/sfm/mtd_mission/adcs.txt") == 0)
-  {
-    strcpy(same_file_logs, "/mnt/fs/sfm/mtd_mission/adcs_logs.txt");
-  }
   if (strlen(same_file_logs) > 10)
   {
     fd = open(same_file_logs, O_TRUNC);
@@ -2671,7 +2651,7 @@ int main(int argc, FAR char *argv[])
         }
         else
         {
-          int retval = task_create("COMMANDER_TASK_APP", 100, 45096, COM_TASK, NULL);
+          int retval = task_create("COMMANDER_TASK_APP", 100, 48096, COM_TASK, NULL);
 
           if (retval >= 0)
           {
@@ -2786,30 +2766,30 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
   }
 
   gpio_write(GPIO_SFM_MODE, state);
-  if ((state == true || state == 1) && (subsystem == 3))
-  {
-    cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
-    cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
-  }
-  if ((state == false || state == 0) && (subsystem == 3))
-  {
-    cubus_mft_configure(board_sfm_get_manifest(), 2);
-    // if(subsystem != 1)
-  }
-  if(state == 0)
-  maintain_data_consistency();
-  // pet_counter = 0
+  // if ((state == true || state == 1) && (subsystem != 1))
+  // {
+  //   cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
+  //   cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
+  // }
+  // if ((state == false || state == 0) && (subsystem != 1))
+  // {
+  //   cubus_mft_configure(board_sfm_get_manifest(), 2);
+  //   // if(subsystem != 1)
+  //   maintain_data_consistency();
+  // }
+    maintain_data_consistency();
+    // pet_counter = 0;
 }
 // #include
 
 // //COM
 void send_flash_data(uint8_t *beacon_data)
 {
-  // printf("Turning on 4v dcdc line..\n");
+  printf("Turning on 4v dcdc line..\n");
   gpio_write(GPIO_DCDC_4V_EN, 1);
   printf("Turning on COM 4V line..\n");
   gpio_write(GPIO_COM_4V_EN, 1);
-  pthread_mutex_lock(&uart_mutex);
+  // pthread_mutex_lock(&uart_mutex);
 
   int fd = open(COM_UART, O_RDWR);
   int ret2;
@@ -2846,8 +2826,8 @@ void send_flash_data(uint8_t *beacon_data)
 
       if (ret2 >= 0)
       {
-        // printf("Flash data sent to COM successfully\n");
-        printf("\n-------------------Data sent to COM is %s---------------\n", beacon_data);
+        printf("Flash data sent to COM successfully\n");
+        printf("data is:::::::: %s\n", beacon_data);
         for (int i = 0; i < BEACON_DATA_SIZE; i++)
         {
           // ret = write(fd, &beacon_data[i], 1);
@@ -2877,13 +2857,12 @@ void send_flash_data(uint8_t *beacon_data)
     }
   }
   sleep(1);
-  // usleep(500000);
-  // printf("\nTurning off 4v dcdc line..\n");
+  printf("\nTurning off 4v dcdc line..\n");
   gpio_write(GPIO_DCDC_4V_EN, 0);
   printf("\nTurning off COM 4V line..\n");
   gpio_write(GPIO_COM_4V_EN, 0);
   close(fd);
-  pthread_mutex_unlock(&uart_mutex);
+  // pthread_mutex_unlock(&uart_mutex);
 }
 
 // COM
@@ -3169,6 +3148,12 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 
   // Allocate memory dynamically
   uint8_t data_received[35002]; // = (uint8_t *)malloc(BUFFER_SIZE);
+  if (!data_received)
+  {
+    printf("Memory allocation failed!\n");
+    return;
+  }
+
   switch (mission)
   {
   case 1:
@@ -3187,13 +3172,13 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   case 3:
     printf("\n________EPDM MISSION OPERATION SELECTED________\n");
     MISSION_STATUS.EPDM_MISSION = true;
-    strcpy(file_name, "/epdm.txt");
+    strcpy(file_name, "/epdmNew.txt");
     strcpy(dev_path, EPDM_UART);
     fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
     break;
   default:
     printf("Invalid mission type\n");
-    // free(data_received);
+    free(data_received);
     return;
   }
 
@@ -3224,7 +3209,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   if (fd2 < 0)
   {
     printf("Failed to open device: %s\n", dev_path);
-    // free(data_received);
+    free(data_received);
     turn_msn_on_off(mission, 0);
     return;
   }
@@ -3374,248 +3359,6 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   turn_msn_on_off(mission, 0);
   pet_counter = 0;
 }
-
-// void mission_operation(uint8_t mission, uint8_t handshake_data[7])
-// {
-//   int fd = -1, hand = -1;
-//   int32_t initial_count = 0, final_count = 0;
-//   struct file file_pointer, file_pointer2;
-//   bool other_mission_running = false;
-//   char file_name[100] = {0}, dev_path[100] = {0};
-//   int i = 1;
-
-//   // Check if another mission is running
-//   if (MISSION_STATUS.CAM_MISSION || MISSION_STATUS.ADCS_MISSION || MISSION_STATUS.EPDM_MISSION)
-//   {
-//     other_mission_running = true;
-//   }
-
-//   printf("\n_______________Other mission running: %d_________________\n", other_mission_running);
-
-//   if (other_mission_running)
-//   {
-//     return;
-//   }
-
-//   // Dynamically allocate memory for data_received
-//   uint8_t *data_received = (uint8_t *)malloc(35002 * sizeof(uint8_t));
-//   if (data_received == NULL)
-//   {
-//     printf("Memory allocation failed!\n");
-//     return;
-//   }
-
-//   switch (mission)
-//   {
-//   case 1:
-//     printf("\n________ADCS MISSION OPERATION SELECTED________\n");
-//     MISSION_STATUS.ADCS_MISSION = true;
-//     strcpy(file_name, "/adcs.txt");
-//     strcpy(dev_path, ADCS_UART);
-//     break;
-//   case 2:
-//     printf("\n________CAM MISSION OPERATION SELECTED________\n");
-//     MISSION_STATUS.CAM_MISSION = true;
-//     strcpy(file_name, "/cam_nir.txt");
-//     i = 2; // Two files for CAM mission
-//     strcpy(dev_path, CAM_UART);
-//     break;
-//   case 3:
-//     printf("\n________EPDM MISSION OPERATION SELECTED________\n");
-//     MISSION_STATUS.EPDM_MISSION = true;
-//     strcpy(file_name, "/epdm.txt");
-//     strcpy(dev_path, EPDM_UART);
-//     fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
-//     break;
-//   default:
-//     printf("Invalid mission type\n");
-//     free(data_received); // Free memory before returning
-//     return;
-//   }
-
-//   // Check initial file size
-//   if (fd >= 0)
-//   {
-//     initial_count = file_seek(&file_pointer, 0, SEEK_END);
-//     file_close(&file_pointer);
-//   }
-//   else
-//   {
-//     initial_count = -1;
-//   }
-
-//   turn_msn_on_off(mission, 1);
-//   sleep(1);
-//   hand = handshake_MSN(mission, handshake_data);
-
-//   if (hand < 0)
-//   {
-//     printf("Handshake failed\n");
-//     free(data_received); // Free memory before returning
-//     turn_msn_on_off(mission, 0);
-//     return;
-//   }
-
-//   int fd2 = open(dev_path, O_RDWR);
-//   if (fd2 < 0)
-//   {
-//     printf("Failed to open device: %s\n", dev_path);
-//     free(data_received); // Free memory before returning
-//     turn_msn_on_off(mission, 0);
-//     return;
-//   }
-
-//   uint32_t counter = 0;
-//   uint8_t data3 = 0, data4 = 0;
-//   time_t start_time = time(NULL);
-//   int k = 0;
-//   pet_counter = 0;
-
-//   for (int j = 0; j < i; j++)
-//   {
-//     // Clear the data_received buffer at the start of each j loop
-//     memset(data_received, 0, 35002 * sizeof(uint8_t));
-
-//     // Switch file for second camera
-//     if (j == 1)
-//     {
-//       strcpy(file_name, "/cam_rgb.txt");
-//     }
-
-//     counter = 0;
-//     while (1)
-//     {
-//       data4 = data3;
-//       if (read(fd2, &data3, 1) <= 0)
-//       {
-//         break;
-//       }
-
-//       if (counter == 35000)
-//       {
-//         k++;
-//         fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
-//         if (fd >= 0)
-//         {
-//           ssize_t write_bytes = file_write(&file_pointer, data_received, counter);
-//           if (write_bytes > 10)
-//           {
-//             printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
-//           }
-//           memset(data_received, 0, 35002 * sizeof(uint8_t)); // Clear buffer after writing
-//         }
-//         file_close(&file_pointer);
-//         counter = 0;
-//       }
-
-//       if (counter < 35000)
-//       {
-//         data_received[counter] = data3;
-//       }
-//       else
-//       {
-//         printf("Buffer overflow prevented!\n");
-//         break;
-//       }
-//       counter++;
-//       printf("%02x ", data3);
-
-//       // Check for end of image (JPEG marker 0xFF 0xD9)
-//       if (data4 == 0xFF && data3 == 0xD9)
-//       {
-//         time_t stop_time = time(NULL);
-//         int elapsed_time = (int)(stop_time - start_time);
-
-//         syslog(LOG_DEBUG, "Counter: %d, Time: %d sec\n", counter, elapsed_time);
-
-
-//         int e;
-//         if (handshake_data[4] < 1 || handshake_data[4] > 5)
-//         {
-//           e = 5;
-//         }
-//         else
-//         {
-//           e = handshake_data[4];
-//         }
-        
-
-//         if (
-//           (mission == 3 && elapsed_time >= e * 57) ||
-//           (mission == 3 && counter > 10000 * e) ||
-//             (mission == 3 && k >= 1) ||
-//             (mission == 1 && counter > 179 && handshake_data[4] == 0x01) ||
-//             (mission == 1 && counter > 39 && handshake_data[4] == 0x02) ||
-//             (mission == 2 && counter > 1000))
-//         {
-//           pet_counter = 0;
-//           printf("\n\nCounter value is %d\n\n", counter + k * 35000);
-
-//           fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
-//           if (fd >= 0)
-//           {
-//             final_count = file_seek(&file_pointer, 0, SEEK_END);
-//             if ((final_count - initial_count > 100 && initial_count > 0) || initial_count <= 0)
-//             {
-//               ssize_t write_bytes = file_write(&file_pointer, data_received, counter);
-//               if (write_bytes > 10)
-//               {
-//                 printf("Data written to %s%s (size: %d)\n", MFM_MSN_STRPATH, file_name, counter);
-
-//                 // Log mission completion
-//                 char log_path[40] = {0};
-//                 if (mission == 1 || mission == 3)
-//                   snprintf(log_path, sizeof(log_path), "%s_logs.txt", mission == 1 ? "/adcs" : "/epdm");
-//                 else
-//                 {
-//                   if (strcmp(file_name, "/cam_rgb.txt") == 0)
-//                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_rgb");
-//                   else
-//                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_nir");
-//                 }
-//                 struct file msn_flag_pointer;
-//                 int fd_log = open_file_flash(&msn_flag_pointer, MFM_MSN_STRPATH, log_path, O_CREAT | O_RDWR | O_APPEND);
-//                 if (fd_log >= 0)
-//                 {
-//                   final_count += write_bytes;
-//                   uint8_t temp_var[4] = {
-//                       (final_count >> 24) & 0xFF,
-//                       (final_count >> 16) & 0xFF,
-//                       (final_count >> 8) & 0xFF,
-//                       final_count & 0xFF};
-//                   file_write(&msn_flag_pointer, temp_var, sizeof(temp_var));
-//                   if (strcmp(file_name, "/cam_rgb.txt") == 0 || (mission == 2 && j == 1))
-//                   {
-//                     int i = 0;
-//                     // If it is RGB camera, capture logs
-//                     char buffer[100] = {'\0'};
-//                     for (i = 0; i < 100; i++)
-//                     {
-//                       buffer[i] = data_received[i];
-//                       if (buffer[i + 1] == 0xff && buffer[i + 2] == 0xd8)
-//                       {
-//                         break;
-//                       }
-//                     }
-//                     file_write(&msn_flag_pointer, buffer, i);
-//                   }
-//                   file_close(&msn_flag_pointer);
-//                 }
-//               }
-//             }
-//             file_close(&file_pointer);
-//           }
-//           break;
-//         }
-//       }
-//     }
-//   }
-
-//   free(data_received); // Free dynamically allocated memory
-//   close(fd2);
-//   turn_msn_on_off(mission, 0);
-//   pet_counter = 0;
-// }
 
 void watchdog_refresh_task(int fd)
 {
@@ -3805,214 +3548,100 @@ float convert1(data)
   return result;
 }
 
-// int ads7953_receiver(int argc, FAR char *argv[])
-// {
-//   int raw_sub_fd = orb_subscribe(ORB_ID(ads7953_raw_msg));
-//   int temp_sub_fd = orb_subscribe(ORB_ID(sat_temp_msg));
-//   int volts_sub_fd = orb_subscribe(ORB_ID(sat_volts_msg));
-
-//   struct pollfd fds[] = {
-//       {.fd = raw_sub_fd, .events = POLLIN},
-//       {.fd = temp_sub_fd, .events = POLLIN},
-//       {.fd = volts_sub_fd, .events = POLLIN},
-//   };
-//   struct sensor_rgb rgb;
-//   int adc_instance = 0;
-//   int afd = orb_advertise_multi_queue_persist(ORB_ID(sensor_rgb), &sat_health,
-//                                               &adc_instance, sizeof(struct sensor_rgb));
-
-//   while (1)
-//   {
-//     // printf("----------------------------------------\n");
-//     // printf("Polling\n");
-
-//     // printf("----------------------------------------\n");
-
-//     // Poll for new data
-//     int poll_ret = poll(fds, 3, 1000);
-
-//     if (poll_ret == 0)
-//     {
-//       printf("ads7953_receiver Poll timeout\n");
-//       continue;
-//     }
-
-//     if (poll_ret < 0)
-//     {
-//       printf("ads7953_receiver Poll error: %d\n", errno);
-//       continue;
-//     }
-
-//     // Check for ads7953_raw_msg updates
-//     if (fds[0].revents & POLLIN)
-//     {
-//       struct ads7953_raw_msg raw_msg;
-//       orb_copy(ORB_ID(ads7953_raw_msg), raw_sub_fd, &raw_msg);
-
-//       ADC_Temp_Conv(&x, &y, 8);
-//     }
-
-//     // Check for sat_temp_msg updates
-//     if (fds[1].revents & POLLIN)
-//     {
-//       struct sat_temp_msg temp_msg;
-//       orb_copy(ORB_ID(sat_temp_msg), temp_sub_fd, &temp_msg);
-//       sat_health.temp_x = temp_msg.temp_2;
-//       sat_health.temp_x1 = temp_msg.temp_3;
-//       sat_health.temp_y = temp_msg.temp_4;
-//       sat_health.temp_y1 = temp_msg.temp_5;
-//       sat_health.ant_temp_out = temp_msg.temp_ant;
-//       // sat_health.temp_z = 0;
-//       // sat_health.temp_z1 = 0;
-//       sat_health.temp_bpb = temp_msg.temp_bpb;
-//       // sat_health.temp_obc = temp_msg.temp_obc;//TODO add temp of MCU
-//       // // sat_health.temp_com = temp_msg.;
-//       sat_health.temp_batt = temp_msg.batt_temp;
-//       // sat_health.batt_volt = ;
-
-//       // int8_t rsv_cmd;
-
-//       // int8_t ant_dep_stat;
-//       // int8_t ul_state;
-//       // int8_t oper_mode;
-//       // int8_t msn_flag;
-//       // int8_t rsv_flag;
-//       // int8_t kill_switch;
-
-//       // int16_t ant_temp_out;
-
-//       // printf("sat_temp_msg:\n");
-//       // printf("********************************************\n");
-//       // printf("  timestamp: %" PRIu64 " | ", temp_msg.timestamp);
-//       // printf("  batt_temp: %.4f \n ", temp_msg.batt_temp);
-//       // printf("  temp_bpb: %.4f \n ", temp_msg.temp_bpb);
-//       // printf("  temp_ant: %.4f \n", temp_msg.temp_ant);
-//       // printf("  temp_z_pos: %.4f\n", temp_msg.temp_z_pos);
-//       // printf("  temp_5: %.4f\n", temp_msg.temp_5);
-//       // printf("  temp_4: %.4f\n", temp_msg.temp_4);
-//       // printf("  temp_3: %.4f\n", temp_msg.temp_3);
-//       // printf("  temp_2: %.4f\n", temp_msg.temp_2);
-//     }
-
-//     // Check for sat_volts_msg updates
-//     if (fds[2].revents & POLLIN)
-//     {
-//       struct sat_volts_msg volts_msg;
-//       orb_copy(ORB_ID(sat_volts_msg), volts_sub_fd, &volts_msg);
-//       sat_health.sol_p1_v = (int16_t)(1000 * volts_msg.volt_sp1);
-//       sat_health.sol_p2_v = (int16_t)(1000 * volts_msg.volt_sp2);
-//       sat_health.sol_p3_v = (int16_t)(1000 * volts_msg.volt_sp3);
-//       sat_health.sol_p4_v = (int16_t)(1000 * volts_msg.volt_sp4);
-//       sat_health.sol_p5_v = (int16_t)(1000 * volts_msg.volt_sp5);
-//       sat_health.sol_t_v = (int16_t)(1000 * volts_msg.volt_SolT);
-//       sat_health.raw_v = (int16_t)(1000 * volts_msg.volt_raw);
-//       // printf("sat_volts_msg:\n");
-//       // printf("  timestamp: %" PRIu64 "\n", volts_msg.timestamp);
-//       // printf("  volt_SolT: %.4f V\n", volts_msg.volt_SolT);
-//       // printf("  volt_raw: %.4f V\n", volts_msg.volt_raw);
-//       // printf("  volt_sp5: %.4f V\n", volts_msg.volt_sp5);
-//       // printf("  volt_sp4: %.4f V\n", volts_msg.volt_sp4);
-//       // printf("  volt_sp3: %.4f V\n", volts_msg.volt_sp3);
-//       // printf("  volt_sp1: %.4f V\n", volts_msg.volt_sp1);
-//       // printf("  volt_sp2: %.4f V\n", volts_msg.volt_sp2);
-//     }
-
-//     // usleep(500000);
-//     // print_satellite_health_data(&sat_health);
-//     read_int_adc1();
-//     read_int_adc3();
-//     make_satellite_health();
-//     sat_health.oper_mode = critic_flags.OPER_MODE;
-//     if (critic_flags.RSV_FLAG != 0)
-//     {
-//       sat_health.rsv_flag = critic_flags.RSV_FLAG;
-//       if (sat_health.rsv_cmd == 0x00)
-//       {
-//         sat_health.rsv_cmd = 1;
-//       }
-//     }
-
-//     if (afd < 0)
-//     {
-//       syslog(LOG_ERR, "Orb advertise failed.\n");
-//     }
-//     else
-//     {
-//       if (OK != orb_publish(ORB_ID(sensor_rgb), afd, &sat_health))
-//       {
-//         syslog(LOG_ERR, "Orb Publish failed\n");
-//       }
-//       else
-//       {
-//         // syslog(LOG_ERR, "ORB published checkpoint\n");
-//       }
-//     }
-//     sleep(20);
-//   }
-//   ret = orb_unadvertise(afd);
-
-//   return 0;
-// }
 int ads7953_receiver(int argc, FAR char *argv[])
 {
   int raw_sub_fd = orb_subscribe(ORB_ID(ads7953_raw_msg));
   int temp_sub_fd = orb_subscribe(ORB_ID(sat_temp_msg));
   int volts_sub_fd = orb_subscribe(ORB_ID(sat_volts_msg));
 
+  struct pollfd fds[] = {
+      {.fd = raw_sub_fd, .events = POLLIN},
+      {.fd = temp_sub_fd, .events = POLLIN},
+      {.fd = volts_sub_fd, .events = POLLIN},
+  };
   struct sensor_rgb rgb;
   int adc_instance = 0;
   int afd = orb_advertise_multi_queue_persist(ORB_ID(sensor_rgb), &sat_health,
                                               &adc_instance, sizeof(struct sensor_rgb));
 
-  if (afd < 0) {
-    syslog(LOG_ERR, "Orb advertise failed.\n");
-    return -1;
-  }
-
   while (1)
   {
-    bool raw_updated = false;
-    bool temp_updated = false;
-    bool volts_updated = false;
+    // printf("----------------------------------------\n");
+    // printf("Polling\n");
 
-    // Check for updates on each topic
-    orb_check(raw_sub_fd, &raw_updated);
-    orb_check(temp_sub_fd, &temp_updated);
-    orb_check(volts_sub_fd, &volts_updated);
+    // printf("----------------------------------------\n");
 
-    // Process ads7953_raw_msg updates
-    if (raw_updated)
+    // Poll for new data
+    int poll_ret = poll(fds, 3, 1000);
+
+    if (poll_ret == 0)
+    {
+      printf("Poll timeout\n");
+      continue;
+    }
+
+    if (poll_ret < 0)
+    {
+      printf("Poll error: %d\n", errno);
+      continue;
+    }
+
+    // Check for ads7953_raw_msg updates
+    if (fds[0].revents & POLLIN)
     {
       struct ads7953_raw_msg raw_msg;
       orb_copy(ORB_ID(ads7953_raw_msg), raw_sub_fd, &raw_msg);
 
-      // Process raw data
       ADC_Temp_Conv(&x, &y, 8);
     }
 
-    // Process sat_temp_msg updates
-    if (temp_updated)
+    // Check for sat_temp_msg updates
+    if (fds[1].revents & POLLIN)
     {
       struct sat_temp_msg temp_msg;
       orb_copy(ORB_ID(sat_temp_msg), temp_sub_fd, &temp_msg);
-
-      // Update satellite health data
       sat_health.temp_x = temp_msg.temp_2;
       sat_health.temp_x1 = temp_msg.temp_3;
       sat_health.temp_y = temp_msg.temp_4;
       sat_health.temp_y1 = temp_msg.temp_5;
       sat_health.ant_temp_out = temp_msg.temp_ant;
+      // sat_health.temp_z = 0;
+      // sat_health.temp_z1 = 0;
       sat_health.temp_bpb = temp_msg.temp_bpb;
+      // sat_health.temp_obc = temp_msg.temp_obc;//TODO add temp of MCU
+      // // sat_health.temp_com = temp_msg.;
       sat_health.temp_batt = temp_msg.batt_temp;
+      // sat_health.batt_volt = ;
+
+      // int8_t rsv_cmd;
+
+      // int8_t ant_dep_stat;
+      // int8_t ul_state;
+      // int8_t oper_mode;
+      // int8_t msn_flag;
+      // int8_t rsv_flag;
+      // int8_t kill_switch;
+
+      // int16_t ant_temp_out;
+
+      // printf("sat_temp_msg:\n");
+      // printf("********************************************\n");
+      // printf("  timestamp: %" PRIu64 " | ", temp_msg.timestamp);
+      // printf("  batt_temp: %.4f \n ", temp_msg.batt_temp);
+      // printf("  temp_bpb: %.4f \n ", temp_msg.temp_bpb);
+      // printf("  temp_ant: %.4f \n", temp_msg.temp_ant);
+      // printf("  temp_z_pos: %.4f\n", temp_msg.temp_z_pos);
+      // printf("  temp_5: %.4f\n", temp_msg.temp_5);
+      // printf("  temp_4: %.4f\n", temp_msg.temp_4);
+      // printf("  temp_3: %.4f\n", temp_msg.temp_3);
+      // printf("  temp_2: %.4f\n", temp_msg.temp_2);
     }
 
-    // Process sat_volts_msg updates
-    if (volts_updated)
+    // Check for sat_volts_msg updates
+    if (fds[2].revents & POLLIN)
     {
       struct sat_volts_msg volts_msg;
       orb_copy(ORB_ID(sat_volts_msg), volts_sub_fd, &volts_msg);
-
-      // Update satellite health data
       sat_health.sol_p1_v = (int16_t)(1000 * volts_msg.volt_sp1);
       sat_health.sol_p2_v = (int16_t)(1000 * volts_msg.volt_sp2);
       sat_health.sol_p3_v = (int16_t)(1000 * volts_msg.volt_sp3);
@@ -4020,14 +3649,22 @@ int ads7953_receiver(int argc, FAR char *argv[])
       sat_health.sol_p5_v = (int16_t)(1000 * volts_msg.volt_sp5);
       sat_health.sol_t_v = (int16_t)(1000 * volts_msg.volt_SolT);
       sat_health.raw_v = (int16_t)(1000 * volts_msg.volt_raw);
+      // printf("sat_volts_msg:\n");
+      // printf("  timestamp: %" PRIu64 "\n", volts_msg.timestamp);
+      // printf("  volt_SolT: %.4f V\n", volts_msg.volt_SolT);
+      // printf("  volt_raw: %.4f V\n", volts_msg.volt_raw);
+      // printf("  volt_sp5: %.4f V\n", volts_msg.volt_sp5);
+      // printf("  volt_sp4: %.4f V\n", volts_msg.volt_sp4);
+      // printf("  volt_sp3: %.4f V\n", volts_msg.volt_sp3);
+      // printf("  volt_sp1: %.4f V\n", volts_msg.volt_sp1);
+      // printf("  volt_sp2: %.4f V\n", volts_msg.volt_sp2);
     }
 
-    // Perform additional tasks
+    // usleep(500000);
+    // print_satellite_health_data(&sat_health);
     read_int_adc1();
     read_int_adc3();
     make_satellite_health();
-
-    // Update operational mode and flags
     sat_health.oper_mode = critic_flags.OPER_MODE;
     if (critic_flags.RSV_FLAG != 0)
     {
@@ -4038,22 +3675,24 @@ int ads7953_receiver(int argc, FAR char *argv[])
       }
     }
 
-    // Publish satellite health data
-    if (OK != orb_publish(ORB_ID(sensor_rgb), afd, &sat_health))
+    if (afd < 0)
     {
-      syslog(LOG_ERR, "Orb Publish failed\n");
+      syslog(LOG_ERR, "Orb advertise failed.\n");
     }
-
-    // Sleep for 20 seconds before the next iteration
+    else
+    {
+      if (OK != orb_publish(ORB_ID(sensor_rgb), afd, &sat_health))
+      {
+        syslog(LOG_ERR, "Orb Publish failed\n");
+      }
+      else
+      {
+        // syslog(LOG_ERR, "ORB published checkpoint\n");
+      }
+    }
     sleep(20);
   }
-
-  // Unadvertise the topic
-  int ret = orb_unadvertise(afd);
-  if (ret < 0)
-  {
-    syslog(LOG_ERR, "Orb unadvertise failed.\n");
-  }
+  ret = orb_unadvertise(afd);
 
   return 0;
 }
@@ -4118,74 +3757,10 @@ void print_satellite_health_data(satellite_health_s *sat_health)
   printf(" |----------------------------------------------------------|\r\n");
 }
 
-// void subscribe_and_retrieve_data(void)
-// {
-//   int fd;
-//   int ret;
-
-//   struct orb_mag_scaled_s mag_scaled;
-
-//   /* Subscribe to the orb_mag_scaled topic */
-//   fd = orb_subscribe(ORB_ID(orb_mag_scaled));
-//   if (fd < 0)
-//   {
-//     syslog(LOG_ERR, "Failed to subscribe to orb_mag_scaled topic.\n");
-//     return;
-//   }
-//   else
-//   {
-//     syslog(LOG_DEBUG, "[READING DATA FROM IMU SENSORS]\n");
-//   }
-
-//   /* Poll for new data */
-//   struct pollfd fds;
-//   fds.fd = fd;
-//   fds.events = POLLIN;
-
-//   while (1) // Infinite loop
-//   {
-//     if (poll(&fds, 1, -1) > 0) // Infinite timeout
-//     {
-//       if (fds.revents & POLLIN)
-//       {
-//         /* Copy the data from the orb */
-//         ret = orb_copy(ORB_ID(orb_mag_scaled), fd, &mag_scaled);
-//         if (ret < 0)
-//         {
-//           syslog(LOG_ERR, "ORB copy error, %d \n", ret);
-//           continue;
-//         }
-
-//         sat_health.accl_x = (int16_t)(mag_scaled.acc_x * 1000);
-//         sat_health.accl_y = (int16_t)(mag_scaled.acc_y * 1000);
-//         sat_health.accl_z = (int16_t)(mag_scaled.acc_z * 1000);
-//         sat_health.gyro_x = (int16_t)(mag_scaled.gyro_x * 1000);
-//         sat_health.gyro_y = (int16_t)(mag_scaled.gyro_y * 1000);
-//         sat_health.gyro_z = (int16_t)(mag_scaled.gyro_z * 1000);
-//         sat_health.mag_x = (int16_t)(mag_scaled.mag_x * 1000);
-//         sat_health.mag_y = (int16_t)(mag_scaled.mag_y * 1000);
-//         sat_health.mag_z = (int16_t)(mag_scaled.mag_z * 1000);
-//         sat_health.temp_obc = mag_scaled.temperature * 1000;
-//       }
-//     }
-//     else
-//     {
-//       syslog(LOG_ERR, "subscribe_and_retrieve_data Poll error.\n");
-//     }
-//   }
-
-//   ret = orb_unsubscribe(fd);
-//   if (ret < 0)
-//   {
-//     syslog(LOG_ERR, "Orb unsubscribe Failed.\n");
-//   }
-//   return 0;
-// }
 void subscribe_and_retrieve_data(void)
 {
   int fd;
   int ret;
-  bool updated;
 
   struct orb_mag_scaled_s mag_scaled;
 
@@ -4201,34 +3776,41 @@ void subscribe_and_retrieve_data(void)
     syslog(LOG_DEBUG, "[READING DATA FROM IMU SENSORS]\n");
   }
 
+  /* Poll for new data */
+  struct pollfd fds;
+  fds.fd = fd;
+  fds.events = POLLIN;
+
   while (1) // Infinite loop
   {
-    /* Check for new data */
-    orb_check(fd, &updated);
-    if (updated)
+    if (poll(&fds, 1, -1) > 0) // Infinite timeout
     {
-      /* Copy the data from the orb */
-      ret = orb_copy(ORB_ID(orb_mag_scaled), fd, &mag_scaled);
-      if (ret < 0)
+      if (fds.revents & POLLIN)
       {
-        syslog(LOG_ERR, "ORB copy error, %d \n", ret);
-        continue;
+        /* Copy the data from the orb */
+        ret = orb_copy(ORB_ID(orb_mag_scaled), fd, &mag_scaled);
+        if (ret < 0)
+        {
+          syslog(LOG_ERR, "ORB copy error, %d \n", ret);
+          continue;
+        }
+
+        sat_health.accl_x = (int16_t)(mag_scaled.acc_x * 1000);
+        sat_health.accl_y = (int16_t)(mag_scaled.acc_y * 1000);
+        sat_health.accl_z = (int16_t)(mag_scaled.acc_z * 1000);
+        sat_health.gyro_x = (int16_t)(mag_scaled.gyro_x * 1000);
+        sat_health.gyro_y = (int16_t)(mag_scaled.gyro_y * 1000);
+        sat_health.gyro_z = (int16_t)(mag_scaled.gyro_z * 1000);
+        sat_health.mag_x = (int16_t)(mag_scaled.mag_x * 1000);
+        sat_health.mag_y = (int16_t)(mag_scaled.mag_y * 1000);
+        sat_health.mag_z = (int16_t)(mag_scaled.mag_z * 1000);
+        sat_health.temp_obc = mag_scaled.temperature * 1000;
       }
-
-      sat_health.accl_x = (int16_t)(mag_scaled.acc_x * 1000);
-      sat_health.accl_y = (int16_t)(mag_scaled.acc_y * 1000);
-      sat_health.accl_z = (int16_t)(mag_scaled.acc_z * 1000);
-      sat_health.gyro_x = (int16_t)(mag_scaled.gyro_x * 1000);
-      sat_health.gyro_y = (int16_t)(mag_scaled.gyro_y * 1000);
-      sat_health.gyro_z = (int16_t)(mag_scaled.gyro_z * 1000);
-      sat_health.mag_x = (int16_t)(mag_scaled.mag_x * 1000);
-      sat_health.mag_y = (int16_t)(mag_scaled.mag_y * 1000);
-      sat_health.mag_z = (int16_t)(mag_scaled.mag_z * 1000);
-      sat_health.temp_obc = mag_scaled.temperature * 1000;
     }
-
-    /* Add a small delay to avoid busy-waiting */
-    usleep(1000); // Sleep for 1 millisecond
+    else
+    {
+      syslog(LOG_ERR, "Poll error.\n");
+    }
   }
 
   ret = orb_unsubscribe(fd);
@@ -4238,7 +3820,6 @@ void subscribe_and_retrieve_data(void)
   }
   return 0;
 }
-
 void print_beacon_a()
 {
   printf("-------------------------------------------------------\nHEAD: 0x%02X\n", s2s_beacon_type_a.HEAD);
@@ -4520,7 +4101,8 @@ void flash_operation_data(uint16_t loop)
       orb_copy(ORB_ID(flash_operation), flash_fd, &flash);
 
       // Print the received flash operation data
-      // printf("\nUORB DATA\nTimestamp: %llu \nPacket_Type: %d\nPacket Number: %d\n", flash.timestamp, flash.packet_type, flash.packet_number);
+      printf("\nUORB DATA\nTimestamp: %llu \nPacket_Type: %d\nPacket Number: %d\n",
+             flash.timestamp, flash.packet_type, flash.packet_number);
       if (count < 0)
       {
         count++;
@@ -4545,8 +4127,8 @@ void flash_operation_data(uint16_t loop)
     }
     stop_time = time(NULL);
 
-    // sleep(1);
-    usleep(500000);
+    sleep(1);
+    // usleep(1000000);
     FLASH_UORB_RESPONDING = true;
     if (stop_time - start_time > 5)
     {
@@ -4555,6 +4137,7 @@ void flash_operation_data(uint16_t loop)
     }
     // printf("the value of counter is %d\n",loop);
   } while (loop >= 0 && loop < 65505);
+
   orb_unsubscribe(flash_fd);
 }
 

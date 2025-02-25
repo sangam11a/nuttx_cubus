@@ -961,7 +961,7 @@
                }
                flash.packet_type = packet_type;
                flash.packet_number = pkt;
-               // //printf("cc: %d num_of_pkt:%d   Packet number:%d\n",count,num_of_packets, flash.packet_number);
+              //  printf("cc: %d num_of_pkt:%d   Packet number:%d\n",count,num_of_packets, flash.packet_number);
                // //printf("\n----------------------------\n");
                count += 80;
  
@@ -980,8 +980,8 @@
              {
                break;
              }
- 
-             usleep(3000000);
+            // sleep(1);
+            sleep(1);
             //  sleep(2.5);//TODO Need to look on the packets so that it is not missed
            } while (num_of_packets > 0);
          }
