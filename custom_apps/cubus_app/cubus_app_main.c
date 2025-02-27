@@ -1542,7 +1542,7 @@ static int COM_TASK(int argc, char *argv[])
       }
     }
     // usleep(1000);
-    sleep(3);
+    sleep(1);
   }
 }
 
@@ -1754,6 +1754,7 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
   }
 
   printf("Handshake failed after %d attempts\n", HANDSHAKE_ATTEMPTS);
+  if(subsystem == 0)
   return -1;
 }
 
@@ -4331,7 +4332,7 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
 
   if (RSV_CMD[16] != 0x00 && RSV_CMD[16] == TO_EXECUTE.mcu_id &&
       RSV_CMD[17] != 0x00 && RSV_CMD[18] != 0x00 &&
-      timer >= TO_EXECUTE.latest_time + timer_counter)
+      timer >= TO_EXECUTE.latest_time + timer_counter )
   {
     printf("----------------------------------------------------\n");
     printf("Time elapsed %d time remaining %d\n", timer, TO_EXECUTE.latest_time + timer_counter);

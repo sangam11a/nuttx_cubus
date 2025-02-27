@@ -981,7 +981,8 @@
                break;
              }
             // sleep(1);
-            sleep(1);
+            // sleep(1);
+            usleep(1700000);
             //  sleep(2.5);//TODO Need to look on the packets so that it is not missed
            } while (num_of_packets > 0);
          }

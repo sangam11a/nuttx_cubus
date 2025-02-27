@@ -212,6 +212,7 @@ void reset_com_and_send_handshake(void) {
   gpio_write(GPIO_3V3_COM_EN, false);
   sleep(1);
   gpio_write(GPIO_3V3_COM_EN, true);
+  gpio_write(GPIO_3V3_COM_EN, true);
   sleep(1);
 
   // Send handshake data via UART
@@ -225,6 +226,20 @@ void reset_com_and_send_handshake(void) {
     printf("Failed to send handshake via UART\n");
   } else {
     printf("Handshake Initiated\n");
+  }
+  sleep(3);
+  if(write(fd_com, data,sizeof(data))<0){
+    printf("failed to send beacon 1 data");
+    if(write(fd_com, data,sizeof(data))<0){
+      printf("failed to send beacon 1 data");
+    }else{
+      reset_obc();
+    }
+  }
+  else{
+    send_beacon_data();
+    send_beacon_data();
+    printf("Beacon 1 sent");
   }
 
   close(fd_com);
@@ -256,7 +271,7 @@ static int watchdog_task(int argc, char *argv[]) {
   syslog(LOG_DEBUG, "Watchdog started\n");
 
   while (1) {
-    if (pet_counter <= 330) {
+    if (pet_counter <= 630) {
       if (ioctl(fd, WDIOC_KEEPALIVE, 0) < 0) {
         printf("Failed to keep watchdog alive: %d\n", errno);
       } else {
@@ -281,10 +296,19 @@ static int watchdog_task(int argc, char *argv[]) {
                                       MISSION_STATUS.EPDM_MISSION)) {
         reset_obc();
       }
-
+      // else if(pet_counter >=600){ 
+      //   reset_obc();
+      // }
+      else if(pet_counter >= 330 && (!MISSION_STATUS.ADCS_MISSION ||
+        !MISSION_STATUS.CAM_MISSION ||
+        !MISSION_STATUS.EPDM_MISSION)){
+          printf("WDOG timeout exceeded than 330! Resetting COM MCU.\n");
+          reset_com_and_send_handshake();
+        }
     } else {
-      printf("WDOG timeout reached! Resetting COM MCU.\n");
-      reset_com_and_send_handshake();
+      // printf("WDOG timeout reached! Resetting COM MCU.\n");
+      // reset_com_and_send_handshake();
+      reset_obc();
     }
   }
 
