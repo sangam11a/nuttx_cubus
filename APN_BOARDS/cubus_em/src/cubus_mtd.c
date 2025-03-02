@@ -128,7 +128,6 @@ int mt25ql_attach(mtd_instance_s *instance)
         SPI_LOCK(spi, false);
 
         instance->mtd_dev = mt25ql_initialize(spi);
-
         if (instance->mtd_dev)
         {
             /* abort on first valid result */
@@ -143,6 +142,15 @@ int mt25ql_attach(mtd_instance_s *instance)
         spi_speed_mhz--;
         usleep(10000);
     }
+    // struct spi_dev_s *spi = stm32_spibus_initialize(instance->bus_id);
+    // SPI_LOCK(spi, true);
+    // SPI_SETFREQUENCY(spi, spi_speed_mhz * 1000 * 1000);
+    // SPI_SETBITS(spi, 8);
+    // SPI_SETMODE(spi, SPIDEV_MODE0);
+    // SPI_SELECT(spi, instance->devid, false);
+    // SPI_LOCK(spi, false);
+    // mt25ql_reset_own(spi);
+    
 
     /* if last attempt is still unsuccessful, abort */
     if (instance->mtd_dev == NULL)

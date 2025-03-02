@@ -284,7 +284,7 @@ static int watchdog_task(int argc, char *argv[]) {
       sleep(1);
 
       // If mission tasks are inactive and counter exceeds limit, reset COM
-      if (pet_counter > 330 && (MISSION_STATUS.ADCS_MISSION == false &&
+      if (pet_counter > 190 && (MISSION_STATUS.ADCS_MISSION == false &&
                                 MISSION_STATUS.CAM_MISSION == false &&
                                 MISSION_STATUS.EPDM_MISSION == false)) {
         reset_com_and_send_handshake();

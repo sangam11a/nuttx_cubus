@@ -91,6 +91,7 @@ void flash_operation_data(uint16_t loop);
 uint64_t get_time_data();
 struct sensor_rgb sensor_rgb_0;
 struct reservation_command TO_EXECUTE;
+void clear_ext_flag();
 /****************************************************************************
  * COM TASK task
  ****************************************************************************/
@@ -737,8 +738,8 @@ void incorrect_command(uint8_t *ack)
 {
   ack[1] = 0xac;
   ack[2] = 0x04;
-  ack[4] = 0x63;
-  ack[5] = 0x62;
+  ack[4] = 0xee;
+  ack[5] = 0x7e;
   sleep(1);
   send_data_uart(COM_UART, ack, sizeof(ack));
   pet_counter = 0;
@@ -835,7 +836,6 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
     return;
   }
 
-
   else if (COM_RX_DATA[0] == 0x72)
   {
     syslog(LOG_DEBUG, "parse command starting\n");
@@ -861,534 +861,575 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
         HEADER = 17;
         MCU_ID = COM_RX_DATA[HEADER];
       }
-
-      syslog(LOG_DEBUG, "**********\n*************\nHere the com rx data is %02x,%02x,%02x,%02x\n********************\n********************\n",
-             HEADER, COM_RX_DATA[HEADER], COM_RX_DATA[HEADER + 1], COM_RX_DATA[HEADER + 2]);
-
-      // uint nack
-
-      uint8_t cmds[5];
-
-      cmds[0] = (uint8_t)COM_RX_DATA[HEADER + 1];
-      cmds[1] = (uint8_t)COM_RX_DATA[HEADER + 2];
-      cmds[2] = (uint8_t)COM_RX_DATA[HEADER + 3];
-      cmds[3] = (uint8_t)COM_RX_DATA[HEADER + 4];
-      cmds[4] = (uint8_t)COM_RX_DATA[HEADER + 5];
-      syslog(LOG_DEBUG, "**********\n*************\nHere the com rx data is %02x,%02x,%02x,%02x,%02x,%02x\n********************\n********************\n",
-             HEADER, cmds[0], cmds[0 + 1], cmds[0 + 2], cmds[0 + 3], cmds[0 + 4]);
-
-      send_data_uart(COM_UART, ack, sizeof(ack));
-
-      syslog(LOG_DEBUG, "MCU ID %d |%02x\n", cmds[0]);
-      if (cmds[3] == 0x00 && cmds[4] == 0x00)
+      if (HEADER == 16 || HEADER == 17)
       {
-        switch (MCU_ID)
+        syslog(LOG_DEBUG, "**********\n*************\nHere the com rx data is %02x,%02x,%02x,%02x\n********************\n********************\n",
+               HEADER, COM_RX_DATA[HEADER], COM_RX_DATA[HEADER + 1], COM_RX_DATA[HEADER + 2]);
+
+        // uint nack
+
+        uint8_t cmds[5];
+
+        cmds[0] = (uint8_t)COM_RX_DATA[HEADER + 1];
+        cmds[1] = (uint8_t)COM_RX_DATA[HEADER + 2];
+        cmds[2] = (uint8_t)COM_RX_DATA[HEADER + 3];
+        cmds[3] = (uint8_t)COM_RX_DATA[HEADER + 4];
+        cmds[4] = (uint8_t)COM_RX_DATA[HEADER + 5];
+        syslog(LOG_DEBUG, "**********\n*************\nHere the com rx data is %02x,%02x,%02x,%02x,%02x,%02x\n********************\n********************\n",
+               HEADER, cmds[0], cmds[0 + 1], cmds[0 + 2], cmds[0 + 3], cmds[0 + 4]);
+
+        send_data_uart(COM_UART, ack, sizeof(ack));
+
+        syslog(LOG_DEBUG, "MCU ID %d |%02x\n", cmds[0]);
+        if (cmds[3] == 0x00 && cmds[4] == 0x00)
         {
-        case OBC_MCU: /*
-                      Command to perform flash operations by the OBC
-                      */
-
-          if (cmds[0] == 0x1a && cmds[1] == 0xe0 && cmds[2] == 0x1e)
+          switch (MCU_ID)
           {
-            printf("\n-------------------Satellite reset command received-----------------\n Resets in 2 seconds\n");
-            sleep(10);
-            gpio_write(GPIO_GBL_RST, true);
-          }
-          else if (cmds[0] == 0x75 && cmds[1] == 0x6e && cmds[2] == 0x69) // TIme updation using unix timestamp
-          {
-            printf("\n Command received to set the clock of OBC\n");
-            // header+6
+          case OBC_MCU: /*
+                        Command to perform flash operations by the OBC
+                        */
 
-            uint32_t timestamp_received = 0;
-            printf("Received command is \n");
-            for (int i = 0; i < 20; i++)
+            if (cmds[0] == 0x1a && cmds[1] == 0xe0 && cmds[2] == 0x1e)
             {
+              printf("\n-------------------Satellite reset command received-----------------\n Resets in 2 seconds\n");
+              sleep(10);
+              gpio_write(GPIO_GBL_RST, true);
             }
-            for (int i = 0; i < 4; i++)
+            else if (cmds[0] == 0x75 && cmds[1] == 0x6e && cmds[2] == 0x69) // TIme updation using unix timestamp
             {
-              printf("%02x ", COM_RX_DATA[HEADER + 9 - i]);
-              timestamp_received |= (COM_RX_DATA[HEADER + 9 - i] << (8 * i));
+              printf("\n Command received to set the clock of OBC\n");
+              // header+6
+
+              uint32_t timestamp_received = 0;
+              printf("Received command is \n");
+              for (int i = 0; i < 20; i++)
+              {
+              }
+              for (int i = 0; i < 4; i++)
+              {
+                printf("%02x ", COM_RX_DATA[HEADER + 9 - i]);
+                timestamp_received |= (COM_RX_DATA[HEADER + 9 - i] << (8 * i));
+              }
+              set_time(timestamp_received);
             }
-            set_time(timestamp_received);
-          }
-          { // __file_operations.cmd = COM_RX_DATA[HEADER + 1];
-            syslog(LOG_DEBUG, "OBC MCU ID has been received\n");
-            // break; // TO remove this later
-            if (cmds[0] == 0xCA || cmds[0] == 0x1D)
-            {
-              struct FILE_OPERATIONS __file_operations = {
-                  .cmd = 0x00,
-                  .number_of_packets = {0}, // Initialize all elements to 0
-                  .filepath = {'\0'},       // Initialize as an empty string
-                  .address = {0},           // Initialize all elements to 0
-                  .rsv_table = {0},         // Initialize all elements to 0
-                  .mcu_id = 0xda};
+            { // __file_operations.cmd = COM_RX_DATA[HEADER + 1];
+              syslog(LOG_DEBUG, "OBC MCU ID has been received\n");
+              // break; // TO remove this later
+              if (cmds[0] == 0xCA || cmds[0] == 0x1D)
+              {
+                struct FILE_OPERATIONS __file_operations = {
+                    .cmd = 0x00,
+                    .number_of_packets = {0}, // Initialize all elements to 0
+                    .filepath = {'\0'},       // Initialize as an empty string
+                    .address = {0},           // Initialize all elements to 0
+                    .rsv_table = {0},         // Initialize all elements to 0
+                    .mcu_id = 0xda};
 
-              __file_operations.cmd = cmds[0];
-              // __file_operations.select_file = ;
-              if ((COM_RX_DATA[HEADER + 2] == 0xD1) || (COM_RX_DATA[HEADER + 2] == 0xD2))
-              {
-                __file_operations.select_flash = MAIN_FLASH_MEMORY;
-                if ((COM_RX_DATA[HEADER + 2] == 0xD2))
-                  strcpy(__file_operations.filepath, MFM_MSN_STRPATH);
-                else
-                  strcpy(__file_operations.filepath, MFM_MAIN_STRPATH);
-              }
-              if ((COM_RX_DATA[HEADER + 2] == 0xD3) || (COM_RX_DATA[HEADER + 2] == 0xD4))
-              {
-                __file_operations.select_flash = SHARED_FLASH_MEMORY;
-                if ((COM_RX_DATA[HEADER + 2] == 0xD3))
-                  strcpy(__file_operations.filepath, SFM_MAIN_STRPATH);
-                else
-                  strcpy(__file_operations.filepath, SFM_MSN_STRPATH);
-              }
-              char filename[9][30] = {"/flags.txt", "/satHealth.txt", "/satHealth.txt", "/reservation_command.txt", "/cam_rgb.txt", "/epdm.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt"};
-
-              if ((cmds[2] == 0xF1))
-              {
-                __file_operations.select_file = FLAGS;
-                __file_operations.mcu_id = 0xad;
-
-                strcat(__file_operations.filepath, "/flags.txt");
-                syslog(LOG_DEBUG, "Selected file is %s\n", __file_operations.select_file);
-              }
-              else if ((cmds[2] == 0xF2))
-              {
-                __file_operations.mcu_id = 218;
-                __file_operations.select_file = SATELLITE_HEALTH;
-                strcat(__file_operations.filepath, "/satHealth.txt");
-                syslog(LOG_DEBUG, "Selected file is %s\n", __file_operations.select_file);
-                __file_operations.mcu_id = 0xda;
-              }
-              else if ((cmds[2] == 0xF3))
-              {
-                __file_operations.mcu_id = 0xda;
-
-                __file_operations.select_file = SATELLITE_LOG;
-                strcat(__file_operations.filepath, "/satHealth.txt");
-              }
-              else if ((cmds[2] == 0xF4))
-              {
-                __file_operations.mcu_id = 0xad;
-
-                __file_operations.select_file = RESERVATION_TABLE;
-                strcat(__file_operations.filepath, "/reservation_command.txt");
-              }
-              else if ((cmds[2] == 0xF5))
-              {
-                strcat(__file_operations.filepath, "/cam_rgb.txt");
-                __file_operations.mcu_id = 0x0c;
-
-                __file_operations.select_file = CAMERA_TXT;
-              }
-              else if ((cmds[2] == 0xF6))
-              {
-                __file_operations.mcu_id = 0x0b;
-
-                __file_operations.select_file = EPDM_TXT;
-                strcat(__file_operations.filepath, "/epdm.txt");
-              }
-              else if ((cmds[2] == 0xF7))
-              {
-                __file_operations.select_file = ADCS_TXT;
-                __file_operations.mcu_id = 0x0d;
-                strcat(__file_operations.filepath, "/adcs.txt");
-              }
-              else if ((cmds[2] == 0xF8))
-              {
-                __file_operations.select_file = CAMERA_NIR_TXT;
-                __file_operations.mcu_id = 0x0c;
-                strcat(__file_operations.filepath, "/cam_nir.txt");
-              }
-              else if ((cmds[2] == 0xF9))
-              {
-                __file_operations.select_file = DIGIPEATER_TXT;
-                __file_operations.mcu_id = 0x0a;
-                strcat(__file_operations.filepath, "/digipeater.txt");
-              }
-              else if ((cmds[2] == 0xFA))
-              {
-                struct file temp_fp;
-                uint32_t counter = 0;
-                int fd = 0;
-                uint8_t beacon[BEACON_DATA_SIZE] = {'\0'};
-
-                // Initialize beacon header
-                beacon[0] = 0x53;
-                beacon[1] = 0x52;
-                beacon[2] = 0xED;
-                beacon[3] = 0x01;
-
-                for (int i = 1; i < 9; i++)
+                __file_operations.cmd = cmds[0];
+                // __file_operations.select_file = ;
+                if ((COM_RX_DATA[HEADER + 2] == 0xD1) || (COM_RX_DATA[HEADER + 2] == 0xD2))
                 {
-                  memset(beacon, '\0', sizeof(beacon));
-
-                  if (i < 4)
-                  {
-                    fd = open_file_flash(&temp_fp, MFM_MAIN_STRPATH, filename[i], O_RDONLY);
-                  }
+                  __file_operations.select_flash = MAIN_FLASH_MEMORY;
+                  if ((COM_RX_DATA[HEADER + 2] == 0xD2))
+                    strcpy(__file_operations.filepath, MFM_MSN_STRPATH);
                   else
-                  {
-                    fd = open_file_flash(&temp_fp, MFM_MSN_STRPATH, filename[i], O_RDONLY);
-                  }
-
-                  if (fd >= 0)
-                  {
-                    counter = file_seek(&temp_fp, 0, SEEK_END);
-                    close(fd); // Close the file to prevent resource leaks
-                  }
+                    strcpy(__file_operations.filepath, MFM_MAIN_STRPATH);
+                }
+                if ((COM_RX_DATA[HEADER + 2] == 0xD3) || (COM_RX_DATA[HEADER + 2] == 0xD4))
+                {
+                  __file_operations.select_flash = SHARED_FLASH_MEMORY;
+                  if ((COM_RX_DATA[HEADER + 2] == 0xD3))
+                    strcpy(__file_operations.filepath, SFM_MAIN_STRPATH);
                   else
+                    strcpy(__file_operations.filepath, SFM_MSN_STRPATH);
+                }
+                char filename[9][30] = {"/flags.txt", "/satHealth.txt", "/satHealth.txt", "/reservation_command.txt", "/cam_rgb.txt", "/epdm.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt"};
+
+                if ((cmds[2] == 0xF1))
+                {
+                  __file_operations.select_file = FLAGS;
+                  __file_operations.mcu_id = 0xad;
+
+                  strcat(__file_operations.filepath, "/flags.txt");
+                  syslog(LOG_DEBUG, "Selected file is %s\n", __file_operations.select_file);
+                }
+                else if ((cmds[2] == 0xF2))
+                {
+                  __file_operations.mcu_id = 218;
+                  __file_operations.select_file = SATELLITE_HEALTH;
+                  strcat(__file_operations.filepath, "/satHealth.txt");
+                  syslog(LOG_DEBUG, "Selected file is %s\n", __file_operations.select_file);
+                  __file_operations.mcu_id = 0xda;
+                }
+                else if ((cmds[2] == 0xF3))
+                {
+                  __file_operations.mcu_id = 0xda;
+
+                  __file_operations.select_file = SATELLITE_LOG;
+                  strcat(__file_operations.filepath, "/satHealth.txt");
+                }
+                else if ((cmds[2] == 0xF4))
+                {
+                  __file_operations.mcu_id = 0xad;
+
+                  __file_operations.select_file = RESERVATION_TABLE;
+                  strcat(__file_operations.filepath, "/reservation_command.txt");
+                }
+                else if ((cmds[2] == 0xF5))
+                {
+                  strcat(__file_operations.filepath, "/cam_rgb.txt");
+                  __file_operations.mcu_id = 0x0c;
+
+                  __file_operations.select_file = CAMERA_TXT;
+                }
+                else if ((cmds[2] == 0xF6))
+                {
+                  __file_operations.mcu_id = 0x0b;
+
+                  __file_operations.select_file = EPDM_TXT;
+                  strcat(__file_operations.filepath, "/epdm.txt");
+                }
+                else if ((cmds[2] == 0xF7))
+                {
+                  __file_operations.select_file = ADCS_TXT;
+                  __file_operations.mcu_id = 0x0d;
+                  strcat(__file_operations.filepath, "/adcs.txt");
+                }
+                else if ((cmds[2] == 0xF8))
+                {
+                  __file_operations.select_file = CAMERA_NIR_TXT;
+                  __file_operations.mcu_id = 0x0c;
+                  strcat(__file_operations.filepath, "/cam_nir.txt");
+                }
+                else if ((cmds[2] == 0xF9))
+                {
+                  __file_operations.select_file = DIGIPEATER_TXT;
+                  __file_operations.mcu_id = 0x0a;
+                  strcat(__file_operations.filepath, "/digipeater.txt");
+                }
+                else if ((cmds[2] == 0xFA))
+                {
+                  struct file temp_fp;
+                  uint32_t counter = 0;
+                  int fd = 0;
+                  uint8_t beacon[BEACON_DATA_SIZE] = {'\0'};
+
+                  // Initialize beacon header
+                  beacon[0] = 0x53;
+                  beacon[1] = 0x52;
+                  beacon[2] = 0xED;
+                  beacon[3] = 0x01;
+
+                  for (int i = 1; i < 9; i++)
                   {
-                    counter = 0; // Handle the error case
+                    memset(beacon, '\0', sizeof(beacon));
+
+                    if (i < 4)
+                    {
+                      fd = open_file_flash(&temp_fp, MFM_MAIN_STRPATH, filename[i], O_RDONLY);
+                    }
+                    else
+                    {
+                      fd = open_file_flash(&temp_fp, MFM_MSN_STRPATH, filename[i], O_RDONLY);
+                    }
+
+                    if (fd >= 0)
+                    {
+                      counter = file_seek(&temp_fp, 0, SEEK_END);
+                      close(fd); // Close the file to prevent resource leaks
+                    }
+                    else
+                    {
+                      counter = 0; // Handle the error case
+                    }
+
+                    beacon[i * 4] = counter & 0xFF;
+                    beacon[i * 4 + 1] = (counter >> 8) & 0xFF;
+                    beacon[i * 4 + 2] = (counter >> 16) & 0xFF;
+                    beacon[i * 4 + 3] = (counter >> 24) & 0xFF;
+                    file_close(&temp_fp);
+                    close(fd);
                   }
 
-                  beacon[i * 4] = counter & 0xFF;
-                  beacon[i * 4 + 1] = (counter >> 8) & 0xFF;
-                  beacon[i * 4 + 2] = (counter >> 16) & 0xFF;
-                  beacon[i * 4 + 3] = (counter >> 24) & 0xFF;
-                  file_close(&temp_fp);
-                  close(fd);
+                  beacon[BEACON_DATA_SIZE - 2] = 0x7E;
+                  beacon[BEACON_DATA_SIZE - 1] = '\0';
+
+                  send_flash_data(beacon);
+                }
+                else if ((cmds[2] == 0xFB)) // SEEK_POINTER
+                {
+
+                  __file_operations.select_file = SEEK_POINTER_TXT;
+                  __file_operations.mcu_id = 0x0a;
+                  strcat(__file_operations.filepath, "/seek_pointer.txt");
                 }
 
-                beacon[BEACON_DATA_SIZE - 2] = 0x7E;
-                beacon[BEACON_DATA_SIZE - 1] = '\0';
+                else if ((cmds[2] == 0xFC)) // LOG_RGB
+                {
+                  __file_operations.select_file = LOG_RGB_TXT;
+                  __file_operations.mcu_id = 0x0a;
+                  strcat(__file_operations.filepath, "/cam_rgb_logs.txt");
+                }
 
-                send_flash_data(beacon);
+                else if ((cmds[2] == 0xFD)) // LOG_NIR
+                {
+
+                  __file_operations.select_file = LOG_NIR_TXT;
+                  __file_operations.mcu_id = 0x0a;
+                  strcat(__file_operations.filepath, "/cam_nir_logs.txt");
+                }
+
+                else if ((cmds[2] == 0xFE)) // LOG_EPDM
+                {
+
+                  __file_operations.select_file = LOG_EPDM_TXT;
+                  __file_operations.mcu_id = 0x0a;
+                  strcat(__file_operations.filepath, "/epdm_logs.txt");
+                }
+
+                // TODO check reservation table here
+                if (cmds[2] != 0xFA)
+                {
+                  __file_operations.rsv_table[0] = COM_RX_DATA[HEADER + 4];
+                  __file_operations.rsv_table[1] = COM_RX_DATA[HEADER + 5];
+
+                  // TODO check address here
+                  __file_operations.address[0] = COM_RX_DATA[HEADER + 6];
+                  __file_operations.address[1] = COM_RX_DATA[HEADER + 7];
+                  __file_operations.address[2] = COM_RX_DATA[HEADER + 8];
+                  __file_operations.address[3] = COM_RX_DATA[HEADER + 9];
+
+                  // TODO check for number of packets here
+                  __file_operations.number_of_packets[0] = COM_RX_DATA[HEADER + 10];
+                  __file_operations.number_of_packets[1] = COM_RX_DATA[HEADER + 11];
+
+                  syslog(LOG_DEBUG, "mcu id %d, cmd : %d, select_file:%d, select_flash: %d, rsv_table:%d, filepath:%s,address :%d %d %d %d, number_of packets:%d %d\n",
+                         __file_operations.mcu_id, __file_operations.cmd, __file_operations.select_flash, __file_operations.select_file, __file_operations.rsv_table[1], __file_operations.rsv_table[0], __file_operations.filepath,
+                         __file_operations.address[3], __file_operations.address[2], __file_operations.address[1], __file_operations.address[0],
+                         __file_operations.number_of_packets[0], __file_operations.number_of_packets[1]);
+                  // sleep(1);
+                  // send_data_uart(COM_UART, ack, sizeof(ack));
+
+                  // uorb
+                  strcpy(command_uorb.path, __file_operations.filepath);
+                  command_uorb.command = __file_operations.cmd;
+                  command_uorb.num_of_packets = (uint16_t)__file_operations.number_of_packets[0] << 8 | __file_operations.number_of_packets[1];
+                  // command_uorb.packet_type = 0x00;//TODO removed from struct
+                  command_uorb.address = (uint32_t)__file_operations.address[0] << 24 | __file_operations.address[1] << 16 | __file_operations.address[2] << 8 | __file_operations.address[3] & 0xff;
+                  command_uorb.pkt_type = __file_operations.mcu_id;
+                  MISSION_STATUS.FLASH_OPERATION = true;
+                  FLASH_OPERATION = true;
+                  flash_read_operation_uorb(); // sends command using uorb
+                  flash_operation_data(command_uorb.num_of_packets);
+
+                  MISSION_STATUS.FLASH_OPERATION = false;
+                  FLASH_OPERATION = false;
+                }
+                // if (FLASH_UORB_RESPONDING == false)
+                // {
+                // perform_file_operations(&__file_operations);//TODO need to check this logic of file operation execute this function if uorb is not responding though a variable has been initialized and if the loop is there for some static second then var is initialized
+                // }
+                // uorb//
+
+                // memset(command_uorb.data, '\0', sizeof(command_uorb.data));
+                // int cmd_fd = orb_advertise(ORB_ID(command), &command_uorb);
+                // int adc_instance = 1;
+                // int cmd_fd = orb_advertise_multi_queue_persist(ORB_ID(command), &command_uorb,
+                //                                                &adc_instance, sizeof(struct command));
+
+                // if (cmd_fd >= 0)
+                // {
+                //   printf("THe command uorb advertise has been opened\n");
+                //   int ret = orb_publish(ORB_ID(command), &command_uorb, sizeof(struct command));
+                //   if (ret >= 0)
+                //   {
+                //     syslog(LOG_DEBUG, "THe data has been published");
+                //   }
+                // }
+                // else
+                // {
+                //   syslog(LOG_ERR, "Raw ADC advertise failed. %i\n", cmd_fd);
+                // }
+                // orb_unadvertise(ORB_ID(command));
+                // uorb//
               }
-              else if ((cmds[2] == 0xFB)) // SEEK_POINTER
+
+              /*
+              Command for disabling status of KILL SWITCH
+              */
+              else if (cmds[0] == 0xee && cmds[1] == 0xaa && cmds[2] == 0xaa)
               {
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
+                critic_flags.KILL_SWITCH_STAT = KILL_SW_OFF;
+                store_flag_data(&critic_flags);
+                gpio_write(GPIO_KILL_SW_EN, 0);
+                gpio_write(GPIO_KILL_SW_EN, false);
 
-                __file_operations.select_file = SEEK_POINTER_TXT;
-                __file_operations.mcu_id = 0x0a;
-                strcat(__file_operations.filepath, "/seek_pointer.txt");
+                // gpio_write(GPIO_)
+
+                syslog(LOG_DEBUG, "--------- kill switch deactivated\n");
               }
 
-              else if ((cmds[2] == 0xFC)) // LOG_RGB
+              /*
+              Command for enabling status of KILL SWITCH
+              */
+              else if (cmds[0] == 0xee && cmds[1] == 0xee && cmds[2] == 0xee)
               {
-                __file_operations.select_file = LOG_RGB_TXT;
-                __file_operations.mcu_id = 0x0a;
-                strcat(__file_operations.filepath, "/cam_rgb_logs.txt");
-              }
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
 
-              else if ((cmds[2] == 0xFD)) // LOG_NIR
+                syslog(LOG_DEBUG, "---------kill switch command received\n");
+
+                if (0 == receive_command(&kill_sw))
+                // store_flag_data(1,&critic_flags);
+                {
+                  critic_flags.KILL_SWITCH_STAT = KILL_SW_ON;
+                  gpio_write(GPIO_KILL_SW1_NEG, true);
+                  gpio_write(GPIO_KILL_SW1_POS, false);
+                  gpio_write(GPIO_KILL_SW_EN, true);
+
+                  gpio_write(GPIO_KILL_SW1_NEG, true);
+                  gpio_write(GPIO_KILL_SW1_POS, false);
+                  gpio_write(GPIO_KILL_SW_EN, true);
+                  syslog(LOG_DEBUG, "---------kill switch activated\n");
+                }
+              }
+              else if (cmds[0] == 0xff && cmds[1] == 0xff && cmds[2] == 0xff)
               {
+                /*
+                Command to erase all the contents of internal as well as external flash
+                */
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
 
-                __file_operations.select_file = LOG_NIR_TXT;
-                __file_operations.mcu_id = 0x0a;
-                strcat(__file_operations.filepath, "/cam_nir_logs.txt");
+                syslog(LOG_DEBUG, "---------flash erase command received\n");
+                clear_int_flag();
+                clear_ext_flag();                
               }
-
-              else if ((cmds[2] == 0xFE)) // LOG_EPDM
+              else if (cmds[0] == 0xff && cmds[1] == 0xfe && cmds[2] == 0xfe)
               {
+                /*
+                Command to erase all the flag data content from internal as well as external flash
+                */
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
 
-                __file_operations.select_file = LOG_EPDM_TXT;
-                __file_operations.mcu_id = 0x0a;
-                strcat(__file_operations.filepath, "/epdm_logs.txt");
+                syslog(LOG_DEBUG, "---------flash erase command received\n");
+                clear_int_flag();
+                // clear_ext_flag();
+                struct file flp1;   
+                int fd = -1;
+                fd = open_file_flash(&flp1, MFM_MAIN_STRPATH, "/flags.txt", O_CREAT | O_TRUNC);
+                close(fd); 
+                fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, "/flags.txt", O_CREAT | O_TRUNC);
+                close(fd); 
               }
-
-              // TODO check reservation table here
-              if (cmds[2] != 0xFA)
-              {
-                __file_operations.rsv_table[0] = COM_RX_DATA[HEADER + 4];
-                __file_operations.rsv_table[1] = COM_RX_DATA[HEADER + 5];
-
-                // TODO check address here
-                __file_operations.address[0] = COM_RX_DATA[HEADER + 6];
-                __file_operations.address[1] = COM_RX_DATA[HEADER + 7];
-                __file_operations.address[2] = COM_RX_DATA[HEADER + 8];
-                __file_operations.address[3] = COM_RX_DATA[HEADER + 9];
-
-                // TODO check for number of packets here
-                __file_operations.number_of_packets[0] = COM_RX_DATA[HEADER + 10];
-                __file_operations.number_of_packets[1] = COM_RX_DATA[HEADER + 11];
-
-                syslog(LOG_DEBUG, "mcu id %d, cmd : %d, select_file:%d, select_flash: %d, rsv_table:%d, filepath:%s,address :%d %d %d %d, number_of packets:%d %d\n",
-                       __file_operations.mcu_id, __file_operations.cmd, __file_operations.select_flash, __file_operations.select_file, __file_operations.rsv_table[1], __file_operations.rsv_table[0], __file_operations.filepath,
-                       __file_operations.address[3], __file_operations.address[2], __file_operations.address[1], __file_operations.address[0],
-                       __file_operations.number_of_packets[0], __file_operations.number_of_packets[1]);
-                // sleep(1);
-                // send_data_uart(COM_UART, ack, sizeof(ack));
-
-                // uorb
-                strcpy(command_uorb.path, __file_operations.filepath);
-                command_uorb.command = __file_operations.cmd;
-                command_uorb.num_of_packets = (uint16_t)__file_operations.number_of_packets[0] << 8 | __file_operations.number_of_packets[1];
-                // command_uorb.packet_type = 0x00;//TODO removed from struct
-                command_uorb.address = (uint32_t)__file_operations.address[0] << 24 | __file_operations.address[1] << 16 | __file_operations.address[2] << 8 | __file_operations.address[3] & 0xff;
-                command_uorb.pkt_type = __file_operations.mcu_id;
-                MISSION_STATUS.FLASH_OPERATION = true;
-                FLASH_OPERATION = true;
-                flash_read_operation_uorb(); // sends command using uorb
-                flash_operation_data(command_uorb.num_of_packets);
-
-                MISSION_STATUS.FLASH_OPERATION = false;
-                FLASH_OPERATION = false;
-              }
-              // if (FLASH_UORB_RESPONDING == false)
-              // {
-              // perform_file_operations(&__file_operations);//TODO need to check this logic of file operation execute this function if uorb is not responding though a variable has been initialized and if the loop is there for some static second then var is initialized
-              // }
-              // uorb//
-
-              // memset(command_uorb.data, '\0', sizeof(command_uorb.data));
-              // int cmd_fd = orb_advertise(ORB_ID(command), &command_uorb);
-              // int adc_instance = 1;
-              // int cmd_fd = orb_advertise_multi_queue_persist(ORB_ID(command), &command_uorb,
-              //                                                &adc_instance, sizeof(struct command));
-
-              // if (cmd_fd >= 0)
-              // {
-              //   printf("THe command uorb advertise has been opened\n");
-              //   int ret = orb_publish(ORB_ID(command), &command_uorb, sizeof(struct command));
-              //   if (ret >= 0)
-              //   {
-              //     syslog(LOG_DEBUG, "THe data has been published");
-              //   }
-              // }
-              // else
-              // {
-              //   syslog(LOG_ERR, "Raw ADC advertise failed. %i\n", cmd_fd);
-              // }
-              // orb_unadvertise(ORB_ID(command));
-              // uorb//
             }
+            /* code */
+            break;
 
-            /*
-            Command for disabling status of KILL SWITCH
-            */
-            else if (cmds[0] == 0xee && cmds[1] == 0xaa && cmds[2] == 0xaa)
+          case COM_MCU:
+            // Command to ENABLE Digipeater misison
             {
-              sleep(1);
-              send_data_uart(COM_UART, ack, sizeof(ack));
-              critic_flags.KILL_SWITCH_STAT = KILL_SW_OFF;
-              store_flag_data(&critic_flags);
-              gpio_write(GPIO_KILL_SW_EN, 0);
-              gpio_write(GPIO_KILL_SW_EN, false);
-
-              // gpio_write(GPIO_)
-
-              syslog(LOG_DEBUG, "--------- kill switch deactivated\n");
-            }
-
-            /*
-            Command for enabling status of KILL SWITCH
-            */
-            else if (cmds[0] == 0xee && cmds[1] == 0xee && cmds[2] == 0xee)
-            {
-              sleep(1);
-              send_data_uart(COM_UART, ack, sizeof(ack));
-
-              syslog(LOG_DEBUG, "---------kill switch command received\n");
-
-              if (0 == receive_command(&kill_sw))
-              // store_flag_data(1,&critic_flags);
+              syslog(LOG_DEBUG, "COM MCU ID has been received\n");
+              if (cmds[0] == 0xDF && cmds[1] == 0xAB && cmds[2] == 0xD1)
               {
-                critic_flags.KILL_SWITCH_STAT = KILL_SW_ON;
-                gpio_write(GPIO_KILL_SW1_NEG, true);
-                gpio_write(GPIO_KILL_SW1_POS, false);
-                gpio_write(GPIO_KILL_SW_EN, true);
 
-                gpio_write(GPIO_KILL_SW1_NEG, true);
-                gpio_write(GPIO_KILL_SW1_POS, false);
-                gpio_write(GPIO_KILL_SW_EN, true);
-                syslog(LOG_DEBUG, "---------kill switch activated\n");
+                syslog(LOG_DEBUG, "-------- Digipeater mission turned ON---------\n");
+              }
+
+              // Command to DISABLE Digipeater misison
+              else if (cmds[0] == 0xFD && cmds[1] == 0xBA && cmds[2] == 0xD0)
+              {
+                incorrect_command(ack);
+                syslog(LOG_DEBUG, "-----------------------Digipeater mission turned OFF---------------\n");
               }
             }
-          }
-          /* code */
-          break;
+            /* code */
+            break;
 
-        case COM_MCU:
-          // Command to ENABLE Digipeater misison
-          {
-            syslog(LOG_DEBUG, "COM MCU ID has been received\n");
-            if (cmds[0] == 0xDF && cmds[1] == 0xAB && cmds[2] == 0xD1)
+          case ADCS_MCU:
+            // Command to DISABLE adcs(MSN1) misison
             {
+              syslog(LOG_DEBUG, "ADCS MCU ID has been received\n");
+              if (cmds[1] == 0x53 && cmds[2] == 0xCE)
+              {
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
+                syslog(LOG_DEBUG, "------------  ADCS mission turned on (command received using radio frequency)--------------\n");
+                uint8_t data2[] = {0x53, 0x0a, 0x0d, 0x0c, 0x01, 0x7e};
+                if (cmds[0] == 0xA0)
+                  data2[4] = 0x01;
+                else
+                  data2[4] = 0x02;
+                mission_operation(1, data2);
 
-              syslog(LOG_DEBUG, "-------- Digipeater mission turned ON---------\n");
-            }
-
-            // Command to DISABLE Digipeater misison
-            else if (cmds[0] == 0xFD && cmds[1] == 0xBA && cmds[2] == 0xD0)
-            {
-              incorrect_command(ack);
-              syslog(LOG_DEBUG, "-----------------------Digipeater mission turned OFF---------------\n");
-            }
-          }
-          /* code */
-          break;
-
-        case ADCS_MCU:
-          // Command to DISABLE adcs(MSN1) misison
-          {
-            syslog(LOG_DEBUG, "ADCS MCU ID has been received\n");
-            if (cmds[1] == 0x53 && cmds[2] == 0xCE)
-            {
-              sleep(1);
-              send_data_uart(COM_UART, ack, sizeof(ack));
-              syslog(LOG_DEBUG, "------------  ADCS mission turned on (command received using radio frequency)--------------\n");
-              uint8_t data2[] = {0x53, 0x0a, 0x0d, 0x0c, 0x01, 0x7e};
-              if (cmds[0] == 0xA0)
-                data2[4] = 0x01;
+                syslog(LOG_DEBUG, "------------  ADCS mission turned off (command received using radio frequency) --------------\n");
+              }
               else
-                data2[4] = 0x02;
-              mission_operation(1, data2);
+              {
+                incorrect_command(ack);
+                // 53,ac,04,01,63,62,7e
+                ack[2] = 0xac;
+                ack[3] = 0x04;
+                ack[4] = 0x01;
+                ack[5] = 0x63;
+                ack[6] = 0x62;
+                ack[7] = 0x7e;
 
-              syslog(LOG_DEBUG, "------------  ADCS mission turned off (command received using radio frequency) --------------\n");
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
+                syslog(LOG_DEBUG, "----------------Incorrect command for ADCS mission---------------\n");
+              }
             }
-            else
+            /* code */
+            break;
+
+          case CAM_MCU:
+            // Command to ENABLE/DISABLE or run camera(MSN2) mission
             {
-              incorrect_command(ack);
-              // 53,ac,04,01,63,62,7e
-              ack[2] = 0xac;
-              ack[3] = 0x04;
-              ack[4] = 0x01;
-              ack[5] = 0x63;
-              ack[6] = 0x62;
-              ack[7] = 0x7e;
-
-              sleep(1);
-              send_data_uart(COM_UART, ack, sizeof(ack));
-              syslog(LOG_DEBUG, "----------------Incorrect command for ADCS mission---------------\n");
+              syslog(LOG_DEBUG, "CAM MCU ID has been received\n");
+              if (cmds[0] == 0xCC && cmds[2] == 0xBD)
+              {
+                gpio_write(GPIO_SFM_MODE, true);
+                syslog(LOG_DEBUG, "------------------------  cam mission turned on (Command received from COM using RF)------------------\n");
+                send_data_uart(COM_UART, ack, sizeof(ack));
+                // new_camera_operation();
+                uint8_t data2[] = {0x53, 0x0c, 0x0a, 0x77, 0x01, 0x7e};
+                data2[4] = cmds[1];
+                mission_operation(2, data2);
+                syslog(LOG_DEBUG, "------------------------  cam mission turned off(Command received from COM using RF)--------------------\n");
+                sleep(1);
+              }
+              else
+              {
+                incorrect_command(ack);
+                ack[2] = 0xac;
+                ack[3] = 0x04;
+                ack[4] = 0x01;
+                ack[5] = 0x63;
+                ack[6] = 0x62;
+                ack[7] = 0x7e;
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
+                syslog(LOG_DEBUG, "------------Incorrect command\n");
+              }
             }
+            /* code */
+            break;
+
+          case EPDM_MCU:
+            // Command to ENABLE/DISABLE or run epdm(MSN3) mission
+            {
+              syslog(LOG_DEBUG, "EPDM MCU ID has been received\n");
+              if (cmds[0] == 0xEC && (cmds[2] == 0xCF | cmds[1] == 0xCF))
+              {
+                // sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
+
+                syslog(LOG_DEBUG, "----------------EPDM  turned on ------------------\n");
+                // epdm_operation();
+                uint8_t data2[] = {0x53, 0x0e, 0x0d, 0x0e, 0x05, 0x7e};
+                data2[4] = cmds[1];
+                mission_operation(3, data2);
+                syslog(LOG_DEBUG, "----------------EPDM  turned off -----------------\n");
+              }
+              else
+              {
+                // incorrect_command(ack);
+
+                ack[2] = 0xda;
+                ack[3] = 0x04;
+                ack[4] = 0x01;
+                ack[5] = 0x63;
+                ack[6] = 0x62;
+                ack[7] = 0x7e;
+                sleep(1);
+                send_data_uart(COM_UART, ack, sizeof(ack));
+                syslog(LOG_DEBUG, "------------Incorrect command received for EPDM-----------\n");
+              }
+            }
+            /* code */
+            break;
+
+          default:
+            ack[2] = 0xac;
+            ack[3] = 0x04;
+            ack[4] = 0x01;
+            ack[5] = 0x63;
+            ack[6] = 0x62;
+            ack[7] = 0x7e;
+            incorrect_command(ack);
+
+            break;
           }
-          /* code */
-          break;
-
-        case CAM_MCU:
-          // Command to ENABLE/DISABLE or run camera(MSN2) mission
-          {
-            syslog(LOG_DEBUG, "CAM MCU ID has been received\n");
-            if (cmds[0] == 0xCC && cmds[2] == 0xBD)
-            {
-              gpio_write(GPIO_SFM_MODE, true);
-              syslog(LOG_DEBUG, "------------------------  cam mission turned on (Command received from COM using RF)------------------\n");
-              send_data_uart(COM_UART, ack, sizeof(ack));
-              // new_camera_operation();
-              uint8_t data2[] = {0x53, 0x0c, 0x0a, 0x77, 0x01, 0x7e};
-              data2[4] = cmds[1];
-              mission_operation(2, data2);
-              syslog(LOG_DEBUG, "------------------------  cam mission turned off(Command received from COM using RF)--------------------\n");
-              sleep(1);
-            }
-            else
-            {
-              incorrect_command(ack);
-              ack[2] = 0xac;
-              ack[3] = 0x04;
-              ack[4] = 0x01;
-              ack[5] = 0x63;
-              ack[6] = 0x62;
-              ack[7] = 0x7e;
-              sleep(1);
-              send_data_uart(COM_UART, ack, sizeof(ack));
-              syslog(LOG_DEBUG, "------------Incorrect command\n");
-            }
-          }
-          /* code */
-          break;
-
-        case EPDM_MCU:
-          // Command to ENABLE/DISABLE or run epdm(MSN3) mission
-          {
-            syslog(LOG_DEBUG, "EPDM MCU ID has been received\n");
-            if (cmds[0] == 0xEC && (cmds[2] == 0xCF | cmds[1] == 0xCF))
-            {
-              // sleep(1);
-              send_data_uart(COM_UART, ack, sizeof(ack));
-
-              syslog(LOG_DEBUG, "----------------EPDM  turned on ------------------\n");
-              // epdm_operation();
-              uint8_t data2[] = {0x53, 0x0e, 0x0d, 0x0e, 0x05, 0x7e};
-              data2[4] = cmds[1];
-              mission_operation(3, data2);
-              syslog(LOG_DEBUG, "----------------EPDM  turned off -----------------\n");
-            }
-            else
-            {
-              incorrect_command(ack);
-
-              ack[2] = 0xac;
-              ack[3] = 0x04;
-              ack[4] = 0x01;
-              ack[5] = 0x63;
-              ack[6] = 0x62;
-              ack[7] = 0x7e;
-              sleep(1);
-              send_data_uart(COM_UART, ack, sizeof(ack));
-              syslog(LOG_DEBUG, "------------Incorrect command received for EPDM-----------\n");
-            }
-          }
-          /* code */
-          break;
-
-        default:
-          ack[2] = 0xac;
-          ack[3] = 0x04;
-          ack[4] = 0x01;
-          ack[5] = 0x63;
-          ack[6] = 0x62;
-          ack[7] = 0x7e;
-          incorrect_command(ack);
-
-          break;
-        }
-      }
-      else
-      {
-        struct reservation_command res;
-        res.mcu_id = MCU_ID;
-        for (int i = 0; i < 5; i++)
-        {
-
-          if (i < 3)
-            res.cmd[i] = cmds[i];
-          else
-            res.time[i % 3] = cmds[i];
-        }
-        res.latest_time = 0x00;
-
-        uint16_t t = 0x00;
-        int adc_instance = 0;
-        t = (uint16_t)cmds[3] << 8 | cmds[4];
-        printf("Reservation command received with time:%d minutes", t);
-        printf("The command is %02x %02x %02x\n", cmds[0], cmds[1], cmds[2]);
-        if (res.mcu_id >= 3 && res.mcu_id <= 5)
-        {
-          sat_health.rsv_flag += 1;
-          critic_flags.RSV_FLAG += 1;
-          save_critics_flags(&critic_flags);
-        }
-        int raw_afd = orb_advertise_multi_queue_persist(ORB_ID(reservation_command), &res,
-                                                        &adc_instance, sizeof(struct reservation_command));
-
-        if (raw_afd < 0)
-        {
-          syslog(LOG_ERR, "Raw ADC advertise failed. %i\n", raw_afd);
         }
         else
         {
-          if (OK != orb_publish(ORB_ID(reservation_command), raw_afd, &res))
+          struct reservation_command res;
+          res.mcu_id = MCU_ID;
+          for (int i = 0; i < 5; i++)
           {
-            syslog(LOG_ERR, "Orb Publish failed\n");
+
+            if (i < 3)
+              res.cmd[i] = cmds[i];
+            else
+              res.time[i % 3] = cmds[i];
+          }
+          res.latest_time = 0x00;
+
+          uint16_t t = 0x00;
+          int adc_instance = 0;
+          t = (uint16_t)cmds[3] << 8 | cmds[4];
+          printf("Reservation command received with time:%d minutes", t);
+          printf("The command is %02x %02x %02x\n", cmds[0], cmds[1], cmds[2]);
+          if (res.mcu_id >= 3 && res.mcu_id <= 5)
+          {
+            sat_health.rsv_flag += 1;
+            critic_flags.RSV_FLAG += 1;
+            save_critics_flags(&critic_flags);
+          }
+          int raw_afd = orb_advertise_multi_queue_persist(ORB_ID(reservation_command), &res,
+                                                          &adc_instance, sizeof(struct reservation_command));
+
+          if (raw_afd < 0)
+          {
+            syslog(LOG_ERR, "Raw ADC advertise failed. %i\n", raw_afd);
           }
           else
           {
-            syslog(LOG_DEBUG, "Reservation Command Orb Published\n");
-            // sat_health.rsv_cmd+=1;
+            if (OK != orb_publish(ORB_ID(reservation_command), raw_afd, &res))
+            {
+              syslog(LOG_ERR, "Orb Publish failed\n");
+            }
+            else
+            {
+              syslog(LOG_DEBUG, "Reservation Command Orb Published\n");
+              // sat_health.rsv_cmd+=1;
 
-            // sort_reservation_command(1, false);
+              // sort_reservation_command(1, false);
 
-            // FIRST_RSV_CMD = true;
+              // FIRST_RSV_CMD = true;
+            }
           }
+          ret = orb_unadvertise(raw_afd);
+          if (ret < 0)
+          {
+            syslog(LOG_ERR, "adc raw Orb Unadvertise failed.\n");
+          }
+          // ORB_DECLARE(reservation_command);
+          // ORB_DEFINE(reservation_command, struct reservation_command,print_satellite_health_data);
         }
-        ret = orb_unadvertise(raw_afd);
-        if (ret < 0)
-        {
-          syslog(LOG_ERR, "adc raw Orb Unadvertise failed.\n");
-        }
-        // ORB_DECLARE(reservation_command);
-        // ORB_DEFINE(reservation_command, struct reservation_command,print_satellite_health_data);
+      }
+      else{
+            ack[2] = 0xac;
+            ack[3] = 0x04;
+            ack[4] = 0x01;
+            ack[5] = 0x63;
+            ack[6] = 0x62;
+            ack[7] = 0x7e;
+            incorrect_command(ack);
       }
       // for (int i = 0; i < BEACON_DATA_SIZE; i++)
       // {
@@ -1401,6 +1442,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
 
 static int COM_TASK(int argc, char *argv[])
 {
+  timer =0;
   int ret = -1;
   uint8_t rx_data[COM_RX_CMD_SIZE] = {'\0'};
   gpio_write(GPIO_3V3_COM_EN, 0);
@@ -1586,7 +1628,7 @@ int handshake_COM(uint8_t *ack)
   uint8_t data1[ACK_DATA_SIZE] = {'\0'};
   int i;
   int count = 0, ret;
-  printf("Opening uart dev path : %s ret : %d", COM_UART, fd);
+  printf("\nOpening uart dev path :  ret : %d", COM_UART, fd);
   usleep(PRINT_DELAY);
   fd = open(COM_UART, O_RDWR);
   if (fd < 0)
@@ -1754,7 +1796,11 @@ int handshake_MSN(uint8_t subsystem, uint8_t *ack)
   }
 
   printf("Handshake failed after %d attempts\n", HANDSHAKE_ATTEMPTS);
-  if(subsystem == 0)
+  if (subsystem == 0)
+  {
+    reset_obc();
+    sleep(1);
+  }
   return -1;
 }
 
@@ -2797,8 +2843,8 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
     cubus_mft_configure(board_sfm_get_manifest(), 2);
     // if(subsystem != 1)
   }
-  if(state == 0)
-  maintain_data_consistency();
+  if (state == 0)
+    maintain_data_consistency();
   // pet_counter = 0
 }
 // #include
@@ -3351,7 +3397,8 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
                     for (i = 0; i < 100; i++)
                     {
                       buffer[i] = data_received[i];
-                      if (buffer[i + 1] == 0xff && buffer[i + 2] == 0xd8)
+                      printf("%02x ", data[i]);
+                      if (buffer[i - 1] == 0xff && buffer[i] == 0xd8)
                       {
                         break;
                       }
@@ -3529,7 +3576,6 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 
 //         syslog(LOG_DEBUG, "Counter: %d, Time: %d sec\n", counter, elapsed_time);
 
-
 //         int e;
 //         if (handshake_data[4] < 1 || handshake_data[4] > 5)
 //         {
@@ -3539,7 +3585,6 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 //         {
 //           e = handshake_data[4];
 //         }
-        
 
 //         if (
 //           (mission == 3 && elapsed_time >= e * 57) ||
@@ -3965,7 +4010,8 @@ int ads7953_receiver(int argc, FAR char *argv[])
   int afd = orb_advertise_multi_queue_persist(ORB_ID(sensor_rgb), &sat_health,
                                               &adc_instance, sizeof(struct sensor_rgb));
 
-  if (afd < 0) {
+  if (afd < 0)
+  {
     syslog(LOG_ERR, "Orb advertise failed.\n");
     return -1;
   }
@@ -4332,7 +4378,7 @@ void handle_reservation_command(int fd_reservation, struct reservation_command r
 
   if (RSV_CMD[16] != 0x00 && RSV_CMD[16] == TO_EXECUTE.mcu_id &&
       RSV_CMD[17] != 0x00 && RSV_CMD[18] != 0x00 &&
-      timer >= TO_EXECUTE.latest_time + timer_counter )
+      timer >= TO_EXECUTE.latest_time + timer_counter + 90)
   {
     printf("----------------------------------------------------\n");
     printf("Time elapsed %d time remaining %d\n", timer, TO_EXECUTE.latest_time + timer_counter);
@@ -4620,4 +4666,57 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
   }
 
   // pthread_mutex_unlock(&main_flash_mutex); // Unlock the mutex
+}
+
+
+void clear_ext_flag(){
+  char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt","/time.txt","/epdm.txt", "/cam_rgb.txt", "/adcs.txt",  "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
+  struct file flp1, flp2, flp3, flp4;
+  int fd=-1;
+  for (int i = 0; i < sizeof(filename) / sizeof(filename[0]); i++)
+  {
+    if(i <= 3){
+      fd = open_file_flash(&flp1, MFM_MAIN_STRPATH, filename[i], O_CREAT); 
+      if (fd < 0)
+      {
+       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+      fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT); 
+      if (fd < 0)
+      {
+       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+    }
+    else if(i==4){
+      fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT); 
+      if (fd < 0)
+      {
+       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+      fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT); 
+      if (fd < 0)
+      {
+       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+    }
+    else{
+      fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT); 
+      if (fd < 0)
+      {
+       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+      fd = open_file_flash(&flp1, SFM_MSN_STRPATH, filename[i], O_CREAT); 
+      if (fd < 0)
+      {
+       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+    }
+    
+  }
 }
