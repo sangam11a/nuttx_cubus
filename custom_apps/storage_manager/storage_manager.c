@@ -115,145 +115,241 @@
    return 0;
  }
  
- void read_and_print_mag_data(void)
- {
-     int sub_fd;
-     struct reservation_command res, last_res = {0};
-     int fd_reservation;
-     fd_reservation = orb_subscribe(ORB_ID(reservation_command));
-     struct orb_mag_scaled_s mag_data;
-     satellite_health_s satellite_health;
-     bool updated;
+//  void read_and_print_mag_data(void)
+//  {
+//      int sub_fd;
+//      struct reservation_command res, last_res = {0};
+//      int fd_reservation;
+//      fd_reservation = orb_subscribe(ORB_ID(reservation_command));
+//      struct orb_mag_scaled_s mag_data;
+//      satellite_health_s satellite_health;
+//      bool updated;
  
-     struct pollfd fds2;
-     struct sensor_rgb satHealth;
-     int fd2, ret;
-     fd2 = orb_subscribe_multi(ORB_ID(sensor_rgb), 0);
-     fds2.fd = fd2;
-     fds2.events = POLLIN;
-       sub_fd = orb_subscribe(ORB_ID(orb_mag_scaled));
-         if (sub_fd < 0)
-         {
-             syslog(LOG_ERR, "Failed to subscribe to orb_mag_scaled topic\n");
-             // return;
-         }
+//      struct pollfd fds2;
+//      struct sensor_rgb satHealth;
+//      int fd2, ret;
+//      fd2 = orb_subscribe_multi(ORB_ID(sensor_rgb), 0);
+//      fds2.fd = fd2;
+//      fds2.events = POLLIN;
+//        sub_fd = orb_subscribe(ORB_ID(orb_mag_scaled));
+//          if (sub_fd < 0)
+//          {
+//              syslog(LOG_ERR, "Failed to subscribe to orb_mag_scaled topic\n");
+//              // return;
+//          }
     
  
-     while (1)
-     {
-         // if (count % 10 == 0)
-         // {
-         //     sort_reservation_command(1, false);
-         // }
-         count+=10;
+//      while (1)
+//      {
+//          // if (count % 10 == 0)
+//          // {
+//          //     sort_reservation_command(1, false);
+//          // }
+//          count+=10;
        
-         // //printf(
-         //   "read and print amg))))))))))))))))))))))))))))))))))))))\n"
-         // );
+//          // //printf(
+//          //   "read and print amg))))))))))))))))))))))))))))))))))))))\n"
+//          // );
  
-         orb_check(fd_reservation, &updated);
-         // //printf("The value of updated is %d\n",updated);
-         if (updated)
-         {
+//          orb_check(fd_reservation, &updated);
+//          // //printf("The value of updated is %d\n",updated);
+//          if (updated)
+//          {
  
-             orb_copy(ORB_ID(reservation_command), fd_reservation, &res);
-             // //printf("the timestamp data is %d %d", res.timestamp,time(NULL));
+//              orb_copy(ORB_ID(reservation_command), fd_reservation, &res);
+//              // //printf("the timestamp data is %d %d", res.timestamp,time(NULL));
  
-             // Process only if it's a new command
-             if (memcmp(&res, &last_res, sizeof(res)) != 0 )//res.mcu_id>=3 && res.mcu_id <=5
-             {
-                 //printf("Value of reservation command uORB has been updated\n");
+//              // Process only if it's a new command
+//              if (memcmp(&res, &last_res, sizeof(res)) != 0 )//res.mcu_id>=3 && res.mcu_id <=5
+//              {
+//                  //printf("Value of reservation command uORB has been updated\n");
  
-                 // Update the last processed command
-                 // res.latest_time += time_counter;
-                 last_res = res;
-                 printf("The reservation command is %02x %02x %02x %d\n", res.cmd[0], res.cmd[1], res.cmd[2], res.latest_time);
+//                  // Update the last processed command
+//                  // res.latest_time += time_counter;
+//                  last_res = res;
+//                  printf("The reservation command is %02x %02x %02x %d\n", res.cmd[0], res.cmd[1], res.cmd[2], res.latest_time);
  
                  
          
-                 // if (res.latest_time == 0x00 && res.mcu_id != 0)
-                  uint16_t t = 0x00;
-                  t = (uint16_t)res.cmd[3] << 8 | res.cmd[4];
-                 if (res.mcu_id>=0x01 && res.mcu_id <=0x05 && t <= 35000)                
-                 {
-                     struct file file_ptr;
-                 pthread_mutex_lock(&main_flash_mutex); // Lock the mutex
+//                  // if (res.latest_time == 0x00 && res.mcu_id != 0)
+//                   uint16_t t = 0x00;
+//                   t = (uint16_t)res.cmd[3] << 8 | res.cmd[4];
+//                  if (res.mcu_id>=0x01 && res.mcu_id <=0x05 && t <= 35000)                
+//                  {
+//                      struct file file_ptr;
+//                  pthread_mutex_lock(&main_flash_mutex); // Lock the mutex
  
-                     int fd = open_file_flash(&file_ptr, MFM_MAIN_STRPATH, RESERVATION_CMD, O_CREAT | O_WRONLY | O_APPEND);
-                     if (fd >= 0)
-                     {
-                         ssize_t file_size = file_seek(&file_ptr, 0, SEEK_END);
-                         ssize_t bytes_written = file_write(&file_ptr, &res, sizeof(res));
-                         if (bytes_written > 0)
-                         {
-                             //printf("File size is %zd. Reservation table updated with %zd bytes\n", file_size, bytes_written);
-                             // res.latest_time -= time_counter;
-                         }
-                         // file_close(&file_ptr);
-                     }
-                     file_close(&file_ptr);
-                 pthread_mutex_unlock(&main_flash_mutex); // Lock the mutex
+//                      int fd = open_file_flash(&file_ptr, MFM_MAIN_STRPATH, RESERVATION_CMD, O_CREAT | O_WRONLY | O_APPEND);
+//                      if (fd >= 0)
+//                      {
+//                          ssize_t file_size = file_seek(&file_ptr, 0, SEEK_END);
+//                          ssize_t bytes_written = file_write(&file_ptr, &res, sizeof(res));
+//                          if (bytes_written > 0)
+//                          {
+//                              //printf("File size is %zd. Reservation table updated with %zd bytes\n", file_size, bytes_written);
+//                              // res.latest_time -= time_counter;
+//                          }
+//                          // file_close(&file_ptr);
+//                      }
+//                      file_close(&file_ptr);
+//                  pthread_mutex_unlock(&main_flash_mutex); // Lock the mutex
  
-                 }
-             }
-             else
-             {
-                 printf("Duplicate reservation command received. Skipping.\n");
-             }
-         }
+//                  }
+//              }
+//              else
+//              {
+//                  printf("Duplicate reservation command received. Skipping.\n");
+//              }
+//          }
  
-         if (count % 90 == 0 | count >= 90)
-         {
-             count = 0;
-             orb_check(sub_fd, &updated);
-             if (updated)
-             {
-                 orb_copy(ORB_ID(orb_mag_scaled), sub_fd, &mag_data);
+//          if (count % 90 == 0 | count >= 90)
+//          {
+//              count = 0;
+//              orb_check(sub_fd, &updated);
+//              if (updated)
+//              {
+//                  orb_copy(ORB_ID(orb_mag_scaled), sub_fd, &mag_data);
  
-                 if (poll(&fds2, 1, 3000) > 0)
-                 {
-                     if (fds2.revents & POLLIN)
-                     {
-                         ret = orb_copy_multi(fd2, &satHealth, sizeof(struct sensor_rgb));
-                         if (ret < 0)
-                         {
-                             syslog(LOG_ERR, "ORB copy error, %d \n", ret);
-                             return;
-                         }
-                         else
-                         {
-                             printf("Satellite Health ORB is getting data %d\n", satellite_health.rsv_cmd);
-                         }
-                     }
-                 }
+//                  if (poll(&fds2, 1, 3000) > 0)
+//                  {
+//                      if (fds2.revents & POLLIN)
+//                      {
+//                          ret = orb_copy_multi(fd2, &satHealth, sizeof(struct sensor_rgb));
+//                          if (ret < 0)
+//                          {
+//                              syslog(LOG_ERR, "ORB copy error, %d \n", ret);
+//                              return;
+//                          }
+//                          else
+//                          {
+//                              printf("Satellite Health ORB is getting data %d\n", satellite_health.rsv_cmd);
+//                          }
+//                      }
+//                  }
  
-                 satellite_health.accl_x = mag_data.acc_x;
-                 satellite_health.accl_y = mag_data.acc_y;
-                 satellite_health.accl_z = mag_data.acc_z;
+//                  satellite_health.accl_x = mag_data.acc_x;
+//                  satellite_health.accl_y = mag_data.acc_y;
+//                  satellite_health.accl_z = mag_data.acc_z;
  
-                 satellite_health.gyro_x = mag_data.gyro_x;
-                 satellite_health.gyro_y = mag_data.gyro_y;
-                 satellite_health.gyro_z = mag_data.gyro_z;
+//                  satellite_health.gyro_x = mag_data.gyro_x;
+//                  satellite_health.gyro_y = mag_data.gyro_y;
+//                  satellite_health.gyro_z = mag_data.gyro_z;
  
-                 satellite_health.mag_x = mag_data.mag_x;
-                 satellite_health.mag_y = mag_data.mag_y;
-                 satellite_health.mag_z = mag_data.mag_z;
+//                  satellite_health.mag_x = mag_data.mag_x;
+//                  satellite_health.mag_y = mag_data.mag_y;
+//                  satellite_health.mag_z = mag_data.mag_z;
  
-                 store_sat_health_data(&satHealth, MFM_MAIN_STRPATH);
-                 store_sat_health_data(&satHealth, SFM_MAIN_STRPATH);
-                //  print_satellite_health_data(&satHealth);
-                 // maintain_data_consistency();
-             }
-         }
-         time_counter += 10;
+//                  store_sat_health_data(&satHealth, MFM_MAIN_STRPATH);
+//                  store_sat_health_data(&satHealth, SFM_MAIN_STRPATH);
+//                 //  print_satellite_health_data(&satHealth);
+//                  // maintain_data_consistency();
+//              }
+//          }
+//          time_counter += 10;
  
-         sleep(10); // Sleep for 1 second
-     }
+//          sleep(10); // Sleep for 1 second
+//      }
  
-     orb_unsubscribe(sub_fd);
-     orb_unsubscribe(fd_reservation);
-     orb_unsubscribe(fd2);
- }
+//      orb_unsubscribe(sub_fd);
+//      orb_unsubscribe(fd_reservation);
+//      orb_unsubscribe(fd2);
+//  }
+void read_and_print_mag_data(void)
+{
+    int sub_fd;
+    struct reservation_command res, last_res = {0};
+    int fd_reservation = orb_subscribe(ORB_ID(reservation_command));
+    struct orb_mag_scaled_s mag_data;
+    satellite_health_s satellite_health;
+    bool updated;
+    
+    /* Subscribe to sensor_rgb using orb_subscribe (instead of using poll) */
+    struct sensor_rgb satHealth;
+    int fd2 = orb_subscribe(ORB_ID(sensor_rgb));
+    
+    sub_fd = orb_subscribe(ORB_ID(orb_mag_scaled));
+    if (sub_fd < 0) {
+        syslog(LOG_ERR, "Failed to subscribe to orb_mag_scaled topic\n");
+        // return; // or handle error as needed
+    }
+    
+    while (1) {
+        count += 10;
+        
+        /* Check for new reservation command data */
+        orb_check(fd_reservation, &updated);
+        if (updated) {
+            orb_copy(ORB_ID(reservation_command), fd_reservation, &res);
+            if (memcmp(&res, &last_res, sizeof(res)) != 0) {
+                last_res = res;
+                printf("The reservation command is %02x %02x %02x %d\n",
+                       res.cmd[0], res.cmd[1], res.cmd[2], res.latest_time);
+                
+                uint16_t t = ((uint16_t)res.cmd[3] << 8) | res.cmd[4];
+                if (res.mcu_id >= 0x01 && res.mcu_id <= 0x05 && t <= 35000) {
+                    struct file file_ptr;
+                    pthread_mutex_lock(&main_flash_mutex); // Lock the mutex
+                    int fd = open_file_flash(&file_ptr, MFM_MAIN_STRPATH, RESERVATION_CMD,
+                                               O_CREAT | O_WRONLY | O_APPEND);
+                    if (fd >= 0) {
+                        ssize_t file_size = file_seek(&file_ptr, 0, SEEK_END);
+                        ssize_t bytes_written = file_write(&file_ptr, &res, sizeof(res));
+                        // You can add logging here if needed
+                    }
+                    file_close(&file_ptr);
+                    pthread_mutex_unlock(&main_flash_mutex); // Unlock the mutex
+                }
+            } else {
+                printf("Duplicate reservation command received. Skipping.\n");
+            }
+        }
+        
+        /* Every 90 count iterations, check for new magnetometer and sensor_rgb data */
+        if ((count % 20 == 0) || (count >= 90)) {
+            count = 0;
+            orb_check(sub_fd, &updated);
+            if (updated) {
+                orb_copy(ORB_ID(orb_mag_scaled), sub_fd, &mag_data);
+                
+                /* Instead of polling, check sensor_rgb with orb_check/ orb_copy */
+                orb_check(fd2, &updated);
+                if (updated) {
+                    int ret = orb_copy(ORB_ID(sensor_rgb), fd2, &satHealth);
+                    if (ret < 0) {
+                        syslog(LOG_ERR, "ORB copy error, %d\n", ret);
+                        return;
+                    } else {
+                        printf("Satellite Health ORB is getting data %d\n", satellite_health.rsv_cmd);
+                    }
+                }
+                
+                /* Update satellite health structure with magnetometer data */
+                satellite_health.accl_x = mag_data.acc_x;
+                satellite_health.accl_y = mag_data.acc_y;
+                satellite_health.accl_z = mag_data.acc_z;
+                
+                satellite_health.gyro_x = mag_data.gyro_x;
+                satellite_health.gyro_y = mag_data.gyro_y;
+                satellite_health.gyro_z = mag_data.gyro_z;
+                
+                satellite_health.mag_x = mag_data.mag_x;
+                satellite_health.mag_y = mag_data.mag_y;
+                satellite_health.mag_z = mag_data.mag_z;
+                
+                store_sat_health_data(&satHealth, MFM_MAIN_STRPATH);
+                store_sat_health_data(&satHealth, SFM_MAIN_STRPATH);
+                print_satellite_health_data(&satHealth);
+            }
+        }
+        
+        time_counter += 10;
+        sleep(10); // Sleep for 10 seconds (adjust as needed)
+    }
+    
+    orb_unsubscribe(sub_fd);
+    orb_unsubscribe(fd_reservation);
+    orb_unsubscribe(fd2);
+}
  
  // void read_and_print_mag_data(void)
  // {

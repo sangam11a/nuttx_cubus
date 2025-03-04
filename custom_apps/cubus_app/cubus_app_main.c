@@ -892,8 +892,14 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
             if (cmds[0] == 0x1a && cmds[1] == 0xe0 && cmds[2] == 0x1e)
             {
               printf("\n-------------------Satellite reset command received-----------------\n Resets in 2 seconds\n");
-              sleep(10);
+              sleep(2);
               gpio_write(GPIO_GBL_RST, true);
+            }
+            else if(cmds[0] == 0xF0 && cmds[1]==0x53 && cmds[2] == 0x4D){//format shared flash memory
+                cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
+                cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
+                cubus_mft_configure(board_sfm_get_manifest(), 2, true);
+                
             }
             else if (cmds[0] == 0x75 && cmds[1] == 0x6e && cmds[2] == 0x69) // TIme updation using unix timestamp
             {
@@ -1205,7 +1211,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
 
                 syslog(LOG_DEBUG, "---------flash erase command received\n");
                 clear_int_flag();
-                clear_ext_flag();                
+                clear_ext_flag();
               }
               else if (cmds[0] == 0xff && cmds[1] == 0xfe && cmds[2] == 0xfe)
               {
@@ -1218,12 +1224,12 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                 syslog(LOG_DEBUG, "---------flash erase command received\n");
                 clear_int_flag();
                 // clear_ext_flag();
-                struct file flp1;   
+                struct file flp1;
                 int fd = -1;
                 fd = open_file_flash(&flp1, MFM_MAIN_STRPATH, "/flags.txt", O_CREAT | O_TRUNC);
-                close(fd); 
+                close(fd);
                 fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, "/flags.txt", O_CREAT | O_TRUNC);
-                close(fd); 
+                close(fd);
               }
             }
             /* code */
@@ -1422,14 +1428,15 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
           // ORB_DEFINE(reservation_command, struct reservation_command,print_satellite_health_data);
         }
       }
-      else{
-            ack[2] = 0xac;
-            ack[3] = 0x04;
-            ack[4] = 0x01;
-            ack[5] = 0x63;
-            ack[6] = 0x62;
-            ack[7] = 0x7e;
-            incorrect_command(ack);
+      else
+      {
+        ack[2] = 0xac;
+        ack[3] = 0x04;
+        ack[4] = 0x01;
+        ack[5] = 0x63;
+        ack[6] = 0x62;
+        ack[7] = 0x7e;
+        incorrect_command(ack);
       }
       // for (int i = 0; i < BEACON_DATA_SIZE; i++)
       // {
@@ -1442,7 +1449,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
 
 static int COM_TASK(int argc, char *argv[])
 {
-  timer =0;
+  timer = 0;
   int ret = -1;
   uint8_t rx_data[COM_RX_CMD_SIZE] = {'\0'};
   gpio_write(GPIO_3V3_COM_EN, 0);
@@ -1501,13 +1508,13 @@ static int COM_TASK(int argc, char *argv[])
     }
     else
     {
-      int retval = task_create("WATCHDOG_TASK", 100, 2896, watchdog_task, NULL);
+      int retval = task_create("WATCHDOG_TASK", 100, 2296, watchdog_task, NULL);
       if (retval < 0)
       {
         printf("unable to create WATCHDOG_TASK task\n");
         for (int i = 0; i < 4; i++)
         {
-          retval = task_create("WATCHDOG_TASK", 100, 4096, watchdog_task, NULL);
+          retval = task_create("WATCHDOG_TASK", 100, 3096, watchdog_task, NULL);
           if (retval >= 0)
           {
             if (retval < 0)
@@ -2718,7 +2725,7 @@ int main(int argc, FAR char *argv[])
         }
         else
         {
-          int retval = task_create("COMMANDER_TASK_APP", 100, 45096, COM_TASK, NULL);
+          int retval = task_create("COMMANDER_TASK_APP", 100, 38096, COM_TASK, NULL);
 
           if (retval >= 0)
           {
@@ -2736,7 +2743,7 @@ int main(int argc, FAR char *argv[])
         }
         else
         {
-          int retval = create_task("BEACON_TASK_APP", 100, 3800, send_beacon);
+          int retval = create_task("BEACON_TASK_APP", 100, 2000, send_beacon);
           if (retval >= 0)
           {
             g_beacon_task_started = true;
@@ -2753,7 +2760,7 @@ int main(int argc, FAR char *argv[])
         }
         else
         {
-          int retval = create_task("MPU6500_TASK_APP", 100, 2048, subscribe_and_retrieve_data);
+          int retval = create_task("MPU6500_TASK_APP", 100, 2148, subscribe_and_retrieve_data);
           if (retval >= 0)
           {
             g_mpu_task_started = true;
@@ -2833,18 +2840,20 @@ int turn_msn_on_off(uint8_t subsystem, uint8_t state)
   }
 
   gpio_write(GPIO_SFM_MODE, state);
-  if ((state == true || state == 1) && (subsystem == 3))
+  if ((state == true || state == 1) && (subsystem != 1))
   {
     cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
     cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
   }
-  if ((state == false || state == 0) && (subsystem == 3))
+  if ((state == false || state == 0) && (subsystem != 1))
   {
-    cubus_mft_configure(board_sfm_get_manifest(), 2);
+    cubus_mft_configure(board_sfm_get_manifest(), 2, false);
     // if(subsystem != 1)
   }
   if (state == 0)
+  {
     maintain_data_consistency();
+  }
   // pet_counter = 0
 }
 // #include
@@ -2997,7 +3006,7 @@ int send_beacon_data()
       // printf("Beacon Type %d sequence complete\n", beacon_type);
       // print_seek_pointer();
       beacon_type = !beacon_type;
-      // print_satellite_health_data(&sat_health);
+      print_satellite_health_data(&sat_health);
       toggle_wdg();
       store_flag_data(&critic_flags, timer);
 
@@ -3796,23 +3805,23 @@ void make_satellite_health()
   float int_adc3_temp[CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE] = {'\0'};
   int_adc3_data_convert(int_adc3_temp);
 
-  sat_health.sol_t_c = (int16_t)(int_adc1_temp[0] * 1000);
-  sat_health.v5_c = (int16_t)(int_adc1_temp[1] * 1000);
-  sat_health.v3_com_c = (int16_t)(int_adc1_temp[2] * 1000);
-  sat_health.v3_main_c = (int16_t)(int_adc1_temp[3] * 1000);
+  sat_health.sol_t_c = (int16_t)(int_adc1_temp[0] * 10);
+  sat_health.v5_c = (int16_t)(int_adc1_temp[1] * 10);
+  sat_health.v3_com_c = (int16_t)(int_adc1_temp[2] * 10);
+  sat_health.v3_main_c = (int16_t)(int_adc1_temp[3] * 10);
   sat_health.batt_volt = (int16_t)(int_adc1_temp[4] * 1000);
-  sat_health.sol_p5_c = (int16_t)(int_adc1_temp[5] * 1000);
-  sat_health.sol_p4_c = (int16_t)(int_adc1_temp[6] * 1000);
-  sat_health.sol_p3_c = (int16_t)(int_adc1_temp[7] * 1000);
-  sat_health.batt_c = (int16_t)(int_adc1_temp[8] * 1000);
-  sat_health.unreg_c = (int16_t)(int_adc1_temp[9] * 1000);
-  sat_health.v4_c = (int16_t)(int_adc1_temp[10] * 1000);
+  sat_health.sol_p5_c = (int16_t)(int_adc1_temp[5] * 10);
+  sat_health.sol_p4_c = (int16_t)(int_adc1_temp[6] * 10);
+  sat_health.sol_p3_c = (int16_t)(int_adc1_temp[7] * 10);
+  sat_health.batt_c = (int16_t)(int_adc1_temp[8] * 10);
+  sat_health.unreg_c = (int16_t)(int_adc1_temp[9] * 10);
+  sat_health.v4_c = (int16_t)(int_adc1_temp[10] * 10);
 
-  sat_health.raw_c = (int32_t)(int_adc1_temp[11] * 1000);
-  sat_health.sol_p1_c = (int16_t)(int_adc1_temp[12] * 1000);
+  sat_health.raw_c = (int32_t)(int_adc1_temp[11] * 10);
+  sat_health.sol_p1_c = (int16_t)(int_adc1_temp[12] * 10);
 
-  sat_health.sol_p2_c = (int16_t)(int_adc1_temp[13] * 1000);
-  sat_health.v3_2_c = (int16_t)(int_adc3_temp[0] * 1000);
+  sat_health.sol_p2_c = (int16_t)(int_adc1_temp[13] * 10);
+  sat_health.v3_2_c = (int16_t)(int_adc3_temp[0] * 10);
 #endif
   sat_health.ant_dep_stat = critic_flags.ANT_DEP_STAT;
   sat_health.oper_mode = critic_flags.OPER_MODE;
@@ -4043,11 +4052,23 @@ int ads7953_receiver(int argc, FAR char *argv[])
       struct sat_temp_msg temp_msg;
       orb_copy(ORB_ID(sat_temp_msg), temp_sub_fd, &temp_msg);
 
+      // // Update satellite health data
+      // sat_health.temp_x = temp_msg.temp_2;
+      // sat_health.temp_x1 = temp_msg.temp_3;
+      // sat_health.temp_y = temp_msg.temp_4;
+      // sat_health.temp_y1 = temp_msg.temp_5;
+      // sat_health.ant_temp_out = temp_msg.temp_ant;
+      // sat_health.temp_bpb = temp_msg.temp_bpb;
+      // sat_health.temp_batt = temp_msg.batt_temp;
       // Update satellite health data
-      sat_health.temp_x = temp_msg.temp_2;
-      sat_health.temp_x1 = temp_msg.temp_3;
-      sat_health.temp_y = temp_msg.temp_4;
-      sat_health.temp_y1 = temp_msg.temp_5;
+      // sat_health.temp_x = temp_msg.temp_2;
+
+      sat_health.temp_y1 = temp_msg.temp_z_pos; //+z
+      sat_health.temp_z1 = temp_msg.temp_3;     //-z
+
+      sat_health.temp_x1 = temp_msg.temp_4; //-x
+      sat_health.temp_y = temp_msg.temp_2;  //+y
+      sat_health.temp_y1 = temp_msg.temp_5; //-y
       sat_health.ant_temp_out = temp_msg.temp_ant;
       sat_health.temp_bpb = temp_msg.temp_bpb;
       sat_health.temp_batt = temp_msg.batt_temp;
@@ -4122,33 +4143,17 @@ void print_satellite_health_data(satellite_health_s *sat_health)
   printf(" |   Z axis magnetic field  \t %d uT\t|\r\n", sat_health->mag_z);
   printf(" |----------------------------------------------------------|\r\n");
 
-  printf(" |   Solar Panel 1 Voltage: \t %d mV\t|\r\n", sat_health->sol_p1_v);
-  printf(" |   Solar Panel 2 Voltage: \t %d mV\t|\r\n", sat_health->sol_p2_v);
-  printf(" |   Solar Panel 3 Voltage: \t %d mV\t|\r\n", sat_health->sol_p3_v);
-  printf(" |   Solar Panel 4 Voltage: \t %d mV\t|\r\n", sat_health->sol_p4_v);
-  printf(" |   Solar Panel 5 Voltage: \t %d mV\t|\r\n", sat_health->sol_p5_v);
-  printf(" |   Solar Panel T Voltage: \t %d mV\t|\r\n", sat_health->sol_t_v);
+  printf(" |   Unreg Line Current:   * 10 \t %d mA \t|\r\n", sat_health->unreg_c);
+  printf(" |   Main 3v3 Current:     * 10 \t %d mA \t|\r\n", sat_health->v3_main_c);
+  printf(" |   COM 3v3 Current:      * 10 \t %d mA \t|\r\n", sat_health->v3_com_c);
+  printf(" |   5 Volts line Current: * 10 \t %d mA \t|\r\n", sat_health->v5_c);
+  printf(" |   3v3 2 line Current:   * 10 \t %d mA \t|\r\n", sat_health->v3_2_c);
   printf(" |----------------------------------------------------------|\r\n");
-
-  printf(" |   Solar Panel 1 Current: \t %d uA\t|\r\n", sat_health->sol_p1_c);
-  printf(" |   Solar Panel 2 Current: \t %d uA\t|\r\n", sat_health->sol_p2_c);
-  printf(" |   Solar Panel 3 Current: \t %d uA\t|\r\n", sat_health->sol_p3_c);
-  printf(" |   Solar Panel 4 Current: \t %d uA\t|\r\n", sat_health->sol_p4_c);
-  printf(" |   Solar Panel 5 Current: \t %d uA\t|\r\n", sat_health->sol_p5_c);
-  printf(" |   Solar Panel T Current: \t %d uA\t|\r\n", sat_health->sol_t_c);
-  printf(" |----------------------------------------------------------|\r\n");
-
-  printf(" |   Unreg Line Current:    \t %d uA\t|\r\n", sat_health->unreg_c);
-  printf(" |   Main 3v3 Current:      \t %d uA\t|\r\n", sat_health->v3_main_c);
-  printf(" |   COM 3v3 Current:       \t %d uA\t|\r\n", sat_health->v3_com_c);
-  printf(" |   5 Volts line Current:  \t %d uA\t|\r\n", sat_health->v5_c);
-  printf(" |   3v3 2 line Current:    \t %d uA\t|\r\n", sat_health->v3_2_c);
-  printf(" |----------------------------------------------------------|\r\n");
-  printf(" |   Raw Current:           \t %d uA\t|\r\n", sat_health->raw_c);
+  printf(" |   Raw Current:          * 10 \t %d mA \t|\r\n", sat_health->raw_c);
   printf(" |   Raw Voltage:           \t %d mV\t|\r\n", sat_health->raw_v);
   printf(" |----------------------------------------------------------|\r\n");
   printf(" |   Battery Total Voltage: \t %d mV\t|\r\n", sat_health->batt_volt);
-  printf(" |   Battery Total Current: \t %d uA\t|\r\n", sat_health->batt_c);
+  printf(" |   Battery Total Current:* 10 \t %d mA \t|\r\n", sat_health->batt_c);
   printf(" |   Battery Temperature:   \t %d C\t|\r\n", sat_health->temp_batt);
   printf(" |----------------------------------------------------------|\r\n");
   printf(" |   Solar Panel 1 Status   \t %s \t|\r\n", (sat_health->sol_p1_v) >= 1000 ? "Working" : "Not Working");
@@ -4157,11 +4162,30 @@ void print_satellite_health_data(satellite_health_s *sat_health)
   printf(" |   Solar Panel 4 Status   \t %s \t|\r\n", (sat_health->sol_p4_v) >= 1000 ? "Working" : "Not Working");
   printf(" |   Solar Panel 5 Status   \t %s \t|\r\n", (sat_health->sol_p5_v) >= 1000 ? "Working" : "Not Working");
   printf(" |----------------------------------------------------------|\r\n");
+
+  printf(" |   Solar Panel 1(+Z) Voltage: \t %d mV\t|\r\n", sat_health->sol_p1_v);
+  printf(" |   Solar Panel 2(+Y) Voltage: \t %d mV\t|\r\n", sat_health->sol_p2_v);
+  printf(" |   Solar Panel 3(-Z) Voltage: \t %d mV\t|\r\n", sat_health->sol_p3_v);
+  printf(" |   Solar Panel 4(-X) Voltage: \t %d mV\t|\r\n", sat_health->sol_p4_v);
+  printf(" |   Solar Panel 5(-Y) Voltage: \t %d mV\t|\r\n", sat_health->sol_p5_v);
+  printf(" |   Solar Panel T Voltage: \t %d mV\t|\r\n", sat_health->sol_t_v);
+  printf(" |----------------------------------------------------------|\r\n");
+
+  printf(" |   Solar Panel 1(+Z) Current * 10 : \t %d mA\t|\r\n", sat_health->sol_p1_c);
+  printf(" |   Solar Panel 2(+Y) Current * 10 : \t %d mA\t|\r\n", sat_health->sol_p2_c);
+  printf(" |   Solar Panel 3(-Z) Current * 10 : \t %d mA\t|\r\n", sat_health->sol_p3_c);
+  printf(" |   Solar Panel 4(-X) Current * 10 : \t %d mA\t|\r\n", sat_health->sol_p4_c);
+  printf(" |   Solar Panel 5(-Y) Current * 10 : \t %d mA\t|\r\n", sat_health->sol_p5_c);
+  printf(" |   Solar Panel T Current * 10 : \t %d mA\t|\r\n", sat_health->sol_t_c);
+
+  printf(" |----------------------------------------------------------|\r\n");
   printf(" |   BPB Temperature            \t %d C\t|\r\n", sat_health->temp_bpb);
   printf(" |   Antenna Panel Temperature  \t %d C\t|\r\n", sat_health->ant_temp_out);
-  printf(" |   Solar Panel Z Temperature  \t %d C\t|\r\n", sat_health->temp_z);
-  printf(" |   Solar Panel X Temperature  \t %d C\t|\r\n", sat_health->temp_x);
-  printf(" |   Solar Panel Y Temperature  \t %d C\t|\r\n", sat_health->temp_y);
+  printf(" |   Solar Panel -X Temperature  \t %d C\t|\r\n", sat_health->temp_x);
+  printf(" |   Solar Panel +Y Temperature  \t %d C\t|\r\n", sat_health->temp_x1);
+  printf(" |   Solar Panel -Y Temperature  \t %d C\t|\r\n", sat_health->temp_y);
+  printf(" |   Solar Panel +Z Temperature  \t %d C\t|\r\n", sat_health->temp_z);
+  printf(" |   Solar Panel -Z Temperature  \t %d C\t|\r\n", sat_health->temp_z1);
   printf(" |----------------------------------------------------------|\r\n");
 }
 
@@ -4262,16 +4286,16 @@ void subscribe_and_retrieve_data(void)
         continue;
       }
 
-      sat_health.accl_x = (int16_t)(mag_scaled.acc_x * 1000);
-      sat_health.accl_y = (int16_t)(mag_scaled.acc_y * 1000);
-      sat_health.accl_z = (int16_t)(mag_scaled.acc_z * 1000);
-      sat_health.gyro_x = (int16_t)(mag_scaled.gyro_x * 1000);
-      sat_health.gyro_y = (int16_t)(mag_scaled.gyro_y * 1000);
-      sat_health.gyro_z = (int16_t)(mag_scaled.gyro_z * 1000);
-      sat_health.mag_x = (int16_t)(mag_scaled.mag_x * 1000);
-      sat_health.mag_y = (int16_t)(mag_scaled.mag_y * 1000);
-      sat_health.mag_z = (int16_t)(mag_scaled.mag_z * 1000);
-      sat_health.temp_obc = mag_scaled.temperature * 1000;
+      sat_health.accl_x = (int16_t)(mag_scaled.acc_x * 100);
+      sat_health.accl_y = (int16_t)(mag_scaled.acc_y * 100);
+      sat_health.accl_z = (int16_t)(mag_scaled.acc_z * 100);
+      sat_health.gyro_x = (int16_t)(mag_scaled.gyro_x * 100);
+      sat_health.gyro_y = (int16_t)(mag_scaled.gyro_y * 100);
+      sat_health.gyro_z = (int16_t)(mag_scaled.gyro_z * 100);
+      sat_health.mag_x = (int16_t)(mag_scaled.mag_x * 100);
+      sat_health.mag_y = (int16_t)(mag_scaled.mag_y * 100);
+      sat_health.mag_z = (int16_t)(mag_scaled.mag_z * 100);
+      sat_health.temp_obc = mag_scaled.temperature * 100;
     }
 
     /* Add a small delay to avoid busy-waiting */
@@ -4668,55 +4692,57 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
   // pthread_mutex_unlock(&main_flash_mutex); // Unlock the mutex
 }
 
-
-void clear_ext_flag(){
-  char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt","/time.txt","/epdm.txt", "/cam_rgb.txt", "/adcs.txt",  "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
+void clear_ext_flag()
+{
+  char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt", "/time.txt", "/epdm.txt", "/cam_rgb.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
   struct file flp1, flp2, flp3, flp4;
-  int fd=-1;
+  int fd = -1;
   for (int i = 0; i < sizeof(filename) / sizeof(filename[0]); i++)
   {
-    if(i <= 3){
-      fd = open_file_flash(&flp1, MFM_MAIN_STRPATH, filename[i], O_CREAT); 
+    if (i <= 3)
+    {
+      fd = open_file_flash(&flp1, MFM_MAIN_STRPATH, filename[i], O_CREAT);
       if (fd < 0)
       {
-       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
       }
       file_close(&flp1);
-      fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT); 
+      fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT);
       if (fd < 0)
       {
-       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
-      }
-      file_close(&flp1);
-    }
-    else if(i==4){
-      fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT); 
-      if (fd < 0)
-      {
-       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
-      }
-      file_close(&flp1);
-      fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT); 
-      if (fd < 0)
-      {
-       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
       }
       file_close(&flp1);
     }
-    else{
-      fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT); 
+    else if (i == 4)
+    {
+      fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT);
       if (fd < 0)
       {
-       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
       }
       file_close(&flp1);
-      fd = open_file_flash(&flp1, SFM_MSN_STRPATH, filename[i], O_CREAT); 
+      fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, filename[i], O_CREAT);
       if (fd < 0)
       {
-       //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
       }
       file_close(&flp1);
     }
-    
+    else
+    {
+      fd = open_file_flash(&flp1, MFM_MSN_STRPATH, filename[i], O_CREAT);
+      if (fd < 0)
+      {
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+      fd = open_file_flash(&flp1, SFM_MSN_STRPATH, filename[i], O_CREAT);
+      if (fd < 0)
+      {
+        //  syslog(LOG_ERR, "Could not create file named sat_health... \n");
+      }
+      file_close(&flp1);
+    }
   }
 }

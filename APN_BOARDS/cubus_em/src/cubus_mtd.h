@@ -111,7 +111,9 @@ const cubus_mft_s* board_get_manifest(void);
 /**
  * mtd operations
  */
-int mt25ql_attach(mtd_instance_s *instance);
+// int mt25ql_attach(mtd_instance_s *instance);
+int mt25ql_attach(mtd_instance_s *instance, bool format_sfm);
+
 /*
   Get device complete geometry or a device
  */
@@ -147,7 +149,7 @@ mtd_instance_s **cubus_mtd_get_instances(unsigned int *count);
  *   non zero if error
  *
  ************************************************************************************/
-int cubus_mtd_config(const cubus_mtd_manifest_t *mft_mtd, int block_number);
+int cubus_mtd_config(const cubus_mtd_manifest_t *mft_mtd, int block_number, bool format_sfm);
 
 /************************************************************************************
  * Name: cubus_mtd_query
@@ -187,6 +189,6 @@ int cubus_mtd_query(const char *type, const char *val, const char **get);
  *
  ************************************************************************************/
 
-int cubus_mft_configure(const cubus_mft_s *mft, int block_number);
+int cubus_mft_configure(const cubus_mft_s *mft, int block_number, bool format_sfm);
 
 #endif  // __APN_BOARDS_CUBUS_BBM_SRC_MTD_H

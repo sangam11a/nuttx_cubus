@@ -89,12 +89,12 @@ typedef struct  {
 	int16_t mag_x; //2 
 	int16_t mag_y; //2
 	int16_t mag_z; //2
-	int16_t temp_x; //2
+	int16_t temp_x; //2 -x 4
 	int16_t temp_x1; //2
-	int16_t temp_y; //2
-	int16_t temp_y1; //2
-	int16_t temp_z; //2
-	int16_t temp_z1; //2
+	int16_t temp_y; //2 +y 2
+	int16_t temp_y1; //2-y 5
+	int16_t temp_z; //+z 1
+	int16_t temp_z1; //-z 3
 	int16_t temp_bpb; //2
 	int16_t temp_obc; //2
 	int16_t temp_com; //2

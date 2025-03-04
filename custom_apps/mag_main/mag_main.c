@@ -134,6 +134,7 @@ int  mag_daemon(int argc, FAR char *argv[])
   int fd;
   int ret;
   int i;
+  uint16_t mag[3];
 
   /* advertie scaled mag topic */
 
@@ -205,6 +206,18 @@ int  mag_daemon(int argc, FAR char *argv[])
       raw_imu.mag_x = mag_scaled.mag_x;
       raw_imu.mag_y = mag_scaled.mag_y;
       raw_imu.mag_z = mag_scaled.mag_z;
+      // mag[0] =(in)
+      // Assign scaled magnetic field values to raw IMU data
+raw_imu.mag_x = mag_scaled.mag_x;
+raw_imu.mag_y = mag_scaled.mag_y;
+raw_imu.mag_z = mag_scaled.mag_z;
+
+// Convert scaled values to uint16_t and multiply by 100
+  mag[0] = (uint16_t)(mag_scaled.mag_x * 100.0f);  // For X-axis
+  mag[1] = (uint16_t)(mag_scaled.mag_y * 100.0f);  // For Y-axis
+  mag[2] = (uint16_t)(mag_scaled.mag_z * 100.0f);  // For Z-axis
+
+
       raw_imu.temperature = mag_scaled.temperature;
       raw_imu.timestamp = mag_scaled.timestamp;
       if(OK != orb_publish(ORB_ID(orb_mag_scaled), afd, &raw_imu))

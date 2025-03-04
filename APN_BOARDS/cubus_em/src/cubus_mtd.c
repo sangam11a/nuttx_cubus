@@ -100,7 +100,7 @@ const cubus_mft_s *board_sfm_get_manifest(void)
     return &mft_sfm;
 }
 
-int mt25ql_attach(mtd_instance_s *instance)
+int mt25ql_attach(mtd_instance_s *instance, bool format_sfm)
 {
     syslog(LOG_INFO, "Starting MTD, MT25QL driver\n");
 
@@ -142,15 +142,16 @@ int mt25ql_attach(mtd_instance_s *instance)
         spi_speed_mhz--;
         usleep(10000);
     }
-    // struct spi_dev_s *spi = stm32_spibus_initialize(instance->bus_id);
     // SPI_LOCK(spi, true);
     // SPI_SETFREQUENCY(spi, spi_speed_mhz * 1000 * 1000);
     // SPI_SETBITS(spi, 8);
     // SPI_SETMODE(spi, SPIDEV_MODE0);
     // SPI_SELECT(spi, instance->devid, false);
     // SPI_LOCK(spi, false);
-    // mt25ql_reset_own(spi);
-    
+    if(format_sfm == true){
+    struct spi_dev_s *spi = stm32_spibus_initialize(instance->bus_id);
+    mt25ql_reset_own(spi); //function defined in mt25ql.c to reset sfm if there is some problem
+    }    
 
     /* if last attempt is still unsuccessful, abort */
     if (instance->mtd_dev == NULL)
@@ -240,7 +241,7 @@ mtd_instance_s **cubus_mtd_get_instances(unsigned int *count)
     return instances;
 }
 
-int cubus_mtd_config(const cubus_mtd_manifest_t *mft_mtd, int block_number)
+int cubus_mtd_config(const cubus_mtd_manifest_t *mft_mtd, int block_number, bool format_sfm)
 {
     // stm32_gpiowrite();
     int rv = -EINVAL;
@@ -327,7 +328,7 @@ int cubus_mtd_config(const cubus_mtd_manifest_t *mft_mtd, int block_number)
         if (mtd_list->entries[num_entry]->device->type == SPI)
         {
 
-            rv = mt25ql_attach(instances[i]);
+            rv = mt25ql_attach(instances[i], format_sfm);
         }
         else if (mtd_list->entries[num_entry]->device->type == ONCHIP)
         {
@@ -589,7 +590,7 @@ int cubus_mtd_query(const char *sub, const char *val, const char **get)
     return rv;
 }
 
-int cubus_mft_configure(const cubus_mft_s *mft_p, int block_number)
+int cubus_mft_configure(const cubus_mft_s *mft_p, int block_number, bool format_sfm)
 {
 
     if (mft_p != NULL)
@@ -599,7 +600,7 @@ int cubus_mft_configure(const cubus_mft_s *mft_p, int block_number)
             switch (mft_p->mfts[m]->type)
             {
             case MTD:
-                cubus_mtd_config((const cubus_mtd_manifest_t *)mft_p->mfts[m]->pmft, block_number);
+                cubus_mtd_config((const cubus_mtd_manifest_t *)mft_p->mfts[m]->pmft, block_number, format_sfm);
                 break;
 
             case MFT:

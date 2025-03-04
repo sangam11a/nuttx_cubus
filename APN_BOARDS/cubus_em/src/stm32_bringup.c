@@ -287,8 +287,8 @@ int stm32_bringup(void)
     }
   #endif
 
-  cubus_mft_configure(board_mfm_get_manifest(), 0);
-  cubus_mft_configure(board_sfm_get_manifest(), 2);
+  cubus_mft_configure(board_mfm_get_manifest(), 0, false);
+  cubus_mft_configure(board_sfm_get_manifest(), 2, false);
   
   // cubus_mft_configure(board_get_manifest());
 
