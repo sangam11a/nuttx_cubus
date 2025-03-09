@@ -66,7 +66,7 @@ int wdog_fd = -1;
 pthread_mutex_t uart_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // wdog
-#define ANT_DEPLOY_TIME 2                   // 60 * 30                  // 60 *30 seconds = 30minutes
+#define ANT_DEPLOY_TIME 60 * 30                   // 60 * 30                  // 60 *30 seconds = 30minutes
 #define VOLT_DIV_RATIO ((1100 + 931) / 931) // ratio of voltage divider used
 #define GBL_RESET_TIME 500                  // seconds in a day
 #define FLASH_DATA_LEN 0x52                 // flash packet length in hex
@@ -1558,11 +1558,11 @@ static int COM_TASK(int argc, char *argv[])
   {
     if (COM_HANDSHAKE_STATUS == 1)
     {
-      if (sat_health.batt_volt > 370)
+      if (sat_health.batt_volt > 3700)
       {
         critic_flags.OPER_MODE = NRML_MODE;
       }
-      if (sat_health.batt_volt <= 370)
+      if (sat_health.batt_volt <= 3700)
       {
         critic_flags.OPER_MODE = SAFE_MODE;
       }
@@ -3006,7 +3006,7 @@ int send_beacon_data()
       // printf("Beacon Type %d sequence complete\n", beacon_type);
       // print_seek_pointer();
       beacon_type = !beacon_type;
-      print_satellite_health_data(&sat_health);
+      // print_satellite_health_data(&sat_health);
       toggle_wdg();
       store_flag_data(&critic_flags, timer);
 

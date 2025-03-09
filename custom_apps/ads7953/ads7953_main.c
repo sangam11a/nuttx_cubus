@@ -105,7 +105,7 @@ int ads7953_daemon(int argc, FAR char *argv[])
     usleep(1000);
 
 #ifdef CONFIG_IOCTL_MODE
-    for (int i = 0; i < CONFIG_EADC0_CHAN_NO; i++)
+    for (int i = 0; i < 16; i++)
     {
       ioctl(fd, ANIOC_ADC_AUTO_2_SELECT_READ, raw_temp);
       /* Volts channel till no i =6, tempe channel from i = 8 to i = 15 */
@@ -117,7 +117,7 @@ int ads7953_daemon(int argc, FAR char *argv[])
       }
       else if (i > 7)
       {
-
+       
         e_ads7953_0.temp_chan[i - 8] = (raw_temp[0] << 8 | raw_temp[1]) & 0x0fff;
         e_ads7953_0.temp_chan_volts[i - 8] = e_ads7953_0.temp_chan[i - 8] * 2.5 / 4095;
       }
@@ -215,6 +215,7 @@ int ads7953_daemon(int argc, FAR char *argv[])
       sat_temps.temp_5 = mean[5];
       sat_temps.temp_3 = mean[6];
       sat_temps.temp_2 = mean[7];
+      // printf()
     }
     counter++;
 

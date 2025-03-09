@@ -305,7 +305,7 @@ void read_and_print_mag_data(void)
         }
         
         /* Every 90 count iterations, check for new magnetometer and sensor_rgb data */
-        if ((count % 20 == 0) || (count >= 90)) {
+        if ((count % 90 == 0) || (count >= 90)) {
             count = 0;
             orb_check(sub_fd, &updated);
             if (updated) {
