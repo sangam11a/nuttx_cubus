@@ -262,7 +262,7 @@ void read_and_print_mag_data(void)
     struct orb_mag_scaled_s mag_data;
     satellite_health_s satellite_health;
     bool updated;
-    
+    bool once_executed = false;
     /* Subscribe to sensor_rgb using orb_subscribe (instead of using poll) */
     struct sensor_rgb satHealth;
     int fd2 = orb_subscribe(ORB_ID(sensor_rgb));
@@ -321,7 +321,7 @@ void read_and_print_mag_data(void)
                     } else {
                         printf("Satellite Health ORB is getting data %d\n", satellite_health.rsv_cmd);
                     }
-                }
+                
                 
                 /* Update satellite health structure with magnetometer data */
                 satellite_health.accl_x = mag_data.acc_x;
@@ -336,12 +336,20 @@ void read_and_print_mag_data(void)
                 satellite_health.mag_y = mag_data.mag_y;
                 satellite_health.mag_z = mag_data.mag_z;
                 
-                store_sat_health_data(&satHealth, MFM_MAIN_STRPATH);
-                store_sat_health_data(&satHealth, SFM_MAIN_STRPATH);
-                print_satellite_health_data(&satHealth);
+                if(satellite_health.ant_dep_stat == DEPLOYED || satHealth.ant_dep_stat == DEPLOYED ||( satellite_health.ul_state == DEPLOYED || satHealth.ul_state == DEPLOYED ))
+                {
+                  // if(satHealth.rst_counter <=3 && once_executed == false){
+                  //   sleep( 60 * 10);
+                  //   once_executed = true;
+                  // }
+                  store_sat_health_data(&satHealth, MFM_MAIN_STRPATH);
+                  store_sat_health_data(&satHealth, SFM_MAIN_STRPATH);
+                  print_satellite_health_data(&satHealth);
+                }
             }
         }
-        
+      }
+
         time_counter += 10;
         sleep(10); // Sleep for 10 seconds (adjust as needed)
     }
@@ -549,9 +557,11 @@ void read_and_print_mag_data(void)
    {
      // uint8_t data_temp[];
      ssize_t bytes_written = file_write(&file_p, sat_health_data, sizeof(satellite_health_s));
+     uint8_t padding[]={0xff,0xd9}; 
      if (bytes_written > 0)
      {
        syslog(LOG_INFO, "Satellite Health data write Successful.\nData Len: %d.\n", bytes_written);
+       file_write(&file_p,padding, sizeof(padding));
        file_close(&file_p);
      }
      else
@@ -610,7 +620,7 @@ void read_and_print_mag_data(void)
          pthread_mutex_unlock(&main_flash_mutex);
        }
      }
-   syslog(LOG_DEBUG, "\n-----Storing data to flash-----\n");  
+   syslog(LOG_DEBUG, "\n-----Storing data to MFM flash-----\n");  
  
  
    // if(strcmp(pathname, SFM_MAIN_STRPATH) == 1){
@@ -1063,11 +1073,11 @@ void read_and_print_mag_data(void)
  
                if (OK != orb_publish(ORB_ID(flash_operation), raw_afd, &flash))
                {
-                 syslog(LOG_ERR, "Orb Publish failed\n");
+                 syslog(LOG_ERR, "Orb Publish failed-storage manager data send flash\n");
                }
                else
                {
-                 syslog(LOG_ERR, "Orb data published\n");
+                 syslog(LOG_ERR, "Orb data published-storage_manage\n");
                }
                // if(num_of_packets == pkt) break;
                num_of_packets -= 1;
@@ -1097,7 +1107,7 @@ void read_and_print_mag_data(void)
  
            if (OK != orb_publish(ORB_ID(flash_operation), raw_afd, &flash))
            {
-             syslog(LOG_ERR, "Orb Publish failed\n");
+             syslog(LOG_ERR, "Orb Publish failed- storage manager data send flash\n");
            }
          }
          file_close(&fp);

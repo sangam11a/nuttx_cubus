@@ -79,7 +79,7 @@ struct SEEK_POINTER
 };
 
 typedef struct  {
-	// uint64_t timestamp;
+	uint64_t timestamp;
 	int16_t accl_x; //2
 	int16_t accl_y; //2
 	int16_t accl_z; //2
@@ -124,16 +124,16 @@ typedef struct  {
 	int16_t batt_c; //2
 	int8_t rsv_cmd; //1
 
-	int8_t ant_dep_stat; //1
-	int8_t ul_state; //1
-	int8_t oper_mode; //1
-	int8_t msn_flag; //1
-	int8_t rsv_flag; //1
-	int8_t kill_switch; //1
-	int8_t rst_counter; //1
+	uint8_t ant_dep_stat; //1
+	uint8_t ul_state; //1
+	uint8_t oper_mode; //1
+	uint8_t msn_flag; //1
+	uint8_t rsv_flag; //1
+	uint8_t kill_switch; //1
+	uint8_t rst_counter; //1
 
     int16_t ant_temp_out; //2
-	int8_t SAT_MODE; //1
+	uint8_t SAT_MODE; //1
 }satellite_health_s;
 
 typedef struct __attribute__ ((__packed__))  _BEACON_A{
@@ -179,7 +179,7 @@ uint8_t UL_STAT;//1 byte
 uint8_t OPER_MODE;//1 byte
 uint16_t RST_RESET_COUNT;
 uint16_t OBC_RESET_COUNT;//2 byte
-uint16_t LAST_RESET;//2 byte
+uint64_t LAST_RESET;//4 byte
 uint16_t CHK_CRC;//2 byte
 
 uint8_t ANT_P_T;

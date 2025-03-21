@@ -330,13 +330,13 @@ int store_flag_data(CRITICAL_FLAGS *flag_data, uint32_t timer)
                 // Data is different, proceed with truncate and write
 
                 file_seek(&fp, 0, SEEK_SET);
-
-                // Measure file write time
-                clock_gettime(CLOCK_MONOTONIC, &start);
                 bwr = file_write(&fp, flag_data, sizeof(CRITICAL_FLAGS));
-                clock_gettime(CLOCK_MONOTONIC, &end);
 
-                elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+                // // Measure file write time
+                // clock_gettime(CLOCK_MONOTONIC, &start);
+                // clock_gettime(CLOCK_MONOTONIC, &end);
+
+                // elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
                 // syslog(LOG_INFO, "MFM Write time: %ld ms", elapsed_ms);
 
                 if (bwr == 0 || bwr != sizeof(CRITICAL_FLAGS))
@@ -351,6 +351,52 @@ int store_flag_data(CRITICAL_FLAGS *flag_data, uint32_t timer)
             else
             {
                 syslog(LOG_INFO, "No change in critical flags, skipping write to MFM storage.");
+            }
+        }
+        else
+        {
+            syslog(LOG_ERR, "Unable to open %s%s for writing critical flash data\n", MFM_MAIN_STRPATH, file_name_flag);
+        }
+        file_close(&fp);
+
+        // Open SFM storage
+        fd1=-1;
+         fd1 = open_file_flash(&fp, SFM_MAIN_STRPATH, file_name_flag, O_CREAT|O_RDWR);
+        if (fd1 >= 0)
+        {
+            CRITICAL_FLAGS existing_data;
+
+            // Read existing data from MFM storage
+            file_read(&fp, &existing_data, sizeof(CRITICAL_FLAGS));
+
+            // Compare existing data with new flag_data
+            if (memcmp(&existing_data, flag_data, sizeof(CRITICAL_FLAGS)) != 0)
+            {
+              toggle_wdg();
+                // Data is different, proceed with truncate and write
+
+                file_seek(&fp, 0, SEEK_SET);
+
+                // Measure file write time
+                // clock_gettime(CLOCK_MONOTONIC, &start);
+                bwr = file_write(&fp, flag_data, sizeof(CRITICAL_FLAGS));
+                // clock_gettime(CLOCK_MONOTONIC, &end);
+
+                // elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+                // syslog(LOG_INFO, "MFM Write time: %ld ms", elapsed_ms);
+
+                if (bwr == 0 || bwr != sizeof(CRITICAL_FLAGS))
+                {
+                    syslog(LOG_ERR, "Error in writing flag data to SFM\n Will try once again without verifying...\n");
+                    bwr = file_write(&fp, flag_data, sizeof(CRITICAL_FLAGS));
+                    syslog(LOG_INFO, "Size of flag data written to SFM on second attempt: %d", bwr);
+                }
+
+                syslog(LOG_INFO, "Critical flags updated in SFM storage.");
+            }
+            else
+            {
+                syslog(LOG_INFO, "No change in critical flags, skipping write to SFM storage.");
             }
         }
         else
@@ -593,12 +639,12 @@ int check_flag_data(CRITICAL_FLAGS *flags)
 
   // Determine the majority-consistent data
   if ((compare_flash_data(&rd_flags_int, &rd_flags_mfm) == 0 && int_valid && mfm_valid) ||
-      (compare_flash_data(&rd_flags_int, &rd_flags_sharedfm) == 0 && int_valid && sharedfm_valid))
+      (compare_flash_data(&rd_flags_int, &rd_flags_sharedfm) == 0 && int_valid && sharedfm_valid) && rd_flags_mfm.ANT_DEP_STAT == DEPLOYED)
   {
     syslog(LOG_INFO, "Internal flash data is consistent with at least one source. Using internal flash data.\n");
     critic_flags = rd_flags_int;
   }
-  else if (compare_flash_data(&rd_flags_mfm, &rd_flags_sharedfm) == 0 && mfm_valid && sharedfm_valid)
+  else if (compare_flash_data(&rd_flags_mfm, &rd_flags_sharedfm) == 0 && mfm_valid && sharedfm_valid && rd_flags_mfm.ANT_DEP_STAT == DEPLOYED)
   {
     syslog(LOG_INFO, "MFM and SharedFM are consistent. Using their data.\n");
     critic_flags = rd_flags_mfm;

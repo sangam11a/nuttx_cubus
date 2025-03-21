@@ -68,12 +68,14 @@ pthread_mutex_t uart_mutex = PTHREAD_MUTEX_INITIALIZER;
 // wdog
 #define ANT_DEPLOY_TIME 60 * 30                   // 60 * 30                  // 60 *30 seconds = 30minutes
 #define VOLT_DIV_RATIO ((1100 + 931) / 931) // ratio of voltage divider used
-#define GBL_RESET_TIME 500                  // seconds in a day
+#define GBL_RESET_TIME 86400                  // seconds in a day
 #define FLASH_DATA_LEN 0x52                 // flash packet length in hex
 bool timer_status = false;
 uint64_t timer_counter = 0;
+uint64_t last_reset;
 float x[8], y[8];
 uint32_t gbl_count = 0;
+
 
 int ads7953_receiver(int argc, FAR char *argv[]);
 
@@ -814,8 +816,17 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
     int fd = file_open(&file_ptr, "/mnt/fs/mfm/mtd_mission/digipeater.txt", O_CREAT | O_WRONLY | O_APPEND);
     if (fd >= 0)
     {
-      ssize_t write_bytes = file_write(&file_ptr, COM_RX_DATA, COM_RX_DATA[2]);
-      file_write(&file_ptr, 0x7e, 1);
+      uint32_t get_time = (uint32_t)time(NULL);  // Ensure 32-bit storage
+      uint8_t time_bytes[4];
+  
+      /* Extract bytes using right shift and mask */
+      time_bytes[0] = (get_time >> 24) & 0xFF;  // Most Significant Byte (MSB)
+      time_bytes[1] = (get_time >> 16) & 0xFF;
+      time_bytes[2] = (get_time >> 8) & 0xFF;
+      time_bytes[3] = (get_time >> 0) & 0xFF;   // Least Significant Byte (LSB)
+      file_write(&file_ptr, time_bytes,sizeof(time_bytes));
+      ssize_t write_bytes = file_write(&file_ptr, COM_RX_DATA,44);
+
       file_close(&file_ptr);
       digipeater_data[0] = 0x53; // TODO: save data with callsign to FM
       // int fd = open(COM_UART, O_WRONLY);
@@ -895,6 +906,164 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
               sleep(2);
               gpio_write(GPIO_GBL_RST, true);
             }
+
+                        
+            else if (cmds[0] == 0x4D && cmds[1] == 0x0a && cmds[2] == 0x0c) {  // Magnetometer calibration
+              int fd;
+              int ret;
+              bool updated;
+              uint64_t start, stop;
+              start = time(NULL);
+              struct orb_mag_scaled_s mag_scaled;
+          
+              /* Subscribe to the orb_mag_scaled topic */
+              fd = orb_subscribe(ORB_ID(orb_mag_scaled));
+              if (fd < 0) {
+                  syslog(LOG_ERR, "Failed to subscribe to orb_mag_scaled topic.\n");
+                  return;
+              } else {
+                  syslog(LOG_DEBUG, "[READING DATA FROM IMU SENSORS]\n");
+              }
+          
+              /* Flash memory setup */
+              struct file fp;
+              ret = file_open(&fp, "/mnt/fs/mfm/mtd_mainstorage/calibration.txt", O_WRONLY | O_CREAT | O_APPEND);
+              if (ret < 0) {
+                  syslog(LOG_ERR, "Failed to open flash for writing\n");
+                  return;
+              }
+          
+              uint16_t xx, yx, zx;
+              uint8_t xx_high, xx_low, yx_high, yx_low, zx_high, zx_low;
+          
+              while (1) {  // Infinite loop
+                  stop = time(NULL);
+                  if (stop - start > 180) {  // Exit after 10 seconds
+                      break;
+                  }
+          
+                  /* Check for new data */
+                  orb_check(fd, &updated);
+                  // if (updated) 
+                  {
+                      /* Copy the data from the orb */
+                      ret = orb_copy(ORB_ID(orb_mag_scaled), fd, &mag_scaled);
+                      if (ret < 0) {
+                          syslog(LOG_ERR, "ORB copy error, %d\n", ret);
+                          continue;
+                      }
+          
+                      /* Scale the data */
+                      xx = (uint16_t)((int16_t)(mag_scaled.mag_x * 100));  // Multiply by 100 for scaling
+                      yx = (uint16_t)((int16_t)(mag_scaled.mag_y * 100));
+                      zx = (uint16_t)((int16_t)(mag_scaled.mag_z * 100));
+          
+                      /* Split each uint16_t value into two 8-bit values */
+                      xx_high = (uint8_t)(xx >> 8);  // High byte of xx
+                      xx_low = (uint8_t)(xx & 0xFF); // Low byte of xx
+          
+                      yx_high = (uint8_t)(yx >> 8);  // High byte of yx
+                      yx_low = (uint8_t)(yx & 0xFF); // Low byte of yx
+          
+                      zx_high = (uint8_t)(zx >> 8);  // High byte of zx
+                      zx_low = (uint8_t)(zx & 0xFF); // Low byte of zx
+          
+                      /* Write the 8-bit values to flash */
+                      ret = file_write(&fp, &xx_high, sizeof(uint8_t));
+                      if (ret < 0) {
+                          syslog(LOG_ERR, "Failed to write xx high byte to flash\n");
+                      }
+                      ret = file_write(&fp, &xx_low, sizeof(uint8_t));
+                      if (ret < 0) {
+                          syslog(LOG_ERR, "Failed to write xx low byte to flash\n");
+                      }
+          
+                      ret = file_write(&fp, &yx_high, sizeof(uint8_t));
+                      if (ret < 0) {
+                          syslog(LOG_ERR, "Failed to write yx high byte to flash\n");
+                      }
+                      ret = file_write(&fp, &yx_low, sizeof(uint8_t));
+                      if (ret < 0) {
+                          syslog(LOG_ERR, "Failed to write yx low byte to flash\n");
+                      }
+          
+                      ret = file_write(&fp, &zx_high, sizeof(uint8_t));
+                      if (ret < 0) {
+                          syslog(LOG_ERR, "Failed to write zx high byte to flash\n");
+                      }
+                      ret = file_write(&fp, &zx_low, sizeof(uint8_t));
+                      if (ret < 0) {
+                          syslog(LOG_ERR, "Failed to write zx low byte to flash\n");
+                      }
+          
+                      printf("Stored mag_x: %d (%d, %d), mag_y: %d (%d, %d), mag_z: %d (%d, %d)\n", 
+                              xx, xx_high, xx_low, yx, yx_high, yx_low, zx, zx_high, zx_low);
+                  }
+          
+                  /* Small delay to avoid busy-waiting */
+                  usleep(10000);  // Sleep for 10 milliseconds
+              }
+          
+              /* Close the flash file */
+              file_close(&fp);
+          
+              /* Unsubscribe from the orb */
+              ret = orb_unsubscribe(fd);
+              if (ret < 0) {
+                  syslog(LOG_ERR, "Orb unsubscribe Failed.\n");
+              }
+          }
+          else if (cmds[0] == 0x4D && cmds[1] == 0x0a && cmds[2] == 0x0c) {  // Magnetometer calibration
+            int ret;
+            struct file fp;
+            uint16_t xx, yx, zx;
+        
+            // Open the file in read mode
+            ret = file_open(&fp, "/mnt/fs/mfm/mtd_mainstorage/calibration.txt", O_RDONLY);
+            if (ret < 0) {
+                syslog(LOG_ERR, "Failed to open file for reading\n");
+                return;
+            }
+        
+            // Get the size of the file
+            off_t file_size = file_seek(&fp, 0, SEEK_END);
+            if (file_size < 0) {
+                syslog(LOG_ERR, "Failed to get the file size\n");
+                file_close(&fp);
+                return;
+            }
+        
+            // Calculate the number of 3 `uint16_t` sets in the file (file_size / (3 * sizeof(uint16_t)))
+            size_t num_chunks = file_size / (3 * sizeof(uint16_t));
+        
+            // Read and process the file in chunks of 3 uint16_t values (mag_x, mag_y, mag_z)
+            for (size_t i = 0; i < num_chunks; i++) {
+                // Read each of the 3 uint16_t values
+                ret = file_read(&fp, &xx, sizeof(uint16_t));
+                // if (ret <= 0) break;  // Exit if read fails
+        
+                ret = file_read(&fp, &yx, sizeof(uint16_t));
+                // if (ret <= 0) break;
+        
+                ret = file_read(&fp, &zx, sizeof(uint16_t));
+                // if (ret <= 0) break;
+        
+                // Convert the uint16_t values to the scaled float values
+                float mag_x = (float)xx / 100.0f;
+                float mag_y = (float)yx / 100.0f;
+                float mag_z = (float)zx / 100.0f;
+        
+                // Print the converted values
+                printf("mag_x: %f, mag_y: %f, mag_z: %f\n", mag_x, mag_y, mag_z);
+            }
+        
+            // Close the file after reading
+            file_close(&fp);
+        }
+        
+          
+
+
             else if(cmds[0] == 0xF0 && cmds[1]==0x53 && cmds[2] == 0x4D){//format shared flash memory
                 cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mainstorage"); //"/mnt/fs/sfm/mtd_mission"
                 cubus_mtd_unmount(board_sfm_get_manifest(), "/mnt/fs/sfm/mtd_mission");     //""
@@ -959,6 +1128,15 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                   strcat(__file_operations.filepath, "/flags.txt");
                   syslog(LOG_DEBUG, "Selected file is %s\n", __file_operations.select_file);
                 }
+                else if ((cmds[2] == 0xF0))
+                {
+                  __file_operations.mcu_id = 218;
+                  __file_operations.select_file = SATELLITE_HEALTH;
+                  strcat(__file_operations.filepath, "/time.txt");
+                  syslog(LOG_DEBUG, "Selected file is %s\n", __file_operations.select_file);
+                  __file_operations.mcu_id = 0x0a;
+                }
+
                 else if ((cmds[2] == 0xF2))
                 {
                   __file_operations.mcu_id = 218;
@@ -1019,17 +1197,20 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                   uint32_t counter = 0;
                   int fd = 0;
                   uint8_t beacon[BEACON_DATA_SIZE] = {'\0'};
-
+                    memset(beacon, '\0', sizeof(beacon));
+                  
                   // Initialize beacon header
                   beacon[0] = 0x53;
-                  beacon[1] = 0x52;
-                  beacon[2] = 0xED;
+                  beacon[1] = 0x0a;
+                  beacon[2] = 0x52;
                   beacon[3] = 0x01;
 
                   for (int i = 1; i < 9; i++)
                   {
-                    memset(beacon, '\0', sizeof(beacon));
-
+                    // beacon[0] = 0x53;
+                    // beacon[1] = 0x52;
+                    // beacon[2] = 0x0a;
+                    // beacon[3] = 0x01;
                     if (i < 4)
                     {
                       fd = open_file_flash(&temp_fp, MFM_MAIN_STRPATH, filename[i], O_RDONLY);
@@ -1056,9 +1237,12 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                     file_close(&temp_fp);
                     close(fd);
                   }
-
+                  beacon[0] = 0x53;
+                  beacon[1] = 0x0a;
+                  beacon[2] = 0x52;
+                  beacon[3] = 0x01;
                   beacon[BEACON_DATA_SIZE - 2] = 0x7E;
-                  beacon[BEACON_DATA_SIZE - 1] = '\0';
+                  beacon[BEACON_DATA_SIZE - 1] = 0x7E;
 
                   send_flash_data(beacon);
                 }
@@ -1092,6 +1276,15 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                   __file_operations.mcu_id = 0x0a;
                   strcat(__file_operations.filepath, "/epdm_logs.txt");
                 }
+
+                else if ((cmds[2] == 0xFF)) // LOG_EPDM
+                {
+
+                  __file_operations.select_file = LOG_EPDM_TXT;
+                  __file_operations.mcu_id = 0x0a;
+                  strcat(__file_operations.filepath, "/calibration.txt");
+                }
+
 
                 // TODO check reservation table here
                 if (cmds[2] != 0xFA)
@@ -1230,6 +1423,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
                 close(fd);
                 fd = open_file_flash(&flp1, SFM_MAIN_STRPATH, "/flags.txt", O_CREAT | O_TRUNC);
                 close(fd);
+                reset_obc();
               }
             }
             /* code */
@@ -1407,7 +1601,7 @@ void parse_command(uint8_t COM_RX_DATA[COM_DATA_SIZE])
           {
             if (OK != orb_publish(ORB_ID(reservation_command), raw_afd, &res))
             {
-              syslog(LOG_ERR, "Orb Publish failed\n");
+              syslog(LOG_ERR, "Orb Publish failed reservation command\n");
             }
             else
             {
@@ -1470,13 +1664,13 @@ static int COM_TASK(int argc, char *argv[])
     syslog(LOG_DEBUG, "Successful handshake with COM\n");
     COM_HANDSHAKE_STATUS = 1;
     uint64_t time1 = time(NULL);
-    if (time1 <= 1736913451) // TODO check out this functionality
+    if (time1 <= 1741717951) // TODO check out this functionality
     {
       time1 = get_time_data();
-      if (time1 <= 1736913451)
+      if (time1 <= 1741717951)
       {
         struct timespec ts;
-        ts.tv_sec = 1736913451;
+        ts.tv_sec = 1741717951;
         ts.tv_nsec = 0; // Set nanoseconds to zero
         int ret = clock_settime(CLOCK_REALTIME, &ts);
       }
@@ -1487,6 +1681,14 @@ static int COM_TASK(int argc, char *argv[])
       printf("\nThe received timestamp is : %d\n", time1);
       // set_time(time1);
     }
+    // struct tm *tm_info = localtime(&time1);
+    // int16_t year = tm_info->tm_year + 1900; // Year since 1900
+    // int16_t month = tm_info->tm_mon + 1;    // Months since January
+    // int16_t day = tm_info->tm_mday;
+    last_reset = time1;
+    // ((year - 2000) << 9) | // 7 bits for year (2000-2150)
+    // ((month << 5) & 0x03E0) | // 4 bits for month (1-12)
+    // (day & 0x001F); // 5 bits for day (1-31);
     // wdog_fd = open(DEVNAME, O_RDONLY);
   }
   // if (ret != 0)
@@ -1926,42 +2128,44 @@ void serialize_beacon_a(uint8_t beacon_data[BEACON_DATA_SIZE])
   }
   // uint8_t beacon_data[BEACON_DATA_SIZE];
   beacon_data[0] = s2s_beacon_type_a.HEAD;
-  beacon_data[1] = s2s_beacon_type_a.TYPE << 4 & s2s_beacon_type_a.TIM_DAY << 4 & 0xff;
-  beacon_data[2] = (uint8_t)s2s_beacon_type_a.TIM_DAY & 0xff;
-  beacon_data[4] = s2s_beacon_type_a.TIM_HOUR;
+  beacon_data[2 + 1] = 0x00;//s2s_beacon_type_a.TYPE << 4 | (((s2s_beacon_type_a.TIM_DAY)<<4) & 0x0f) & 0xff;
+  beacon_data[2 + 2] = s2s_beacon_type_a.TYPE << 4 | (((s2s_beacon_type_a.TIM_DAY)<<4) & 0x0f) & 0xff;//((s2s_beacon_type_a.TIM_DAY) & 0xff);
+  //  (uint8_t)s2s_beacon_type_a.TIM_DAY >> 4 & 0xff;
+  beacon_data[2 + 3] =  (uint8_t)s2s_beacon_type_a.TIM_DAY  & 0xff;
+  
+  beacon_data[2 + 4] = s2s_beacon_type_a.TIM_HOUR;
 
-  beacon_data[3] = 0x01;
 
-  beacon_data[1 + 4] = (s2s_beacon_type_a.BAT_V >> 8) & 0Xff;
-  beacon_data[1 + 5] = s2s_beacon_type_a.BAT_V & 0xff;
-  beacon_data[1 + 6] = (s2s_beacon_type_a.BAT_C >> 8) & 0Xff;
-  beacon_data[1 + 7] = (s2s_beacon_type_a.BAT_C) & 0Xff;
-  beacon_data[1 + 8] = (s2s_beacon_type_a.BAT_T >> 8) & 0Xff;
-  beacon_data[1 + 9] = (s2s_beacon_type_a.BAT_T) & 0Xff;
+  beacon_data[2 + 1 + 4] = (s2s_beacon_type_a.BAT_V >> 8) & 0Xff;
+  beacon_data[2 + 1 + 5] = s2s_beacon_type_a.BAT_V & 0xff;
+  beacon_data[2 + 1 + 6] = (s2s_beacon_type_a.BAT_C >> 8) & 0Xff;
+  beacon_data[2 + 1 + 7] = (s2s_beacon_type_a.BAT_C) & 0Xff;
+  beacon_data[2 + 1 + 8] = (s2s_beacon_type_a.BAT_T >> 8) & 0Xff;
+  beacon_data[2 + 1 + 9] = (s2s_beacon_type_a.BAT_T) & 0Xff;
 
-  beacon_data[1 + 10] = s2s_beacon_type_a.RAW_C;
-  beacon_data[1 + 11] = (s2s_beacon_type_a.SOL_TOT_V >> 8) & 0Xff;
-  beacon_data[1 + 12] = (s2s_beacon_type_a.SOL_TOT_V) & 0Xff;
-  beacon_data[1 + 13] = (s2s_beacon_type_a.SOL_TOT_C >> 8) & 0Xff;
-  beacon_data[1 + 14] = (s2s_beacon_type_a.SOL_TOT_C >> 8) & 0Xff;
-  beacon_data[1 + 15] = s2s_beacon_type_a.ANT_P_T;
-  beacon_data[1 + 16] = s2s_beacon_type_a.BPB_T;
-  beacon_data[1 + 17] = s2s_beacon_type_a.OBC_T;
-  beacon_data[1 + 18] = s2s_beacon_type_a.X_T;
-  beacon_data[1 + 19] = s2s_beacon_type_a.X1_T;
-  beacon_data[1 + 20] = s2s_beacon_type_a.Y_T;
-  beacon_data[1 + 21] = s2s_beacon_type_a.Y1_T;
-  beacon_data[1 + 22] = sat_health.sol_p5_v;
+  beacon_data[2 + 1 + 10] = s2s_beacon_type_a.RAW_C;
+  beacon_data[2 + 1 + 11] = (s2s_beacon_type_a.SOL_TOT_V >> 8) & 0Xff;
+  beacon_data[2 + 1 + 12] = (s2s_beacon_type_a.SOL_TOT_V) & 0Xff;
+  beacon_data[2 + 1 + 13] = (s2s_beacon_type_a.SOL_TOT_C >> 8) & 0Xff;
+  beacon_data[2 + 1 + 14] = (s2s_beacon_type_a.SOL_TOT_C) & 0Xff;
+  beacon_data[2 + 1 + 15] = s2s_beacon_type_a.ANT_P_T;
+  beacon_data[2 + 1 + 16] = s2s_beacon_type_a.BPB_T;
+  beacon_data[2 + 1 + 17] = s2s_beacon_type_a.OBC_T;
+  beacon_data[2 + 1 + 18] = s2s_beacon_type_a.X_T;
+  beacon_data[2 + 1 + 19] = s2s_beacon_type_a.X1_T;
+  beacon_data[2 + 1 + 20] = s2s_beacon_type_a.Y_T;
+  beacon_data[2 + 1 + 21] = s2s_beacon_type_a.Y1_T;
+  beacon_data[2 + 1 + 22] = sat_health.sol_p5_v;
 
-  beacon_data[1 + 23] = s2s_beacon_type_a.SOL_P1_STAT << 7 & s2s_beacon_type_a.SOL_P2_STAT << 6 & s2s_beacon_type_a.SOL_P3_STAT << 5 & s2s_beacon_type_a.SOL_P4_STAT << 4 & s2s_beacon_type_a.MSN1_STAT << 3 & s2s_beacon_type_a.MSN2_STAT << 2 & s2s_beacon_type_a.MSN3_STAT << 1 & 0xff;
-  beacon_data[1 + 24] = s2s_beacon_type_a.ANT_STAT << 4 & s2s_beacon_type_a.UL_STAT << 4;
-  beacon_data[1 + 25] = s2s_beacon_type_a.OPER_MODE;
-  beacon_data[1 + 26] = (s2s_beacon_type_a.OBC_RESET_COUNT >> 8) & 0xff;
-  beacon_data[1 + 27] = s2s_beacon_type_a.OBC_RESET_COUNT & 0xff;
-  beacon_data[1 + 28] = s2s_beacon_type_a.RST_RESET_COUNT >> 8 & 0xff; // TODO no reset mcu so no count needed
-  beacon_data[1 + 29] = s2s_beacon_type_a.RST_RESET_COUNT & 0xff;
-  // beacon_data[1 + 30] = s2s_beacon_type_a.LAST_RESET;
-  beacon_data[1 + 30] = s2s_beacon_type_a.CHK_CRC;
+  beacon_data[2 + 1 + 23] = (s2s_beacon_type_a.SOL_P1_STAT << 7) | (s2s_beacon_type_a.SOL_P2_STAT << 6) | (s2s_beacon_type_a.SOL_P3_STAT << 5) | (s2s_beacon_type_a.SOL_P4_STAT << 4) | (s2s_beacon_type_a.SOL_P5_STAT << 3) | (s2s_beacon_type_a.MSN1_STAT << 2) | (s2s_beacon_type_a.MSN2_STAT << 1) | (s2s_beacon_type_a.MSN3_STAT)  & 0xff;
+  beacon_data[2 + 1 + 24] = ((s2s_beacon_type_a.UL_STAT == UL_RX)? 1<<4 :0 <<4) |((s2s_beacon_type_a.ANT_STAT == DEPLOYED)? 1: 0 ) & 0xff ;
+  beacon_data[2 + 1 + 25] = s2s_beacon_type_a.OPER_MODE;
+  beacon_data[2 + 1 + 26] = (s2s_beacon_type_a.OBC_RESET_COUNT >> 8) & 0xff;
+  beacon_data[2 + 1 + 27] = s2s_beacon_type_a.OBC_RESET_COUNT & 0xff;
+  beacon_data[2 + 1 + 28] = last_reset >> 24 & 0xff; // TODO no reset mcu so no count needed
+  beacon_data[2 + 1 + 29] = last_reset >> 16 & 0xff;
+  beacon_data[2 + 1 + 30] = last_reset >> 8 & 0xff;
+  beacon_data[2 + 1 + 31] = last_reset & 0xff;
 }
 // COM_APP
 
@@ -1973,45 +2177,46 @@ void serialize_beacon_b(uint8_t beacon_data[BEACON_DATA_SIZE])
   }
   // uint8_t beacon_data[BEACON_DATA_SIZE];
   beacon_data[0] = s2s_beacon_type_b.HEAD;
-  beacon_data[1] = s2s_beacon_type_b.TYPE;
-  beacon_data[2] = s2s_beacon_type_b.TIM_DAY;
+  beacon_data[2 + 1] = s2s_beacon_type_b.TYPE;
+  beacon_data[2 + 2] = s2s_beacon_type_b.TIM_DAY;
 
-  beacon_data[3] = 0x02;
+  beacon_data[2 + 3] = 0x02;
 
-  beacon_data[1 + 3] = s2s_beacon_type_b.SOL_P1_V;
-  beacon_data[1 + 4] = s2s_beacon_type_b.SOL_P2_V;
-  beacon_data[1 + 5] = s2s_beacon_type_b.SOL_P3_V;
-  beacon_data[1 + 6] = s2s_beacon_type_b.SOL_P4_V;
-  beacon_data[1 + 7] = s2s_beacon_type_b.SOL_P5_V; // panel 5
+  beacon_data[2 + 1 + 3] = s2s_beacon_type_b.SOL_P1_V;
+  beacon_data[2 + 1 + 4] = s2s_beacon_type_b.SOL_P2_V;
+  beacon_data[2 + 1 + 5] = s2s_beacon_type_b.SOL_P3_V;
+  beacon_data[2 + 1 + 6] = s2s_beacon_type_b.SOL_P4_V;
+  beacon_data[2 + 1 + 7] = s2s_beacon_type_b.SOL_P5_V; // panel 5
 
-  beacon_data[1 + 8] = s2s_beacon_type_b.SOL_P1_C;
-  beacon_data[1 + 9] = s2s_beacon_type_b.SOL_P2_C;
-  beacon_data[1 + 10] = s2s_beacon_type_b.SOL_P3_C;
-  beacon_data[1 + 11] = s2s_beacon_type_b.SOL_P4_C;
-  beacon_data[1 + 12] = s2s_beacon_type_b.SOL_P5_C;
+  beacon_data[2 + 1 + 8] = s2s_beacon_type_b.SOL_P1_C;
+  beacon_data[2 + 1 + 9] = s2s_beacon_type_b.SOL_P2_C;
+  beacon_data[2 + 1 + 10] = s2s_beacon_type_b.SOL_P3_C;
+  beacon_data[2 + 1 + 11] = s2s_beacon_type_b.SOL_P4_C;
+  beacon_data[2 + 1 + 12] = s2s_beacon_type_b.SOL_P5_C;
 
-  beacon_data[1 + 13] = ((s2s_beacon_type_b.GYRO_X >> 8) & 0xff) * 100;
-  beacon_data[1 + 14] = ((s2s_beacon_type_b.GYRO_X) & 0xff) * 100;
-  beacon_data[1 + 15] = ((s2s_beacon_type_b.GYRO_Y >> 8) & 0xff) * 100;
-  beacon_data[1 + 16] = ((s2s_beacon_type_b.GYRO_Y) & 0xff) * 100;
-  beacon_data[1 + 17] = (s2s_beacon_type_b.GYRO_Z >> 8 & 0xff) * 100;
-  beacon_data[1 + 18] = (s2s_beacon_type_b.GYRO_Z & 0xff) * 100;
+  beacon_data[2 + 1 + 13] = ((s2s_beacon_type_b.GYRO_X >> 8) & 0xff);
+  beacon_data[2 + 1 + 14] = ((s2s_beacon_type_b.GYRO_X) & 0xff);
+  beacon_data[2 + 1 + 15] = ((s2s_beacon_type_b.GYRO_Y >> 8) & 0xff);
+  beacon_data[2 + 1 + 16] = ((s2s_beacon_type_b.GYRO_Y) & 0xff);
+  beacon_data[2 + 1 + 17] = (s2s_beacon_type_b.GYRO_Z >> 8 & 0xff);
+  beacon_data[2 + 1 + 18] = (s2s_beacon_type_b.GYRO_Z & 0xff);
 
-  beacon_data[1 + 19] = ((s2s_beacon_type_b.ACCL_X >> 8) & 0xff) * 100;
-  beacon_data[1 + 20] = ((s2s_beacon_type_b.ACCL_X) & 0xff) * 100;
-  beacon_data[1 + 21] = ((s2s_beacon_type_b.ACCL_Y >> 8) & 0xff) * 100;
-  beacon_data[1 + 22] = ((s2s_beacon_type_b.ACCL_Y) & 0xff) * 100;
-  beacon_data[1 + 23] = (s2s_beacon_type_b.ACCL_Z >> 8 & 0xff) * 100;
-  beacon_data[1 + 24] = (s2s_beacon_type_b.ACCL_Z & 0xff) * 100;
+  beacon_data[2 + 1 + 19] = ((s2s_beacon_type_b.ACCL_X >> 8) & 0xff);
+  beacon_data[2 + 1 + 20] = ((s2s_beacon_type_b.ACCL_X) & 0xff);
+  beacon_data[2 + 1 + 21] = ((s2s_beacon_type_b.ACCL_Y >> 8) & 0xff);
+  beacon_data[2 + 1 + 22] = ((s2s_beacon_type_b.ACCL_Y) & 0xff);
+  beacon_data[2 + 1 + 23] = (s2s_beacon_type_b.ACCL_Z >> 8 & 0xff);
+  beacon_data[2 + 1 + 24] = (s2s_beacon_type_b.ACCL_Z & 0xff);
 
-  beacon_data[1 + 25] = ((s2s_beacon_type_b.MAG_X >> 8) & 0xff) * 100;
-  beacon_data[1 + 26] = ((s2s_beacon_type_b.MAG_X) & 0xff) * 100;
-  beacon_data[1 + 27] = ((s2s_beacon_type_b.MAG_Y >> 8) & 0xff) * 100;
-  beacon_data[1 + 28] = ((s2s_beacon_type_b.MAG_Y) & 0xff) * 100;
-  beacon_data[1 + 29] = (s2s_beacon_type_b.MAG_Z >> 8 & 0xff) * 100;
-  beacon_data[1 + 30] = (s2s_beacon_type_b.MAG_Z & 0xff) * 100;
-  beacon_data[1 + 31] = s2s_beacon_type_b.CHK_CRC; // TODO::  last rst
+  beacon_data[2 + 1 + 25] = ((s2s_beacon_type_b.MAG_X >> 8) & 0xff);
+  beacon_data[2 + 1 + 26] = ((s2s_beacon_type_b.MAG_X) & 0xff);
+  beacon_data[2 + 1 + 27] = ((s2s_beacon_type_b.MAG_Y >> 8) & 0xff);
+  beacon_data[2 + 1 + 28] = ((s2s_beacon_type_b.MAG_Y) & 0xff);
+  beacon_data[2 + 1 + 29] = (s2s_beacon_type_b.MAG_Z >> 8 & 0xff);
+  beacon_data[2 + 1 + 30] = (s2s_beacon_type_b.MAG_Z & 0xff);
+  beacon_data[2 + 1 + 31] = s2s_beacon_type_b.CHK_CRC; // TODO::  last rst
 }
+
 
 // COM_APP
 void Make_Beacon_Data(uint8_t type)
@@ -2063,7 +2268,7 @@ void Make_Beacon_Data(uint8_t type)
     // break;
 
     s2s_beacon_type_a.OBC_RESET_COUNT = critic_flags.RST_COUNT; // TODO
-    s2s_beacon_type_a.LAST_RESET = 0xff;                        // TODO
+    s2s_beacon_type_a.LAST_RESET = last_reset;                        // TODO
     // s2s_beacon_type_a.CHK_CRC = ;          //TODO
 
     // case 2:
@@ -2479,68 +2684,6 @@ void perform_file_operations(struct FILE_OPERATIONS *file_operations)
 // mpu6500_imu_msg
 void Antenna_Deployment(int argc, char *argv[]);
 
-/*
-Declaring structure necessary for collecting HK data
-*/
-
-// WDG_TASK
-
-// void WDG_TASK(){
-//   bool state = true;
-//   uint32_t counter=0;
-//   for(;;){
-//     counter++;
-//     gpio_write(GPIO_WD_WDI, state);
-//     state = !state;
-//     if(counter >= 1000){
-//       while(1){
-
-//       }
-//     }
-//     usleep(50);
-//   }
-// }
-void alarm_handler(int sig)
-{
-  printf("Alarm triggered!\n");
-  critic_flags.RST_COUNT = critic_flags.RST_COUNT + 1;
-  // store_flag_data(1,&critic_flags);
-  save_critics_flags(&critic_flags);
-  print_critical_flag_data(&critic_flags);
-  sleep(1);
-  gpio_write(GPIO_GBL_RST, true);
-}
-
-void rtc_alarm_func(uint16_t time)
-{
-  struct sigaction sa;
-  struct itimerspec timer_spec;
-  timer_t timer_id;
-
-  // Set up the signal handler
-  sa.sa_handler = alarm_handler;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  sigaction(SIGALRM, &sa, NULL);
-
-  // Create the timer
-  timer_create(CLOCK_REALTIME, NULL, &timer_id);
-
-  // Set the timer to expire in 5 seconds
-  timer_spec.it_value.tv_sec = time;
-  timer_spec.it_value.tv_nsec = 0;
-  timer_spec.it_interval.tv_sec = 0;
-  timer_spec.it_interval.tv_nsec = 0;
-
-  timer_settime(timer_id, 0, &timer_spec, NULL);
-
-  // Wait for the alarm to trigger
-  // pause();
-  while (1)
-  {
-    sleep(1);
-  }
-}
 
 void global_reset()
 {
@@ -2714,9 +2857,12 @@ int main(int argc, FAR char *argv[])
     // sleep(10);
     if (critic_flags.ANT_DEP_STAT != DEPLOYED && critic_flags.UL_STATE != UL_RX)
     {
+      CRITICAL_FLAGS rd_flags_int = {0};
+      check_flag_data(&rd_flags_int);
+      if (rd_flags_int.ANT_DEP_STAT != DEPLOYED && rd_flags_int.UL_STATE != UL_RX)
       Antenna_Deployment(argc, argv);
     }
-    else
+    // else
     {
       {
         if (g_commander_task_started)
@@ -2725,7 +2871,7 @@ int main(int argc, FAR char *argv[])
         }
         else
         {
-          int retval = task_create("COMMANDER_TASK_APP", 100, 38096, COM_TASK, NULL);
+          int retval = task_create("COMMANDER_TASK_APP", 100, 44096, COM_TASK, NULL);
 
           if (retval >= 0)
           {
@@ -3006,7 +3152,7 @@ int send_beacon_data()
       // printf("Beacon Type %d sequence complete\n", beacon_type);
       // print_seek_pointer();
       beacon_type = !beacon_type;
-      // print_satellite_health_data(&sat_health);
+      print_satellite_health_data(&sat_health);
       toggle_wdg();
       store_flag_data(&critic_flags, timer);
 
@@ -3029,7 +3175,7 @@ void Antenna_Deployment(int argc, char *argv[])
 
   printf("\n----------------Antenna Deployment Flag: %d------------\n", rd_flags_int.ANT_DEP_STAT);
 
-  if ((rd_flags_int.ANT_DEP_STAT != DEPLOYED || rd_flags_int.UL_STATE != UL_RX) || (rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT < 3))
+  if ((rd_flags_int.ANT_DEP_STAT != DEPLOYED || rd_flags_int.UL_STATE != UL_RX) || (rd_flags_int.ANT_DEP_STAT == DEPLOYED && rd_flags_int.UL_STATE == UL_RX && rd_flags_int.RST_COUNT <= 3))
   {
     printf("****************************************\n");
     printf("ANtenna not deployed\n-----------------Antenna deployment starting-----------------\n");
@@ -3200,7 +3346,6 @@ void Antenna_Deployment(int argc, char *argv[])
 //     send_data_uart(COM_UART, ack, sizeof(ack));
 //   }
 // }
-
 void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 {
   int fd = -1, hand = -1;
@@ -3223,8 +3368,14 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
     return;
   }
 
-  // Allocate memory dynamically
-  uint8_t data_received[35002]; // = (uint8_t *)malloc(BUFFER_SIZE);
+  // Dynamically allocate memory for the buffer
+  uint8_t *data_received = (uint8_t *)malloc(35002 * sizeof(uint8_t));
+  if (data_received == NULL)
+  {
+    printf("Memory allocation failed\n");
+    return;
+  }
+
   switch (mission)
   {
   case 1:
@@ -3249,7 +3400,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
     break;
   default:
     printf("Invalid mission type\n");
-    // free(data_received);
+    free(data_received);
     return;
   }
 
@@ -3271,7 +3422,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   if (hand < 0)
   {
     printf("Handshake failed\n");
-    // free(data_received);
+    free(data_received);
     turn_msn_on_off(mission, 0);
     return;
   }
@@ -3280,7 +3431,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
   if (fd2 < 0)
   {
     printf("Failed to open device: %s\n", dev_path);
-    // free(data_received);
+    free(data_received);
     turn_msn_on_off(mission, 0);
     return;
   }
@@ -3312,18 +3463,13 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
         fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
         if (fd >= 0)
         {
-          // final_count = file_seek(&file_pointer, 0, SEEK_END);
-          // if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
+          if (file_write(&file_pointer, data_received, counter) > 10)
           {
-            if (file_write(&file_pointer, data_received, counter) > 10)
-            {
-              printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
-            }
-            memset(data_received, '\0', sizeof(data_received));
+            printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
           }
+          memset(data_received, '\0', 35002);
         }
         file_close(&file_pointer);
-        // counter1 = 0;
         counter = 0;
       }
 
@@ -3358,7 +3504,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 
         if ((mission == 3 && counter > 10000 * elapsed_time) ||
             (mission == 3 && k >= 1) ||
-            (mission == 1 && counter > 179 && handshake_data[4] == 0x01) ||
+            (mission == 1 && (counter > 979 || stop_time - start_time >= 60) && handshake_data[4] == 0x01) ||
             (mission == 1 && counter > 39 && handshake_data[4] == 0x02) ||
             (mission == 2 && counter > 1000))
         {
@@ -3406,8 +3552,8 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
                     for (i = 0; i < 100; i++)
                     {
                       buffer[i] = data_received[i];
-                      printf("%02x ", data[i]);
-                      if (buffer[i - 1] == 0xff && buffer[i] == 0xd8)
+                      printf("%02x ", data_received[i]);
+                      if (i > 0 && buffer[i - 1] == 0xff && buffer[i] == 0xd8)
                       {
                         break;
                       }
@@ -3425,12 +3571,247 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
       }
     }
   }
-
-  // free(data_received); // Free memory **only once**
+  pet_counter = 0;
+  
+  free(data_received);
   close(fd2);
   turn_msn_on_off(mission, 0);
   pet_counter = 0;
 }
+
+//FM working
+// void mission_operation(uint8_t mission, uint8_t handshake_data[7])
+// {
+//   int fd = -1, hand = -1;
+//   int32_t initial_count = 0, final_count = 0;
+//   struct file file_pointer, file_pointer2;
+//   bool other_mission_running = false;
+//   char file_name[100] = {0}, dev_path[100] = {0};
+//   int i = 1;
+
+//   // Check if another mission is running
+//   if (MISSION_STATUS.CAM_MISSION || MISSION_STATUS.ADCS_MISSION || MISSION_STATUS.EPDM_MISSION)
+//   {
+//     other_mission_running = true;
+//   }
+
+//   printf("\n_______________Other mission running: %d_________________\n", other_mission_running);
+
+//   if (other_mission_running)
+//   {
+//     return;
+//   }
+
+//   // Allocate memory dynamically
+//   uint8_t data_received[32002]; // = (uint8_t *)malloc(BUFFER_SIZE);
+//   switch (mission)
+//   {
+//   case 1:
+//     printf("\n________ADCS MISSION OPERATION SELECTED________\n");
+//     MISSION_STATUS.ADCS_MISSION = true;
+//     strcpy(file_name, "/adcs.txt");
+//     strcpy(dev_path, ADCS_UART);
+//     break;
+//   case 2:
+//     printf("\n________CAM MISSION OPERATION SELECTED________\n");
+//     MISSION_STATUS.CAM_MISSION = true;
+//     strcpy(file_name, "/cam_nir.txt");
+//     i = 2;
+//     strcpy(dev_path, CAM_UART);
+//     break;
+//   case 3:
+//     printf("\n________EPDM MISSION OPERATION SELECTED________\n");
+//     MISSION_STATUS.EPDM_MISSION = true;
+//     strcpy(file_name, "/epdm.txt");
+//     strcpy(dev_path, EPDM_UART);
+//     fd = open_file_flash(&file_pointer, SFM_MAIN_STRPATH, file_name, O_RDONLY);
+//     break;
+//   default:
+//     printf("Invalid mission type\n");
+//     // free(data_received);
+//     return;
+//   }
+
+//   // Check initial file size
+//   if (fd >= 0)
+//   {
+//     initial_count = file_seek(&file_pointer, 0, SEEK_END);
+//     file_close(&file_pointer);
+//   }
+//   else
+//   {
+//     initial_count = -1;
+//   }
+
+//   turn_msn_on_off(mission, 1);
+//   sleep(1);
+//   hand = handshake_MSN(mission, handshake_data);
+
+//   if (hand < 0)
+//   {
+//     printf("Handshake failed\n");
+//     // free(data_received);
+//     turn_msn_on_off(mission, 0);
+//     return;
+//   }
+
+//   int fd2 = open(dev_path, O_RDWR);
+//   if (fd2 < 0)
+//   {
+//     printf("Failed to open device: %s\n", dev_path);
+//     // free(data_received);
+//     turn_msn_on_off(mission, 0);
+//     return;
+//   }
+
+//   uint32_t counter = 0;
+//   uint8_t data3 = 0, data4 = 0;
+//   time_t start_time = time(NULL);
+//   int k = 0;
+//   pet_counter = 0;
+//   for (int j = 0; j < i; j++)
+//   {
+//     // Switch file for second camera
+//     if (j == 1)
+//     {
+//       strcpy(file_name, "/cam_rgb.txt");
+//     }
+
+//     counter = 0;
+//     while (1)
+//     {
+//       data4 = data3;
+//       if (read(fd2, &data3, 1) <= 0)
+//       {
+//         break;
+//       }
+//       if (counter == 32000)
+//       {
+//         k++;
+//         fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
+//         if (fd >= 0)
+//         {
+//           // final_count = file_seek(&file_pointer, 0, SEEK_END);
+//           // if ((final_count - initial_count > 100 && initial_count > 0) | (initial_count <= 0))
+//           {
+//             if (file_write(&file_pointer, data_received, counter) > 10)
+//             {
+//               printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
+//             }
+//             memset(data_received, '\0', sizeof(data_received));
+//           }
+//         }
+//         file_close(&file_pointer);
+//         // counter1 = 0;
+//         counter = 0;
+//       }
+
+//       if (counter < 32000)
+//       {
+//         data_received[counter] = data3;
+//       }
+//       else
+//       {
+//         printf("Buffer overflow prevented!\n");
+//         break;
+//       }
+//       counter++;
+//       printf("%02x ", data3);
+
+//       // Check for end of image (JPEG marker 0xFF 0xD9)
+//       if (data4 == 0xFF && data3 == 0xD9)
+//       {
+//         time_t stop_time = time(NULL);
+//         int elapsed_time = (int)(stop_time - start_time);
+
+//         syslog(LOG_DEBUG, "Counter: %d, Time: %d sec\n", counter, elapsed_time);
+
+//         if (handshake_data[4] < 1 || handshake_data[4] > 5)
+//         {
+//           elapsed_time = 5;
+//         }
+//         else
+//         {
+//           elapsed_time = handshake_data[4];
+//         }
+
+//         if ((mission == 3 && counter > 10000 * elapsed_time) ||
+//             (mission == 3 && k >= 1) ||
+//             (mission == 1 && counter > 979 && stop_time - start_time>=50 && handshake_data[4] == 0x01) ||
+//             (mission == 1 && counter > 39 && handshake_data[4] == 0x02) ||
+//             (mission == 2 && counter > 1000))
+//         {
+//           pet_counter = 0;
+//           printf("\n\nCounter value is %d\n\n", counter + k * 35000);
+
+//           fd = open_file_flash(&file_pointer, MFM_MSN_STRPATH, file_name, O_CREAT | O_RDWR | O_APPEND);
+//           if (fd >= 0)
+//           {
+//             final_count = file_seek(&file_pointer, 0, SEEK_END);
+//             if ((final_count - initial_count > 100 && initial_count > 0) || initial_count <= 0)
+//             {
+//               ssize_t write_bytes = file_write(&file_pointer, data_received, counter);
+//               if (write_bytes > 10)
+//               {
+//                 printf("Data written to %s%s (size: %d)\n", MFM_MSN_STRPATH, file_name, counter);
+
+//                 // Log mission completion
+//                 char log_path[40] = {0};
+//                 if (mission == 1 || mission == 3)
+//                   snprintf(log_path, sizeof(log_path), "%s_logs.txt", mission == 1 ? "/adcs" : "/epdm");
+//                 else
+//                 {
+//                   if (strcmp(file_name, "/cam_rgb.txt") == 0)
+//                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_rgb");
+//                   else
+//                     snprintf(log_path, sizeof(log_path), "%s_logs.txt", "/cam_nir");
+//                 }
+//                 struct file msn_flag_pointer;
+//                 int fd_log = open_file_flash(&msn_flag_pointer, MFM_MSN_STRPATH, log_path, O_CREAT | O_RDWR | O_APPEND);
+//                 if (fd_log >= 0)
+//                 {
+//                   final_count += write_bytes;
+//                   uint8_t temp_var[4] = {
+//                       (final_count >> 24) & 0xFF,
+//                       (final_count >> 16) & 0xFF,
+//                       (final_count >> 8) & 0xFF,
+//                       final_count & 0xFF};
+//                   file_write(&msn_flag_pointer, temp_var, sizeof(temp_var));
+//                   if (strcmp(file_name, "/cam_rgb.txt") == 0 || (mission == 2 && j == 1))
+//                   {
+//                     int i = 0;
+//                     // if it is rgb camera then in that case capture logs
+//                     char buffer[100] = {'\0'};
+//                     for (i = 0; i < 100; i++)
+//                     {
+//                       buffer[i] = data_received[i];
+//                       printf("%02x ", data[i]);
+//                       if (buffer[i - 1] == 0xff && buffer[i] == 0xd8)
+//                       {
+//                         break;
+//                       }
+//                     }
+//                     file_write(&msn_flag_pointer, buffer, i);
+//                   }
+//                   file_close(&msn_flag_pointer);
+//                 }
+//               }
+//             }
+//             file_close(&file_pointer);
+//           }
+//           break;
+//         }
+//       }
+//     }
+//   }
+//   pet_counter = 0;
+ 
+//   // free(data_received); // Free memory **only once**
+//   close(fd2);
+//   turn_msn_on_off(mission, 0);
+//   pet_counter = 0;
+
+// }
 
 // void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 // {
@@ -3559,7 +3940,7 @@ void mission_operation(uint8_t mission, uint8_t handshake_data[7])
 //           {
 //             printf("Data has been written to %s%s path with size %d\n", MFM_MSN_STRPATH, file_name, counter);
 //           }
-//           memset(data_received, 0, 35002 * sizeof(uint8_t)); // Clear buffer after writing
+//           memset(data_received, '\0', 35002 * sizeof(uint8_t)); // Clear buffer after writing
 //         }
 //         file_close(&file_pointer);
 //         counter = 0;
@@ -3804,6 +4185,7 @@ void make_satellite_health()
 
   float int_adc3_temp[CONFIG_CUSTOM_APPS_CUBUS_INT_ADC3_GROUPSIZE] = {'\0'};
   int_adc3_data_convert(int_adc3_temp);
+  sat_health.timestamp = time(NULL);
 
   sat_health.sol_t_c = (int16_t)(int_adc1_temp[0] * 10);
   sat_health.v5_c = (int16_t)(int_adc1_temp[1] * 10);
@@ -3973,7 +4355,7 @@ float convert1(data)
 //     }
 
 //     // usleep(500000);
-//     // print_satellite_health_data(&sat_health);
+    // print_satellite_health_data(&sat_health);
 //     read_int_adc1();
 //     read_int_adc3();
 //     make_satellite_health();
@@ -4008,6 +4390,7 @@ float convert1(data)
 
 //   return 0;
 // }
+
 int ads7953_receiver(int argc, FAR char *argv[])
 {
   int raw_sub_fd = orb_subscribe(ORB_ID(ads7953_raw_msg));
@@ -4063,9 +4446,9 @@ int ads7953_receiver(int argc, FAR char *argv[])
       // Update satellite health data
       // sat_health.temp_x = temp_msg.temp_2;
 
-      sat_health.temp_y1 = temp_msg.temp_z_pos; //+z
+      // sat_health.temp_y1 = temp_msg.temp_z_pos; //+z
       sat_health.temp_z1 = temp_msg.temp_3;     //-z
-
+      sat_health.temp_z = temp_msg.temp_z_pos;
       sat_health.temp_x1 = temp_msg.temp_4; //-x
       sat_health.temp_y = temp_msg.temp_2;  //+y
       sat_health.temp_y1 = temp_msg.temp_5; //-y
@@ -4109,7 +4492,14 @@ int ads7953_receiver(int argc, FAR char *argv[])
     // Publish satellite health data
     if (OK != orb_publish(ORB_ID(sensor_rgb), afd, &sat_health))
     {
-      syslog(LOG_ERR, "Orb Publish failed\n");
+      syslog(LOG_ERR, "Orb Publish failed-sat health\n");
+      orb_unadvertise(afd);  // Unadvertise if needed
+      afd = orb_advertise_multi_queue_persist(ORB_ID(sensor_rgb), &sat_health, &adc_instance, sizeof(struct sensor_rgb));
+      if (afd < 0)
+      {
+          syslog(LOG_ERR, "Re-advertise failed\n");
+          reset_obc();
+      }
     }
 
     // Sleep for 20 seconds before the next iteration
@@ -4181,8 +4571,8 @@ void print_satellite_health_data(satellite_health_s *sat_health)
   printf(" |----------------------------------------------------------|\r\n");
   printf(" |   BPB Temperature            \t %d C\t|\r\n", sat_health->temp_bpb);
   printf(" |   Antenna Panel Temperature  \t %d C\t|\r\n", sat_health->ant_temp_out);
-  printf(" |   Solar Panel -X Temperature  \t %d C\t|\r\n", sat_health->temp_x);
-  printf(" |   Solar Panel +Y Temperature  \t %d C\t|\r\n", sat_health->temp_x1);
+  printf(" |   Solar Panel -X Temperature  \t %d C\t|\r\n", sat_health->temp_x1);
+  printf(" |   Solar Panel +Y Temperature  \t %d C\t|\r\n", sat_health->temp_y1);
   printf(" |   Solar Panel -Y Temperature  \t %d C\t|\r\n", sat_health->temp_y);
   printf(" |   Solar Panel +Z Temperature  \t %d C\t|\r\n", sat_health->temp_z);
   printf(" |   Solar Panel -Z Temperature  \t %d C\t|\r\n", sat_health->temp_z1);
@@ -4313,6 +4703,16 @@ void subscribe_and_retrieve_data(void)
 void print_beacon_a()
 {
   printf("-------------------------------------------------------\nHEAD: 0x%02X\n", s2s_beacon_type_a.HEAD);
+  // printf("TYPE: %d\n", s2s_beacon_type_a.TYPE);
+  // printf("TIM_DAY: %d\n", s2s_beacon_type_a.TIM_DAY);
+  // printf("TIM_HOUR: %d\n", s2s_beacon_type_a.TIM_HOUR);
+  // printf("BAT_V: %d\n", s2s_beacon_type_a.BAT_V);
+  // printf("BAT_C: %d\n", s2s_beacon_type_a.BAT_C);
+  // printf("BAT_T: %d\n", s2s_beacon_type_a.BAT_T);
+  // printf("RAW_C: %d\n", s2s_beacon_type_a.RAW_C);
+  // printf("SOL_TOT_V: %d\n", s2s_beacon_type_a.SOL_TOT_V);
+  // printf("SOL_TOT_C: %d\n", s2s_beacon_type_a.SOL_TOT_C);
+  
   printf("TYPE: %d\n", s2s_beacon_type_a.TYPE);
   printf("TIM_DAY: %d\n", s2s_beacon_type_a.TIM_DAY);
   printf("TIM_HOUR: %d\n", s2s_beacon_type_a.TIM_HOUR);
@@ -4322,6 +4722,28 @@ void print_beacon_a()
   printf("RAW_C: %d\n", s2s_beacon_type_a.RAW_C);
   printf("SOL_TOT_V: %d\n", s2s_beacon_type_a.SOL_TOT_V);
   printf("SOL_TOT_C: %d\n", s2s_beacon_type_a.SOL_TOT_C);
+  printf("ANT_P_T: %d\n", s2s_beacon_type_a.ANT_P_T);
+  printf("BPB_T: %d\n", s2s_beacon_type_a.BPB_T);
+  printf("OBC_T: %d\n", s2s_beacon_type_a.OBC_T);
+  printf("X_T: %d\n", s2s_beacon_type_a.X_T);
+  printf("X1_T: %d\n", s2s_beacon_type_a.X1_T);
+  printf("Y_T: %d\n", s2s_beacon_type_a.Y_T);
+  printf("Y1_T: %d\n", s2s_beacon_type_a.Y1_T);
+  printf("Z_T: %d\n", s2s_beacon_type_a.Z_T);
+  printf("SOL_P1_STAT: %d\n", s2s_beacon_type_a.SOL_P1_STAT);
+  printf("SOL_P2_STAT: %d\n", s2s_beacon_type_a.SOL_P2_STAT);
+  printf("SOL_P3_STAT: %d\n", s2s_beacon_type_a.SOL_P3_STAT);
+  printf("SOL_P4_STAT: %d\n", s2s_beacon_type_a.SOL_P4_STAT);
+  printf("MSN1_STAT: %d\n", s2s_beacon_type_a.MSN1_STAT);
+  printf("MSN2_STAT: %d\n", s2s_beacon_type_a.MSN2_STAT);
+  printf("MSN3_STAT: %d\n", s2s_beacon_type_a.MSN3_STAT);
+  printf("ANT_STAT: %d\n", s2s_beacon_type_a.ANT_STAT);
+  printf("UL_STAT: %d\n", s2s_beacon_type_a.UL_STAT);
+  printf("OPER_MODE: %d\n", s2s_beacon_type_a.OPER_MODE);
+  printf("OBC_RESET_COUNT: %d\n", s2s_beacon_type_a.OBC_RESET_COUNT);
+  printf("LAST_RESET_TIME: %d\n", s2s_beacon_type_a.LAST_RESET);
+  printf("CHK_CRC: 0x%04X\n", s2s_beacon_type_a.CHK_CRC);
+  printf("----------------------------\n");
   printf("-------------------------------------------------------\n");
 }
 void print_beacon_b()
@@ -4555,7 +4977,7 @@ void flash_read_operation_uorb()
     {
       if (OK != orb_publish(ORB_ID(command), raw_afd, &command_uorb))
       {
-        syslog(LOG_ERR, "Orb Publish failed\n");
+        syslog(LOG_ERR, "Orb Publish failed -flash read operation cubus app\n");
       }
       else
       {
@@ -4583,6 +5005,7 @@ void flash_operation_data(uint16_t loop)
   uint32_t stop_time = 0;
   int32_t count = -1;
   uint8_t beacon_data[BEACON_DATA_SIZE] = {'\0'};
+  MISSION_STATUS.FLASH_OPERATION = true;
   do
   {
     orb_check(flash_fd, &updated);
@@ -4626,6 +5049,7 @@ void flash_operation_data(uint16_t loop)
     }
     // printf("the value of counter is %d\n",loop);
   } while (loop >= 0 && loop < 65505);
+  MISSION_STATUS.FLASH_OPERATION = false;
   orb_unsubscribe(flash_fd);
 }
 
@@ -4694,12 +5118,12 @@ void get_top_rsv(struct reservation_command *res, uint32_t *timer1)
 
 void clear_ext_flag()
 {
-  char filename[][30] = {"/flags.txt", "/satHealth.txt", "/reservation_command.txt", "/time.txt", "/epdm.txt", "/cam_rgb.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt"};
+  char filename[][30] = {"/test.txt","/flags.txt", "/satHealth.txt", "/reservation_command.txt", "/time.txt", "/epdm.txt", "/cam_rgb.txt", "/adcs.txt", "/cam_nir.txt", "/digipeater.txt", "/adcs_logs.txt", "/epdm_logs.txt", "/cam_rgb_logs.txt", "/cam_nir_logs.txt","/epdmNew.txt"};
   struct file flp1, flp2, flp3, flp4;
   int fd = -1;
   for (int i = 0; i < sizeof(filename) / sizeof(filename[0]); i++)
   {
-    if (i <= 3)
+    if (i <= 4)
     {
       fd = open_file_flash(&flp1, MFM_MAIN_STRPATH, filename[i], O_CREAT);
       if (fd < 0)

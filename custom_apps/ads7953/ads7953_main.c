@@ -150,7 +150,8 @@ int ads7953_daemon(int argc, FAR char *argv[])
 
     if (OK != orb_publish(ORB_ID(ads7953_raw_msg), raw_afd, &e_ads7953_0))
     {
-      syslog(LOG_ERR, "Orb Publish failed\n");
+      syslog(LOG_ERR, "Orb Publish failed-ext adc data e_ads7953_0\n");
+      
     }
 
     // Processing temperature sensor reading
@@ -247,12 +248,24 @@ int ads7953_daemon(int argc, FAR char *argv[])
     if (OK != orb_publish(ORB_ID(sat_temp_msg), temp_afd, &sat_temps))
     {
       syslog(LOG_ERR, "Sat temp Orb Publish failed\n");
+      orb_unadvertise(temp_afd);  // Unadvertise if needed
+      temp_afd = orb_advertise_multi_queue_persist(ORB_ID(sat_temp_msg), &sat_temps, 0,
+                                               sizeof(struct sat_temp_msg));
+  
+      if (temp_afd < 0)
+      {
+          syslog(LOG_ERR, "Re-advertise failed\n");
+          if (OK != orb_publish(ORB_ID(sat_temp_msg), temp_afd, &sat_temps))
+          {
+          reset_obc();
+          }
+      }
     }
     if (counter > 450 || counter % 450 == 0)
     {
       for (int i = 1; i < 8; i++)
       {
-        mean[i] = 0.0f;
+        mean[i] = mean[i];
       }
       // mean=0;
       counter = 0;
@@ -273,6 +286,17 @@ int ads7953_daemon(int argc, FAR char *argv[])
     if (OK != orb_publish(ORB_ID(sat_volts_msg), volts_afd, &sat_volts))
     {
       syslog(LOG_ERR, "Sat volts Orb Publish failed\n");
+      orb_unadvertise(volts_afd);  // Unadvertise if needed
+      volts_afd = orb_advertise_multi_queue_persist(ORB_ID(sat_volts_msg), &sat_volts,
+      0, sizeof(struct sat_volts_msg));
+      if (volts_afd < 0)
+      {
+          syslog(LOG_ERR, "Re-advertise failed\n");
+          if (OK != orb_publish(ORB_ID(sat_volts_msg), volts_afd, &sat_volts))
+          {
+            reset_obc();
+          }    
+      }
     }
 
     usleep(10000);

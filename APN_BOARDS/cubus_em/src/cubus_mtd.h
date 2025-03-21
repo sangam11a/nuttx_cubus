@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <nuttx/mtd/mtd.h>
 
-#define MAX_MTD_INSTANCES 5u
+#define MAX_MTD_INSTANCES 15u
 
 // The data needed to interface with mtd device's
 
