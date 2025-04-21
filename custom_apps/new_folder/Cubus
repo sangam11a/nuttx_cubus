@@ -1,0 +1,629 @@
+Cubus
+Opened file: /mnt/fs/mfm/mtd_mainstorage/sat_health.txt ...
+Opened file: /mnt/fs/mfm/mtd_mainstorage/flags.txt ...
+Opened file: /mnt/fs/mfm/mtd_mission/cam.txt ...
+Opened file: /mnt/fs/mfm/mtd_mission/epdm.txt ...
+Checking initial flag data...
+Error opening internal flash atempt 1......
+
+Opened file: /mnt/fs/mfm/mtd_mainstorage/flags.txt ...
+data available in both main flash and internal flash memories
+
+Printing Main flash flag data....
+ ********************************************
+ |   Antenna Deployment Status   222    |
+ |   Kill Switch Status          0      |
+ |   Operation Mode              90     |
+ |   Reservation Table Flag      0      |
+ |   Command uplink status       174    |
+ ********************************************
+Printing Internal flash flag data.
+ ********************************************
+ |   Antenna Deployment Status   217    |
+ |   Kill Switch Status          1      |
+ |   Operation Mode              8      |
+ |   Reservation Table Flag      191    |
+ |   Command uplink status       1      |
+ ********************************************
+Flags data check and write complete....
+ ********************************************
+ |   Antenna Deployment Status   217    |
+ |   Kill Switch Status          1      |
+ |   Operation Mode              8      |
+ |   Reservation Table Flag      191    |
+ |   Command uplink status       1      |
+ ********************************************
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc0
+Readsize: 80
+ nbytes: 75
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 16
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2029
+1: channel: 2 value: 96
+2: channel: 3 value: 1
+3: channel: 4 value: 55
+4: channel: 5 value: 2363
+5: channel: 6 value: 5
+6: channel: 7 value: 6
+7: channel: 8 value: 6
+8: channel: 9 value: 2087
+9: channel: 10 value: 80
+10: channel: 11 value: 2
+11: channel: 12 value: 2010
+12: channel: 14 value: 9
+13: channel: 15 value: 5
+14: channel: 17 value: 8
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc2
+Readsize: 5
+ nbytes: 5
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 1
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2049
+Going to Test the External ADC
+opened external ADC driver successfully
+Channel: 0   value: 2
+Channel: 1   value: 1
+Channel: 2   value: 0
+Channel: 3   value: 0
+Channel: 4   value: 0
+Channel: 5   value: 0
+Channel: 6   value: 0
+Channel: 7   value: 0
+Channel: 8   value: 0
+Channel: 9   value: 1
+Channel: 10   value: 0
+Channel: 11   value: 2
+Sensor Fusion example
+Sample Rate: 10.00 Hz
+got inside sensor_workFailed to open magnetometer
+************************************************
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.567920 | Y: 0.088525 | Z: -0.062207
+Gyroscope X: -1.768293 | Y: 0.030487 | Z: 0.396341
+Failed to read from sensor.
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.567920 | Y: 0.088525 | Z: -0.062207
+Gyroscope X: -1.768293 | Y: 0.030487 | Z: 0.396341
+Magnetometer X: 0.000000 | Y: 0.000000 | Z: 0.000000
+************************************************
+Accelerometer X: 1068935577 | Y: 1610612736 | Z: -1071439162
+  Magnetometer X: -1610612736 | Y: 1068935577 | Z: -1610612736
+Opened file: /mnt/fs/mfm/mtd_mainstorage/sat_health.txt ...
+Satellite Health data write Successful.
+Data Len: 112.
+ *******************************************
+ |   X axis acceleration         -9.567920      |
+ |   Y axis acceleration         0.088525       |
+ |   Z axis acceleration         -0.062207      |
+ |   X axis Gyro data            -1.768293      |
+ |   Y axis Gyro data            0.030487       |
+ |   Z axis gyro data            0.396341       |
+ |   X axis magnetic field       0.000000       |
+ |   Y axis magnetic field       0.000000       |
+ |   Z axis magnetic field       0.000000       |
+ |   Solar Panel 1 Voltage:      0      |
+ |   Solar Panel 2 Voltage:      0      |
+ |   Solar Panel 3 Voltage:      0      |
+ |   Solar Panel 4 Voltage:      0      |
+ |   Solar Panel 5 Voltage:      1      |
+ |   Solar Panel T Voltage:      4      |
+ |--------------------------------------|
+ |   Solar Panel 1 Current:      8      |
+ |   Solar Panel 2 Current:      14     |
+ |   Solar Panel 3 Current:      8      |
+ |   Solar Panel 4 Current:      9      |
+ |   Solar Panel 5 Current:      3363   |
+ |   Solar Panel T Current:      -6220  |
+ |--------------------------------------|
+ |   Unreg Line Current:         3270   |
+ |   Main 3v3 Current:           154    |
+ |   COM 3v3 Current:            1      |
+ |   5 Volts line Current:       88     |
+ |   3v3 2 line Current:         9      |
+ |--------------------------------------|
+ |   Raw Current:                -114   |
+ |   Raw Voltage:                4      |
+ |--------------------------------------|
+ |   Battery Total Voltage:      4      |
+ |   Battery Total Current:      -5983  |
+ |   Battery Temperature:        0      |
+ *********************************************
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc0
+Readsize: 80
+ nbytes: 75
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 16
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2014
+1: channel: 2 value: 96
+2: channel: 3 value: 2
+3: channel: 4 value: 56
+4: channel: 5 value: 2366
+5: channel: 6 value: 6
+6: channel: 7 value: 7
+7: channel: 8 value: 6
+8: channel: 9 value: 2068
+9: channel: 10 value: 78
+10: channel: 11 value: 2
+11: channel: 12 value: 1995
+12: channel: 14 value: 9
+13: channel: 15 value: 5
+14: channel: 17 value: 6
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc2
+Readsize: 5
+ nbytes: 5
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 1
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2036
+Going to Test the External ADC
+opened external ADC driver successfully
+Channel: 0   value: 2
+Channel: 1   value: 1
+Channel: 2   value: 0
+Channel: 3   value: 0
+Channel: 4   value: 0
+Channel: 5   value: 0
+Channel: 6   value: 0
+Channel: 7   value: 0
+Channel: 8   value: 0
+Channel: 9   value: 1
+Channel: 10   value: 0
+Channel: 11   value: 2
+Sensor Fusion example
+Sample Rate: 10.00 Hz
+got inside sensor_workFailed to open magnetometer
+************************************************
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.548779 | Y: 0.098095 | Z: -0.110059
+Gyroscope X: -1.615854 | Y: 0.030487 | Z: 0.579268
+Failed to read from sensor.
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.548779 | Y: 0.098095 | Z: -0.110059
+Gyroscope X: -1.615854 | Y: 0.030487 | Z: 0.579268
+Magnetometer X: 0.000000 | Y: 0.000000 | Z: 0.000000
+************************************************
+Accelerometer X: 1069096140 | Y: -1610612736 | Z: -1071441671
+  Magnetometer X: -1073741824 | Y: 1069096140 | Z: -1073741824
+Opened file: /mnt/fs/mfm/mtd_mainstorage/sat_health.txt ...
+Satellite Health data write Successful.
+Data Len: 112.
+ *******************************************
+ |   X axis acceleration         -9.548779      |
+ |   Y axis acceleration         0.098095       |
+ |   Z axis acceleration         -0.110059      |
+ |   X axis Gyro data            -1.615854      |
+ |   Y axis Gyro data            0.030487       |
+ |   Z axis gyro data            0.579268       |
+ |   X axis magnetic field       0.000000       |
+ |   Y axis magnetic field       0.000000       |
+ |   Z axis magnetic field       0.000000       |
+ |   Solar Panel 1 Voltage:      0      |
+ |   Solar Panel 2 Voltage:      0      |
+ |   Solar Panel 3 Voltage:      0      |
+ |   Solar Panel 4 Voltage:      0      |
+ |   Solar Panel 5 Voltage:      1      |
+ |   Solar Panel T Voltage:      4      |
+ |--------------------------------------|
+ |   Solar Panel 1 Current:      9      |
+ |   Solar Panel 2 Current:      14     |
+ |   Solar Panel 3 Current:      8      |
+ |   Solar Panel 4 Current:      9      |
+ |   Solar Panel 5 Current:      3333   |
+ |   Solar Panel T Current:      -6220  |
+ |--------------------------------------|
+ |   Unreg Line Current:         3246   |
+ |   Main 3v3 Current:           154    |
+ |   COM 3v3 Current:            3      |
+ |   5 Volts line Current:       90     |
+ |   3v3 2 line Current:         11     |
+ |--------------------------------------|
+ |   Raw Current:                -159   |
+ |   Raw Voltage:                4      |
+ |--------------------------------------|
+ |   Battery Total Voltage:      4      |
+ |   Battery Total Current:      -5989  |
+ |   Battery Temperature:        0      |
+ *********************************************
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc0
+Readsize: 80
+ nbytes: 75
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 16
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2041
+1: channel: 2 value: 97
+2: channel: 3 value: 1
+3: channel: 4 value: 56
+4: channel: 5 value: 2365
+5: channel: 6 value: 5
+6: channel: 7 value: 6
+7: channel: 8 value: 6
+8: channel: 9 value: 2066
+9: channel: 10 value: 78
+10: channel: 11 value: 1
+11: channel: 12 value: 2017
+12: channel: 14 value: 8
+13: channel: 15 value: 5
+14: channel: 17 value: 7
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc2
+Readsize: 5
+ nbytes: 5
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 1
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2012
+Going to Test the External ADC
+opened external ADC driver successfully
+Channel: 0   value: 2
+Channel: 1   value: 1
+Channel: 2   value: 0
+Channel: 3   value: 0
+Channel: 4   value: 0
+Channel: 5   value: 0
+Channel: 6   value: 0
+Channel: 7   value: 0
+Channel: 8   value: 0
+Channel: 9   value: 1
+Channel: 10   value: 0
+Channel: 11   value: 2
+Sensor Fusion example
+Sample Rate: 10.00 Hz
+got inside sensor_workFailed to open magnetometer
+************************************************
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.534424 | Y: 0.114844 | Z: -0.004785
+Gyroscope X: -1.829268 | Y: 0.274390 | Z: 0.518293
+Failed to read from sensor.
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.534424 | Y: 0.114844 | Z: -0.004785
+Gyroscope X: -1.829268 | Y: 0.274390 | Z: 0.518293
+Magnetometer X: 0.000000 | Y: 0.000000 | Z: 0.000000
+************************************************
+Accelerometer X: 1069377126 | Y: 0 | Z: -1071443552
+  Magnetometer X: 1610612736 | Y: 1069377126 | Z: -1610612736
+Opened file: /mnt/fs/mfm/mtd_mainstorage/sat_health.txt ...
+Satellite Health data write Successful.
+Data Len: 112.
+ *******************************************
+ |   X axis acceleration         -9.534424      |
+ |   Y axis acceleration         0.114844       |
+ |   Z axis acceleration         -0.004785      |
+ |   X axis Gyro data            -1.829268      |
+ |   Y axis Gyro data            0.274390       |
+ |   Z axis gyro data            0.518293       |
+ |   X axis magnetic field       0.000000       |
+ |   Y axis magnetic field       0.000000       |
+ |   Z axis magnetic field       0.000000       |
+ |   Solar Panel 1 Voltage:      0      |
+ |   Solar Panel 2 Voltage:      0      |
+ |   Solar Panel 3 Voltage:      0      |
+ |   Solar Panel 4 Voltage:      0      |
+ |   Solar Panel 5 Voltage:      1      |
+ |   Solar Panel T Voltage:      4      |
+ |--------------------------------------|
+ |   Solar Panel 1 Current:      8      |
+ |   Solar Panel 2 Current:      12     |
+ |   Solar Panel 3 Current:      8      |
+ |   Solar Panel 4 Current:      9      |
+ |   Solar Panel 5 Current:      3329   |
+ |   Solar Panel T Current:      -6223  |
+ |--------------------------------------|
+ |   Unreg Line Current:         3289   |
+ |   Main 3v3 Current:           156    |
+ |   COM 3v3 Current:            1      |
+ |   5 Volts line Current:       90     |
+ |   3v3 2 line Current:         9      |
+ |--------------------------------------|
+ |   Raw Current:                -92    |
+ |   Raw Voltage:                4      |
+ |--------------------------------------|
+ |   Battery Total Voltage:      4      |
+ |   Battery Total Current:      -5989  |
+ |   Battery Temperature:        0      |
+ *********************************************
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc0
+Readsize: 80
+ nbytes: 75
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 16
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2042
+1: channel: 2 value: 96
+2: channel: 3 value: 2
+3: channel: 4 value: 56
+4: channel: 5 value: 2366
+5: channel: 6 value: 5
+6: channel: 7 value: 6
+7: channel: 8 value: 6
+8: channel: 9 value: 2070
+9: channel: 10 value: 80
+10: channel: 11 value: 1
+11: channel: 12 value: 2002
+12: channel: 14 value: 8
+13: channel: 15 value: 6
+14: channel: 17 value: 11
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc2
+Readsize: 5
+ nbytes: 5
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 1
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2045
+Going to Test the External ADC
+opened external ADC driver successfully
+Channel: 0   value: 2
+Channel: 1   value: 1
+Channel: 2   value: 0
+Channel: 3   value: 0
+Channel: 4   value: 0
+Channel: 5   value: 0
+Channel: 6   value: 0
+Channel: 7   value: 0
+Channel: 8   value: 0
+Channel: 9   value: 1
+Channel: 10   value: 0
+Channel: 11   value: 2
+Sensor Fusion example
+Sample Rate: 10.00 Hz
+got inside sensor_workFailed to open magnetometer
+************************************************
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -8.385986 | Y: 0.122021 | Z: 4.531543
+Gyroscope X: -1.676829 | Y: -2.591464 | Z: 0.396341
+Failed to read from sensor.
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -8.385986 | Y: 0.122021 | Z: 4.531543
+Gyroscope X: -1.676829 | Y: -2.591464 | Z: 0.396341
+Magnetometer X: 0.000000 | Y: 0.000000 | Z: 0.000000
+************************************************
+Accelerometer X: 1069497548 | Y: 0 | Z: -1071594080
+  Magnetometer X: -1073741824 | Y: 1069497548 | Z: -1073741824
+Opened file: /mnt/fs/mfm/mtd_mainstorage/sat_health.txt ...
+Satellite Health data write Successful.
+Data Len: 112.
+ *******************************************
+ |   X axis acceleration         -8.385986      |
+ |   Y axis acceleration         0.122021       |
+ |   Z axis acceleration         4.531543       |
+ |   X axis Gyro data            -1.676829      |
+ |   Y axis Gyro data            -2.591464      |
+ |   Z axis gyro data            0.396341       |
+ |   X axis magnetic field       0.000000       |
+ |   Y axis magnetic field       0.000000       |
+ |   Z axis magnetic field       0.000000       |
+ |   Solar Panel 1 Voltage:      0      |
+ |   Solar Panel 2 Voltage:      0      |
+ |   Solar Panel 3 Voltage:      0      |
+ |   Solar Panel 4 Voltage:      0      |
+ |   Solar Panel 5 Voltage:      0      |
+ |   Solar Panel T Voltage:      4      |
+ |--------------------------------------|
+ |   Solar Panel 1 Current:      8      |
+ |   Solar Panel 2 Current:      12     |
+ |   Solar Panel 3 Current:      9      |
+ |   Solar Panel 4 Current:      9      |
+ |   Solar Panel 5 Current:      3336   |
+ |   Solar Panel T Current:      -6223  |
+ |--------------------------------------|
+ |   Unreg Line Current:         3291   |
+ |   Main 3v3 Current:           154    |
+ |   COM 3v3 Current:            3      |
+ |   5 Volts line Current:       90     |
+ |   3v3 2 line Current:         9      |
+ |--------------------------------------|
+ |   Raw Current:                -138   |
+ |   Raw Voltage:                4      |
+ |--------------------------------------|
+ |   Battery Total Voltage:      4      |
+ |   Battery Total Current:      -5983  |
+ |   Battery Temperature:        0      |
+ *********************************************
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc0
+Readsize: 80
+ nbytes: 75
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 16
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2040
+1: channel: 2 value: 96
+2: channel: 3 value: 2
+3: channel: 4 value: 56
+4: channel: 5 value: 2366
+5: channel: 6 value: 5
+6: channel: 7 value: 6
+7: channel: 8 value: 6
+8: channel: 9 value: 2064
+9: channel: 10 value: 78
+10: channel: 11 value: 1
+11: channel: 12 value: 1996
+12: channel: 14 value: 8
+13: channel: 15 value: 5
+14: channel: 17 value: 8
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc2
+Readsize: 5
+ nbytes: 5
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 1
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2030
+Going to Test the External ADC
+opened external ADC driver successfully
+Channel: 0   value: 2
+Channel: 1   value: 1
+Channel: 2   value: 0
+Channel: 3   value: 0
+Channel: 4   value: 0
+Channel: 5   value: 0
+Channel: 6   value: 0
+Channel: 7   value: 0
+Channel: 8   value: 0
+Channel: 9   value: 1
+Channel: 10   value: 0
+Channel: 11   value: 2
+Sensor Fusion example
+Sample Rate: 10.00 Hz
+got inside sensor_workFailed to open magnetometer
+************************************************
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -1.842285 | Y: 1.715479 | Z: 9.553564
+Gyroscope X: -1.250000 | Y: -0.548781 | Z: 0.579268
+Failed to read from sensor.
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -1.842285 | Y: 1.715479 | Z: 9.553564
+Gyroscope X: -1.250000 | Y: -0.548781 | Z: 0.579268
+Magnetometer X: 0.000000 | Y: 0.000000 | Z: 0.000000
+************************************************
+Accelerometer X: 1073443481 | Y: 0 | Z: -1073907200
+  Magnetometer X: -1610612736 | Y: 1073443481 | Z: -1073741824
+Opened file: /mnt/fs/mfm/mtd_mainstorage/sat_health.txt ...
+Satellite Health data write Successful.
+Data Len: 112.
+ *******************************************
+ |   X axis acceleration         -1.842285      |
+ |   Y axis acceleration         1.715479       |
+ |   Z axis acceleration         9.553564       |
+ |   X axis Gyro data            -1.250000      |
+ |   Y axis Gyro data            -0.548781      |
+ |   Z axis gyro data            0.579268       |
+ |   X axis magnetic field       0.000000       |
+ |   Y axis magnetic field       0.000000       |
+ |   Z axis magnetic field       0.000000       |
+ |   Solar Panel 1 Voltage:      0      |
+ |   Solar Panel 2 Voltage:      0      |
+ |   Solar Panel 3 Voltage:      0      |
+ |   Solar Panel 4 Voltage:      0      |
+ |   Solar Panel 5 Voltage:      0      |
+ |   Solar Panel T Voltage:      4      |
+ |--------------------------------------|
+ |   Solar Panel 1 Current:      8      |
+ |   Solar Panel 2 Current:      12     |
+ |   Solar Panel 3 Current:      8      |
+ |   Solar Panel 4 Current:      9      |
+ |   Solar Panel 5 Current:      3326   |
+ |   Solar Panel T Current:      -6223  |
+ |--------------------------------------|
+ |   Unreg Line Current:         3287   |
+ |   Main 3v3 Current:           154    |
+ |   COM 3v3 Current:            3      |
+ |   5 Volts line Current:       90     |
+ |   3v3 2 line Current:         9      |
+ |--------------------------------------|
+ |   Raw Current:                -156   |
+ |   Raw Voltage:                4      |
+ |--------------------------------------|
+ |   Battery Total Voltage:      4      |
+ |   Battery Total Current:      -5989  |
+ |   Battery Temperature:        0      |
+ *********************************************
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc0
+Readsize: 80
+ nbytes: 75
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 16
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2036
+1: channel: 2 value: 96
+2: channel: 3 value: 2
+3: channel: 4 value: 53
+4: channel: 5 value: 2366
+5: channel: 6 value: 5
+6: channel: 7 value: 6
+7: channel: 8 value: 6
+8: channel: 9 value: 2074
+9: channel: 10 value: 79
+10: channel: 11 value: 1
+11: channel: 12 value: 2009
+12: channel: 14 value: 8
+13: channel: 15 value: 5
+14: channel: 17 value: 7
+adc_main: g_adcstate.count: 1
+adc_main: Hardware initialized. Opening the ADC device: /dev/adc2
+Readsize: 5
+ nbytes: 5
+ CUSTOM_APPS_CUBUS_INT_ADC_GROUPSIZE : 1
+ ADCSTATE READCOUNT: 1
+Sample:
+0: channel: 0 value: 2017
+Going to Test the External ADC
+opened external ADC driver successfully
+Channel: 0   value: 2
+Channel: 1   value: 1
+Channel: 2   value: 0
+Channel: 3   value: 0
+Channel: 4   value: 0
+Channel: 5   value: 0
+Channel: 6   value: 0
+Channel: 7   value: 0
+Channel: 8   value: 0
+Channel: 9   value: 1
+Channel: 10   value: 0
+Channel: 11   value: 2
+Sensor Fusion example
+Sample Rate: 10.00 Hz
+got inside sensor_workFailed to open magnetometer
+************************************************
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.572705 | Y: 0.028710 | Z: -0.102881
+Gyroscope X: -1.798781 | Y: 0.121951 | Z: 0.426829
+Failed to read from sensor.
+Timestamp: 0.000000  Temperature: 0.000000
+Accelerometer X: -9.572705 | Y: 0.028710 | Z: -0.102881
+Gyroscope X: -1.798781 | Y: 0.121951 | Z: 0.426829
+Magnetometer X: 0.000000 | Y: 0.000000 | Z: 0.000000
+************************************************
+Accelerometer X: 1067279974 | Y: -1610612736 | Z: -1071438535
+  Magnetometer X: 1610612736 | Y: 1067279974 | Z: 1610612736
+Opened file: /mnt/fs/mfm/mtd_mainstorage/sat_health.txt ...
+Satellite Health data write Successful.
+Data Len: 112.
+ *******************************************
+ |   X axis acceleration         -9.572705      |
+ |   Y axis acceleration         0.028710       |
+ |   Z axis acceleration         -0.102881      |
+ |   X axis Gyro data            -1.798781      |
+ |   Y axis Gyro data            0.121951       |
+ |   Z axis gyro data            0.426829       |
+ |   X axis magnetic field       0.000000       |
+ |   Y axis magnetic field       0.000000       |
+ |   Z axis magnetic field       0.000000       |
+ |   Solar Panel 1 Voltage:      0      |
+ |   Solar Panel 2 Voltage:      0      |
+ |   Solar Panel 3 Voltage:      0      |
+ |   Solar Panel 4 Voltage:      0      |
+ |   Solar Panel 5 Voltage:      0      |
+ |   Solar Panel T Voltage:      4      |
+ |--------------------------------------|
+ |   Solar Panel 1 Current:      8      |
+ |   Solar Panel 2 Current:      12     |
+ |   Solar Panel 3 Current:      8      |
+ |   Solar Panel 4 Current:      9      |
+ |   Solar Panel 5 Current:      3342   |
+ |   Solar Panel T Current:      -6223  |
+ |--------------------------------------|
+ |   Unreg Line Current:         3281   |
+ |   Main 3v3 Current:           154    |
+ |   COM 3v3 Current:            3      |
+ |   5 Volts line Current:       85     |
+ |   3v3 2 line Current:         9      |
+ |--------------------------------------|
+ |   Raw Current:                -117   |
+ |   Raw Voltage:                4      |
+ |--------------------------------------|
+ |   Battery Total Voltage:      4      |
+ |   Battery Total Current:      -5986  |
+ |   Battery Temperature:        0      |
+ *********************************************
